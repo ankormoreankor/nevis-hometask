@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Local env
+.env
+.env.*
+!.env.example
+*.local
+
+# Confidential design exports (Figma node trees, frame renders)
+design/
