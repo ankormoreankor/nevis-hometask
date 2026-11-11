@@ -4,7 +4,7 @@ Dashboard for the Nevis Senior Frontend Engineer take-home: advisors and their m
 
 Review copy. The design and the client figures belong to Nevis; this repository is for their evaluation only.
 
-Task, payload and design links: `docs/brief.md`. Exported design trees and frames: `design/` (gitignored).
+Task, payload and design links: `docs/brief.md`. Exported design trees and frames: `design/` (gitignored). Decisions made before any code, design facts and the idea backlog: `docs/context.md`.
 
 ## Run it
 
