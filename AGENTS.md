@@ -17,6 +17,24 @@ Nevis frontend take-home: dashboard over a company > branch > adviser > channel 
 - Numbers rendered in the UI come from the payload unchanged. Where a level is missing (branches without employees, advisers without channels), the row is a leaf and says so.
 - UI copy is plain and factual: no em dashes, no marketing adjectives, no exclamation.
 
+## Who writes what
+
+Configuration belongs to the agent. Implementation belongs to the user.
+
+The agent writes without asking:
+
+- config: `opencode.jsonc`, root and workspace `package.json`, `package-lock.json`, tsconfig files, Vite, ESLint, Vitest, Playwright, CI workflows, `render.yaml`, `.gitignore`, `.editorconfig`
+- docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/tasks/**`
+- scaffolding: folders, empty files, `.gitkeep`, placeholder exports
+
+The agent stops before implementation under `apps/**` and `packages/**`: components, routes, API handlers, schemas, styles, tests. It writes a task file instead.
+
+A task file goes at `docs/tasks/<area>/<nn>-<name>.md`. Format and rules: `docs/tasks/README.md`. The agent may create the folders and stub files a task needs, but the body stays empty for the user.
+
+Direct request overrides this. If the user says "build X", the agent builds X, and the permission prompt is the only confirmation. No task file.
+
+`opencode.jsonc` enforces the split: edits under `apps/` and `packages/` ask, config paths and `docs/` are free, `design/` and the brief are read-only.
+
 ## Working notes
 
 - Match the design's visual treatment, not its pixel positions: its chart bars disagree with its own table.
