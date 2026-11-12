@@ -1,0 +1,16 @@
+{
+  "name": "nevis-hometask",
+  "version": "1.0.0",
+  "description": "Dashboard for the Nevis Senior Frontend Engineer take-home: advisors and their managers track a book of business over Feb 2024 - Jan 2025, drilling from the whole company down to a branch, an advisor or an acquisition channel. Two parts, a stacked bar chart over time and a per-month detail table with expandable rows.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "analyze": "fallow",
+    "analyze:changed": "fallow audit",
+    "analyze:dupes": "fallow dupes"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "fallow": "^3.42.0"
+  }
+}
