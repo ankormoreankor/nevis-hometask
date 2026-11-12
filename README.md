@@ -6,14 +6,41 @@ Review copy. The design and the client figures belong to Nevis; this repository 
 
 Task, payload and design links: `docs/brief.md`. Exported design trees and frames: `design/` (gitignored). Decisions made before any code, design facts and the idea backlog: `docs/context.md`.
 
+## Layout
+
+- `apps/web` - Vite + React 19 client.
+- `apps/api` - Express API.
+- `packages/shared` - Zod contract used by both.
+
 ## Run it
 
-Not built yet. Commands land here once the app exists: install, dev server, API, tests.
+Install once from the root:
+
+```bash
+npm install
+```
+
+Then:
+
+```bash
+npm run dev        # web and api together
+npm run dev:web
+npm run dev:api
+
+npm run build
+npm run test
+npm run lint
+npm run typecheck
+npm run analyze    # fallow: dead code, duplication, complexity
+```
+
+The workspace scripts are wired. Vite, TypeScript and the API entry points land next, so the app commands start working as those files are added.
 
 ## Decisions
 
 The brief asks for the calls made where it left things open, and for anything that looks wrong on their side. One line per decision, with the alternative and the reason.
 
+- Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
 - Open: what the chart stacks. Branch values sum to the company row, the design's channel legend does not.
 - Open: whether the chart follows the selected drill-down node or always shows the whole company.
 - Open: employee avatars appear in the design, the payload carries no image data.

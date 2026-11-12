@@ -4,6 +4,15 @@ build/
 coverage/
 *.log
 
+# Build caches
+*.tsbuildinfo
+.vite/
+.eslintcache
+.fallow/
+
+# macOS
+.DS_Store
+
 # Local env
 .env
 .env.*

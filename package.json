@@ -1,16 +1,28 @@
 {
   "name": "nevis-hometask",
   "version": "1.0.0",
-  "description": "Dashboard for the Nevis Senior Frontend Engineer take-home: advisors and their managers track a book of business over Feb 2024 - Jan 2025, drilling from the whole company down to a branch, an advisor or an acquisition channel. Two parts, a stacked bar chart over time and a per-month detail table with expandable rows.",
   "private": true,
   "type": "module",
+  "description": "Dashboard for the Nevis Senior Frontend Engineer take-home: advisors and their managers track a book of business over Feb 2024 - Jan 2025, drilling from the whole company down to a branch, an advisor or an acquisition channel. Two parts, a stacked bar chart over time and a per-month detail table with expandable rows.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
+    "dev": "concurrently -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "npm run dev -w @nevis/web",
+    "dev:api": "npm run dev -w @nevis/api",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "analyze": "fallow",
     "analyze:changed": "fallow audit",
     "analyze:dupes": "fallow dupes"
   },
   "license": "ISC",
   "devDependencies": {
+    "concurrently": "^10.0.7",
     "fallow": "^3.42.0"
   }
 }
