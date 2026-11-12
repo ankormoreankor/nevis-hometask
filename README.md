@@ -34,7 +34,7 @@ npm run typecheck
 npm run analyze    # fallow: dead code, duplication, complexity
 ```
 
-The workspace scripts are wired. Vite, TypeScript and the API entry points land next, so the app commands start working as those files are added.
+The web client runs now: `npm run dev:web` serves http://localhost:5173. `npm run dev` and `npm run build` start both workspaces, so they stay red until `apps/api` has an entry point and a tsconfig.
 
 ## Deploy
 
@@ -60,6 +60,8 @@ Production notes: the API binds `0.0.0.0` on `PORT`, serves `apps/web/dist`, and
 The brief asks for the calls made where it left things open, and for anything that looks wrong on their side. One line per decision, with the alternative and the reason.
 
 - Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
+- Styling: CSS modules through Vite's built-in support, `localsConvention: camelCaseOnly` so `.page-title` is `styles.pageTitle`. No CSS framework; the design is one screen and the brief grades the markup. Tokens will live in one file.
+- TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
 - Deploy: one Render web service on the Starter plan, `nevis-hometask.ankormoreankor.com`, Cloudflare in front. A static site plus a separate API would need CORS or a Worker; one service avoids both. Starter for the review month avoids the free tier's one-minute cold start.
 - Open: what the chart stacks. Branch values sum to the company row, the design's channel legend does not.
 - Open: whether the chart follows the selected drill-down node or always shows the whole company.

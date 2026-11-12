@@ -24,16 +24,14 @@ Configuration belongs to the agent. Implementation belongs to the user.
 The agent writes without asking:
 
 - config: `opencode.jsonc`, root and workspace `package.json`, `package-lock.json`, tsconfig files, Vite, ESLint, Vitest, Playwright, CI workflows, `render.yaml`, `.gitignore`, `.editorconfig`
-- docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/tasks/**`
+- docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/task-template.md`
 - scaffolding: folders, empty files, `.gitkeep`, placeholder exports
 
-The agent stops before implementation under `apps/**` and `packages/**`: components, routes, API handlers, schemas, styles, tests. It writes a task file instead.
+The agent stops before implementation under `apps/**` and `packages/**`: components, routes, API handlers, schemas, styles, tests. It writes the task into the file that needs the code, as a comment block at the top, and leaves the smallest placeholder that compiles. Frontend tasks assume a senior frontend developer and state the contract only. Backend tasks assume a junior and spell out the Express and Zod mechanics. Format and calibration: `docs/task-template.md`.
 
-A task file goes at `docs/tasks/<area>/<nn>-<name>.md`. Format and rules: `docs/tasks/README.md`. The agent may create the folders and stub files a task needs, but the body stays empty for the user.
+Direct request overrides this. If the user says "build X", the agent builds X and writes no task.
 
-Direct request overrides this. If the user says "build X", the agent builds X, and the permission prompt is the only confirmation. No task file.
-
-`opencode.jsonc` enforces the split: edits under `apps/` and `packages/` ask, config paths and `docs/` are free, `design/` and the brief are read-only.
+Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent follows, checked against the diff. `design/`, `docs/brief.md` and `docs/jd.md` stay denied at the config level because they are employer material.
 
 ## Working notes
 

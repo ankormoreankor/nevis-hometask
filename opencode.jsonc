@@ -4,25 +4,14 @@
   // Rules are ordered. The last match wins, so broad rules come first and
   // exceptions follow.
   "permissions": [
-    // Writes are open by default. Employer material is read-only and
-    // implementation code needs a confirmation, which is where the
-    // "agent writes tasks, user writes code" rule is enforced.
+    // Any path in the repo is writable. Who writes what is a workflow rule in
+    // AGENTS.md, not a permission gate.
     { "action": "edit", "resource": "*", "effect": "allow" },
+
+    // Employer material stays untouched. These are a hard stop, not a prompt.
     { "action": "edit", "resource": "design/**", "effect": "deny" },
     { "action": "edit", "resource": "docs/brief.md", "effect": "deny" },
     { "action": "edit", "resource": "docs/jd.md", "effect": "deny" },
-    { "action": "edit", "resource": "apps/**", "effect": "ask" },
-    { "action": "edit", "resource": "packages/**", "effect": "ask" },
-
-    // Config inside the workspaces stays free: manifests, compiler, bundler,
-    // test and lint settings.
-    { "action": "edit", "resource": "apps/*/package.json", "effect": "allow" },
-    { "action": "edit", "resource": "apps/*/tsconfig*.json", "effect": "allow" },
-    { "action": "edit", "resource": "apps/*/vite.config.*", "effect": "allow" },
-    { "action": "edit", "resource": "apps/*/vitest.config.*", "effect": "allow" },
-    { "action": "edit", "resource": "apps/*/eslint.config.*", "effect": "allow" },
-    { "action": "edit", "resource": "packages/*/package.json", "effect": "allow" },
-    { "action": "edit", "resource": "packages/*/tsconfig*.json", "effect": "allow" },
 
     // Shell runs freely except where it can destroy work or leave the machine.
     { "action": "shell", "resource": "*", "effect": "allow" },
@@ -52,16 +41,6 @@
     { "action": "shell", "resource": "git push --force *", "effect": "deny" },
     { "action": "shell", "resource": "git push -f *", "effect": "deny" },
     { "action": "shell", "resource": "git push --force-with-lease *", "effect": "ask" },
-
-    // Serena can edit files without going through the edit tool, which would
-    // bypass the rules above. Its read-only tools stay available.
-    { "action": "serena_replace_content", "resource": "*", "effect": "deny" },
-    { "action": "serena_replace_in_files", "resource": "*", "effect": "deny" },
-    { "action": "serena_replace_symbol_body", "resource": "*", "effect": "deny" },
-    { "action": "serena_insert_after_symbol", "resource": "*", "effect": "deny" },
-    { "action": "serena_insert_before_symbol", "resource": "*", "effect": "deny" },
-    { "action": "serena_rename_symbol", "resource": "*", "effect": "deny" },
-    { "action": "serena_safe_delete_symbol", "resource": "*", "effect": "deny" },
 
     // Anything outside the repo needs a yes, apart from reading the global
     // OpenCode config.
