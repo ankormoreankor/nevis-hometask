@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nevis-hometask
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start -w @nevis/api
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"
+    domains:
+      - nevis-hometask.ankormoreankor.com
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
