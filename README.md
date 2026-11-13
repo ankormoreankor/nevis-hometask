@@ -34,7 +34,7 @@ npm run typecheck
 npm run analyze    # fallow: dead code, duplication, complexity
 ```
 
-The web client runs now: `npm run dev:web` serves http://localhost:5173. `npm run dev` and `npm run build` start both workspaces, so they stay red until `apps/api` has an entry point and a tsconfig.
+The web client runs on http://localhost:5173 and the API on http://localhost:3000. `npm run dev` starts both. The API entry points are task blocks for now, so the API process starts and exits until the code in `apps/api/src/index.ts` and `packages/shared/src/index.ts` replaces the placeholders.
 
 ## Deploy
 
@@ -62,6 +62,7 @@ The brief asks for the calls made where it left things open, and for anything th
 - Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
 - Styling: CSS modules through Vite's built-in support, `localsConvention: camelCaseOnly` so `.page-title` is `styles.pageTitle`. No CSS framework; the design is one screen and the brief grades the markup. Tokens will live in one file.
 - TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
+- API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
 - Deploy: one Render web service on the Starter plan, `nevis-hometask.ankormoreankor.com`, Cloudflare in front. A static site plus a separate API would need CORS or a Worker; one service avoids both. Starter for the review month avoids the free tier's one-minute cold start.
 - Open: what the chart stacks. Branch values sum to the company row, the design's channel legend does not.
 - Open: whether the chart follows the selected drill-down node or always shows the whole company.

@@ -9,10 +9,10 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 ## What is already decided
 
 - **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`, CSS modules with a token file. Same shape as the employer's own app.
-- **Backend:** Express, in the same repo, deliberately thin. `GET /api/book` returns the payload; `GET /api/health`; `?simulate=slow|error` behind the same routes so loading and error states can be demonstrated in the reviewer's browser.
+- **Backend:** Express, in the same repo, deliberately thin. `GET /api/data` returns the payload; `GET /api/health`; `?simulate=slow|error` behind the same routes so loading and error states can be demonstrated in the reviewer's browser.
 - **Contract:** one Zod schema in `shared/`, used by the server to validate its own response and by the client to type the parsed data. No duplicated interfaces.
 - **Deploy:** one service. Express serves the built client and the API from the same origin, so no CORS and no base URL. In dev, Vite proxies `/api` to the API port.
-- **Data:** the payload is the source of truth, served unchanged. A repository module (`getBook()`) keeps the swap to a real database to one file, and the README says so in a sentence instead of shipping a database that holds twelve numbers.
+- **Data:** the payload is the source of truth, served unchanged. A repository module (`getData()`) keeps the swap to a real database to one file, and the README says so in a sentence instead of shipping a database that holds twelve numbers.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
 
@@ -66,7 +66,7 @@ Decide and document: serve the payload as given, or surface the mismatch. Either
 7. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container rather than squeezed columns at 375px.
 8. **States:** pending per row, error per row with retry, empty depth, reduced motion.
 
-Stretch, only after the above: lazy child fetching. `GET /api/book?nodeId=&depth=` so expanding a branch loads its children, cached after the first fetch, with per-row loading and a failure that does not break the rest of the table. Roughly 1.5 hours and it exercises API design plus per-row async state.
+Stretch, only after the above: lazy child fetching. `GET /api/data?nodeId=&depth=` so expanding a branch loads its children, cached after the first fetch, with per-row loading and a failure that does not break the rest of the table. Roughly 1.5 hours and it exercises API design plus per-row async state.
 
 ## Constraints to check before calling it done
 
