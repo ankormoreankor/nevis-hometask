@@ -84,3 +84,26 @@ Open
 Decided
 - Supersedes the gitignore decision above: `docs/log.md` is committed with the repo. The work behind the decisions is worth showing, and the file is the record of how the repo was built.
 - Entries carry no dates. The agent does not need them, and they turn a decision log into a timesheet.
+
+## treegrid and chart contracts
+
+Decided
+- `TreeGrid` is a native `<table role="treegrid">` with the APG rows-first keyboard model. Accordion or Collapsible over divs rebuilds table semantics by hand, and TanStack Table solves only the flattening.
+- `MonthlyChart` is shadcn Chart over Recharts 3, `accessibilityLayer` passed explicitly. It stacks the three branches: the design's channel legend is illustrative, branch values close against the company row.
+- Tailwind v4 and shadcn for the two data components, CSS modules for the page shell. `cn` replaces clsx plus tailwind-merge.
+- `MONTHS` joins the shared contract, because both components label the same axis.
+- Inter Variable, self-hosted. Geist is shadcn's preset default and the design is Inter.
+- Expansion stays internal state. URL state is out of scope.
+
+Done
+- shadcn init with table and chart only; button, card, base-ui, cva and lucide removed as unused.
+- Task blocks and placeholders in `apps/web/src/components/TreeGrid.tsx` and `MonthlyChart.tsx`, README decisions, `docs/context.md`.
+
+Verified
+- `npm run typecheck` and `npm run build` at the root; `npm run build -w @nevis/web` emits Inter subsets.
+
+Open
+- `--chart-1/2/3` still hold shadcn defaults; the design palette is specified in the chart task.
+
+Next
+- Implement the shared schema, then the data module and the HTTP surface, then the two components.

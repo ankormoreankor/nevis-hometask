@@ -60,13 +60,16 @@ Production notes: the API binds `0.0.0.0` on `PORT`, serves `apps/web/dist`, and
 The brief asks for the calls made where it left things open, and for anything that looks wrong on their side. One line per decision, with the alternative and the reason.
 
 - Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
-- Styling: CSS modules through Vite's built-in support, `localsConvention: camelCaseOnly` so `.page-title` is `styles.pageTitle`. No CSS framework; the design is one screen and the brief grades the markup. Tokens will live in one file.
+- Styling: Tailwind v4 with shadcn/ui for the two data components, CSS modules for the page shell. The shadcn Table and Chart primitives give the markup, so the diff shows the ARIA and the chart wiring rather than a rebuilt table. CSS modules stay for the three page blocks. Tokens live in one file, `apps/web/src/index.css`.
+- Type: Inter Variable, self-hosted through `@fontsource-variable/inter`. The design and Nevis' own app both use Inter; Geist ships with shadcn's base preset and was removed. Self-hosting avoids a third-party font request and keeps the build reproducible offline.
 - TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
 - API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
 - Deploy: one Render web service on the Starter plan, `nevis-hometask.ankormoreankor.com`, Cloudflare in front. A static site plus a separate API would need CORS or a Worker; one service avoids both. Starter for the review month avoids the free tier's one-minute cold start.
-- Open: what the chart stacks. Branch values sum to the company row, the design's channel legend does not.
+- Table: native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model, not Accordion or Collapsible over divs. A div grid means rebuilding row, gridcell, header association and hierarchy by hand, then writing the same keyboard layer, and a reviewer reads it as a red flag. No TanStack Table either: flattening twelve rows is fifteen lines and the library does nothing for the part that is graded.
+- Chart: shadcn Chart over Recharts 3. `accessibilityLayer` is on by default and passed explicitly, so a Recharts upgrade cannot turn it off silently. The treegrid below is the accessible alternative: `role="application"` is a blunt instrument, and the table carries the same figures with real table semantics.
+- Chart stacking: the three branches, bottom to top. Branch values sum to the company row in every month but May, while the design's channel legend is illustrative: channels exist under one adviser and reach 27 against a company bar of 350. The legend names the branches and the colours keep the design palette.
 - Open: whether the chart follows the selected drill-down node or always shows the whole company.
-- Open: employee avatars appear in the design, the payload carries no image data.
+- Avatars: initials circles for advisers, no image field in the payload and no extra endpoint. The design shows photographs; serving them would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes.
 
 ## Data quirks found so far
 

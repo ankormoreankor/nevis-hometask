@@ -1,8 +1,16 @@
-import { defineConfig } from "vite";
+import path from "path";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      // shadcn/ui components import from "@/...".
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   css: {
     modules: {
       // .card-title in CSS becomes styles.cardTitle in TypeScript.

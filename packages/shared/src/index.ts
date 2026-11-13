@@ -10,6 +10,7 @@
  *   Exports
  *     companySchema, branchSchema, advisorSchema, channelSchema
  *     Company, Branch, Advisor, Channel (z.infer of each)
+ *     MONTHS, readonly tuple of the twelve ISO months, "2024-02" to "2025-01"
  *
  *   Shape, from docs/brief.md
  *     Channel  id, name, values
@@ -19,6 +20,10 @@
  *
  *   values   z.array(z.number()).length(12), Feb 2024 to Jan 2025
  *   id       z.uuid()
+ *
+ *   MONTHS sits beside the schemas because both the chart and the treegrid
+ *   label the same axis. Index i of values is MONTHS[i]. Components format it
+ *   with Intl, so the wire format stays sortable and locale-free.
  *
  * Steps
  *   1. channelSchema, then advisorSchema, then branchSchema, then companySchema.
@@ -36,6 +41,7 @@
  *     throws a ZodError whose path points at that array.
  *   - A branch without an employees key parses to an object with no employees
  *     key.
+ *   - MONTHS has 12 entries, starts "2024-02" and ends "2025-01".
  *
  * Edge cases
  *   - employees and channels are optional, branches is not. The payload always

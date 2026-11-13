@@ -8,7 +8,9 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 
 ## What is already decided
 
-- **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`, CSS modules with a token file. Same shape as the employer's own app.
+- **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`. Same shape as the employer's own app.
+- **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Expansion is internal state for now; URL state is out of scope.
+- **Chart:** `MonthlyChart`, shadcn Chart over Recharts 3 with `accessibilityLayer`, stacking the three branches. The treegrid is the accessible alternative.
 - **Backend:** Express, in the same repo, deliberately thin. `GET /api/data` returns the payload; `GET /api/health`; `?simulate=slow|error` behind the same routes so loading and error states can be demonstrated in the reviewer's browser.
 - **Contract:** one Zod schema in `shared/`, used by the server to validate its own response and by the client to type the parsed data. No duplicated interfaces.
 - **Deploy:** one service. Express serves the built client and the API from the same origin, so no CORS and no base URL. In dev, Vite proxies `/api` to the API port.
@@ -41,7 +43,7 @@ File `1qKUKrXJEGzIUoryLIOlJ7`, five frames, node trees and 2x renders in `design
 
 Two design issues to resolve in code and record in the README:
 
-1. **The chart legend does not match the data.** It names Existing clients / New organic / New paid, but channels exist only under one adviser, whose August total is 27 against a bar that reaches 350. The design's segments sum to roughly company-scale values, so the legend is illustrative. Branch values do sum to the company row. Decide what the stack represents and say why.
+1. **The chart legend does not match the data.** It names Existing clients / New organic / New paid, but channels exist only under one adviser, whose August total is 27 against a bar that reaches 350. The design's segments sum to roughly company-scale values, so the legend is illustrative. Branch values do sum to the company row. Resolved: the stack is the three branches and the legend names them.
 2. **The design's bars drift from its own table** by up to about 12 units in Sep and Jan, so match the visual treatment rather than pixel positions.
 
 ## Data facts
