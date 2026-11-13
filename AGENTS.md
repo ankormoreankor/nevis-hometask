@@ -6,8 +6,9 @@ Nevis frontend take-home: dashboard over a company > branch > adviser > channel 
 
 1. `docs/brief.md` - the brief, the payload, and the five Figma links with node IDs.
 2. `docs/context.md` - decisions already made, design facts, data inconsistencies, the idea backlog, constraints.
-3. `docs/jd.md` - the role this is for.
-4. `design/` - node trees (`nodes.json`, query with `jq`, never read whole) and 2x frame renders (`*.png`). Gitignored: employer material, never committed.
+3. `docs/log.md` - the last two entries: what the previous sessions decided and what to pick up next.
+4. `docs/jd.md` - the role this is for.
+5. `design/` - node trees (`nodes.json`, query with `jq`, never read whole) and 2x frame renders (`*.png`). Gitignored: employer material, never committed.
 
 ## Conventions
 
@@ -32,6 +33,16 @@ The agent stops before implementation under `apps/**` and `packages/**`: compone
 Direct request overrides this. If the user says "build X", the agent builds X and writes no task.
 
 Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent follows, checked against the diff. `design/`, `docs/brief.md` and `docs/jd.md` stay denied at the config level because they are employer material.
+
+## Project log
+
+`docs/log.md` is the session log: what happened, what was decided, what is next. It is the only channel that survives a session change. It is committed with the repo. If it is missing, create it.
+
+- Read the last two entries at the start of a session, after `docs/context.md`.
+- Write on an explicit trigger: `/log`, or the user saying "log it". Nothing else. The agent cannot detect the end of a session, and guessing produces entries nobody asked for.
+- One entry per trigger. A short title, then `Decided`, `Done`, `Verified`, `Open`, `Next`. Leave out a heading when it is empty. Twelve lines is the target. No dates.
+- Append-only. To change a past decision, write a new entry that supersedes it. Do not edit the old one.
+- `docs/context.md` stays the current truth. The log is the history. When they disagree, `context.md` wins and the log says why it changed.
 
 ## Working notes
 
