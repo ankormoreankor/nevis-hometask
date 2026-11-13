@@ -107,3 +107,24 @@ Open
 
 Next
 - Implement the shared schema, then the data module and the HTTP surface, then the two components.
+
+## data layer and routing
+
+Decided
+- `GET /api/dashboard` serves the company plus its branches; `GET /api/nodes/:id/children` serves one level. The node id is the path and the cache key, so expansion changes no query parameter.
+- `hasChildren` is computed by the server from `employees` or `channels`. A stored flag would drift from the tree it describes.
+- SWR is the client store: one key per request, in-memory only, no context. `revalidateIfStale: false` makes a collapsed row reopen from cache with no request; `shouldRetryOnError: false` lets the error demo settle.
+- `/dashboard` is canonical, `/` redirects in a loader with `replace`, so Back leaves the app.
+- The chart is fixed at company level. Expanding a row does not change it.
+- URL expansion state is cut. Leaf requests stay open: the client never asks, because `hasChildren` is false.
+- A failed row renders the message in its name cell, keeping one focus model instead of an error child row that needs a level and a position.
+
+Done
+- Task blocks rewritten in `packages/shared/src/index.ts`, `apps/api/src/data.ts`, `apps/api/src/index.ts`, `apps/web/src/lib/api.ts`, `TreeGrid.tsx`, `MonthlyChart.tsx`.
+- `apps/web/src/router.tsx`, `routes/Dashboard.tsx`, a mount task in `main.tsx`. `swr@2.5.1` installed.
+
+Verified
+- `npm run typecheck` and `npm run build` at the root.
+
+Open
+- Nothing implemented under `apps/**` or `packages/**`. `App.tsx` stays until `main.tsx` mounts the router.

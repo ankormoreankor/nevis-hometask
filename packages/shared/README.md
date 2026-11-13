@@ -1,7 +1,7 @@
 # @nevis/shared
 
-Zod schema for the dashboard payload. The API validates its response with it and the web client parses the response with it, so the types cannot drift.
+Zod contract for the dashboard: the source payload schemas, the node summary, and the two response shapes. The API validates what it sends and the web client parses what it receives, so the types cannot drift.
 
 ```ts
-import { companySchema } from "@nevis/shared";
+import { companySchema, nodeSummarySchema } from "@nevis/shared";
 ```

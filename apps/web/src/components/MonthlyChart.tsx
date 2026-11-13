@@ -4,29 +4,33 @@ import { ChartContainer } from "@/components/ui/chart";
  * TASK: the stacked monthly chart, built on the shadcn Chart component
  *
  * Goal
- *   One stacked bar per month, Feb 2024 to Jan 2025, from the payload, with a
- *   keyboard and screen-reader path that does not depend on seeing colour. The
- *   treegrid below holds the same figures and is the accessible alternative.
+ *   One stacked bar per month, Feb 2024 to Jan 2025, from the branches prop,
+ *   with a keyboard and screen-reader path that does not depend on seeing
+ *   colour. The treegrid below holds the same figures and is the accessible
+ *   alternative.
  *
  * Contract
  *   export type MonthlyChartProps = {
- *     company: Company
+ *     branches: NodeSummary[]
  *     className?: string
  *   }
  *   export default function MonthlyChart(props: MonthlyChartProps)
  *
- *   Company and MONTHS come from "@nevis/shared". Primitives come from
+ *   NodeSummary and MONTHS come from "@nevis/shared". Primitives come from
  *   "@/components/ui/chart": ChartContainer, ChartTooltip, ChartTooltipContent,
  *   ChartLegend, ChartLegendContent. Recharts pieces come from "recharts".
  *
  * Series
- *   Stack the three branches, not the acquisition channels. Branch values sum to
- *   the company row in every month except May, while the design's channel legend
- *   is illustrative: channels exist under one adviser and reach 27 against a
- *   company bar of 350. So the stack is company.branches, bottom to top in array
- *   order, and the legend names the branches.
+ *   Stack the three branches. Branch values sum to the company row in every
+ *   month except May, while the design's channel legend is illustrative:
+ *   channels exist under one adviser and reach 27 against a company bar of 350.
+ *   So the stack is the `branches` prop, bottom to top in array order, and the
+ *   legend names the branches.
+ *   The chart is fixed at company level. Expanding a row in the treegrid does
+ *   not change it, and the branches arrive with the dashboard response, so the
+ *   chart never fetches on its own.
  *   Data rows: { month, branch1, branch2, branch3 }, where branchN is
- *   company.branches[N-1].values[i]. Month i is MONTHS[i], formatted like the
+ *   branches[N-1].values[i]. Month i is MONTHS[i], formatted like the
  *   treegrid. If the array holds fewer than three branches, render what exists.
  *   ChartConfig: key branch1..3, label = the branch name, color
  *   var(--chart-N). Set --chart-1/2/3 in src/index.css to the design palette,
@@ -72,7 +76,7 @@ import { ChartContainer } from "@/components/ui/chart";
  * Acceptance
  *   - Feb 2024 renders three stacked segments whose heights are 147, 76 and 27,
  *     summing to 250, the company value for that month.
- *   - The legend lists the three branch names from the payload.
+ *   - The legend lists the three branch names from the branches prop.
  *   - Tab reaches the chart once; ArrowRight moves the tooltip to Mar 2024 and
  *     the announced text contains the month and three branch names.
  *   - With reduced motion set, no bar animates on mount.

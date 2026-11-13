@@ -8,13 +8,14 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 
 ## What is already decided
 
-- **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`. Same shape as the employer's own app.
-- **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Expansion is internal state for now; URL state is out of scope.
-- **Chart:** `MonthlyChart`, shadcn Chart over Recharts 3 with `accessibilityLayer`, stacking the three branches. The treegrid is the accessible alternative.
-- **Backend:** Express, in the same repo, deliberately thin. `GET /api/data` returns the payload; `GET /api/health`; `?simulate=slow|error` behind the same routes so loading and error states can be demonstrated in the reviewer's browser.
-- **Contract:** one Zod schema in `shared/`, used by the server to validate its own response and by the client to type the parsed data. No duplicated interfaces.
+- **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. The dashboard is `/dashboard`; `/` redirects there in a loader, replacing the entry. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`. Same shape as the employer's own app.
+- **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Expansion is internal state; URL state is cut.
+- **Chart:** `MonthlyChart`, shadcn Chart over Recharts 3 with `accessibilityLayer`, stacking the three branches. Fixed at company level: expanding a row does not change it. The treegrid is the accessible alternative.
+- **Backend:** Express, in the same repo, deliberately thin. `GET /api/dashboard` returns the company and its branches; `GET /api/nodes/:id/children` returns one level; `GET /api/health`; `?simulate=slow|error` on the data routes so loading and error states can be demonstrated in the reviewer's browser.
+- **Contract:** one Zod contract in `shared/`, holding the source tree schemas plus `NodeSummary` and the two response schemas. The server validates what it sends, the client parses what it receives, and no interface is duplicated.
+- **Client data:** SWR, one key per request, in-memory cache, no context for data. `revalidateIfStale: false` so a collapsed row reopens from cache with no request.
 - **Deploy:** one service. Express serves the built client and the API from the same origin, so no CORS and no base URL. In dev, Vite proxies `/api` to the API port.
-- **Data:** the payload is the source of truth, served unchanged. A repository module (`getData()`) keeps the swap to a real database to one file, and the README says so in a sentence instead of shipping a database that holds twelve numbers.
+- **Data:** the payload is the source of truth, served unchanged. `getData()` holds the parsed tree; `getDashboard()` and `getChildren(id)` project it. Moving to a real database touches one file, and the README says so in a sentence instead of shipping a database that holds twelve numbers.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
 
@@ -60,15 +61,11 @@ Decide and document: serve the payload as given, or surface the mismatch. Either
 ## Ideas worth building, in order of value
 
 1. **Keyboard and screen-reader parity for the chart.** Not just the table: expose the same numbers through a companion data table or a focusable bar series with an accessible description. Almost no take-home does this and their interview bank asks about keyboard access to charted data.
-2. **Expansion state in the URL.** `useSearchParams` so an open row survives reload and can be linked. Cheap, and it is the kind of thing a data product needs.
-3. **`?simulate=slow|error`.** Makes the loading, retry and error states reviewable without touching code. Document the switch next to the live link.
-4. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale).
-5. **A data-quality note** in the README, with a UI decision behind it: a footnote, a tooltip, or a dev-only badge on inconsistent months.
-6. **Avatars served by id.** `GET /api/advisors/:id/avatar`, 404 when absent, initials fallback in the UI, empty `alt` because the name is adjacent, no layout shift, cache headers. Keys are stable, so production can put the same paths behind a CDN with signed URLs; note that in one line rather than building the bucket.
-7. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container rather than squeezed columns at 375px.
-8. **States:** pending per row, error per row with retry, empty depth, reduced motion.
-
-Stretch, only after the above: lazy child fetching. `GET /api/data?nodeId=&depth=` so expanding a branch loads its children, cached after the first fetch, with per-row loading and a failure that does not break the rest of the table. Roughly 1.5 hours and it exercises API design plus per-row async state.
+2. **`?simulate=slow|error`.** Makes the loading, retry and error states reviewable without touching code. Document the switch next to the live link.
+3. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale).
+4. **A data-quality note** in the README, with a UI decision behind it: a footnote, a tooltip, or a dev-only badge on inconsistent months.
+5. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container rather than squeezed columns at 375px.
+6. **States:** pending per row, error per row with retry, empty depth, reduced motion.
 
 ## Constraints to check before calling it done
 
@@ -82,7 +79,5 @@ Stretch, only after the above: lazy child fetching. `GET /api/data?nodeId=&depth
 
 ## Open questions to answer in the README
 
-- What the chart stacks, and what happens to the chart when a row is expanded.
 - Whether numbers are counts, money or something else. The brief says figures; the design shows plain integers.
 - What to do with months whose totals disagree across levels.
-- Whether the table shows all four levels at once or only the path that is open.

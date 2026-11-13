@@ -60,7 +60,7 @@ Production notes: the API binds `0.0.0.0` on `PORT`, serves `apps/web/dist`, and
 The brief asks for the calls made where it left things open, and for anything that looks wrong on their side. One line per decision, with the alternative and the reason.
 
 - Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
-- Styling: Tailwind v4 with shadcn/ui for the two data components, CSS modules for the page shell. The shadcn Table and Chart primitives give the markup, so the diff shows the ARIA and the chart wiring rather than a rebuilt table. CSS modules stay for the three page blocks. Tokens live in one file, `apps/web/src/index.css`.
+- Styling: Tailwind v4 with shadcn/ui for the two data components, CSS modules for the page shell. The shadcn Table and Chart primitives give the markup, so the diff shows the ARIA and the chart wiring rather than a rebuilt table. Tokens live in one file, `apps/web/src/index.css`.
 - Type: Inter Variable, self-hosted through `@fontsource-variable/inter`. The design and Nevis' own app both use Inter; Geist ships with shadcn's base preset and was removed. Self-hosting avoids a third-party font request and keeps the build reproducible offline.
 - TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
 - API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
@@ -68,7 +68,11 @@ The brief asks for the calls made where it left things open, and for anything th
 - Table: native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model, not Accordion or Collapsible over divs. A div grid means rebuilding row, gridcell, header association and hierarchy by hand, then writing the same keyboard layer, and a reviewer reads it as a red flag. No TanStack Table either: flattening twelve rows is fifteen lines and the library does nothing for the part that is graded.
 - Chart: shadcn Chart over Recharts 3. `accessibilityLayer` is on by default and passed explicitly, so a Recharts upgrade cannot turn it off silently. The treegrid below is the accessible alternative: `role="application"` is a blunt instrument, and the table carries the same figures with real table semantics.
 - Chart stacking: the three branches, bottom to top. Branch values sum to the company row in every month but May, while the design's channel legend is illustrative: channels exist under one adviser and reach 27 against a company bar of 350. The legend names the branches and the colours keep the design palette.
-- Open: whether the chart follows the selected drill-down node or always shows the whole company.
+- Chart scope: fixed at company level. Expanding a row in the table does not change the chart, because its series are the branches from the first response.
+- API: `GET /api/dashboard` returns the company and its branches; `GET /api/nodes/:id/children` returns one level. Expansion never changes a query parameter: the node id is the path and the cache key, and a `?nodeId=&depth=` pair cannot describe two open rows at once.
+- Client data: SWR, one key per request, in-memory cache, no context for data. `revalidateIfStale: false` means a collapsed row reopens from cache with no request, and `shouldRetryOnError: false` lets the error demo settle. `SWRConfig` appears only in tests, for a fresh cache per test.
+- Lazy levels: the first paint is the company plus its branches, because the chart stacks branches. A branch or adviser row fetches its children on expand and shows one skeleton row while it loads.
+- Routing: `/dashboard` is canonical and `/` redirects in a loader with `replace`, so Back leaves the app instead of bouncing. One URL for one screen, with a named path that leaves room for a second route.
 - Avatars: initials circles for advisers, no image field in the payload and no extra endpoint. The design shows photographs; serving them would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes.
 
 ## Data quirks found so far
@@ -81,7 +85,7 @@ Arithmetic in the payload does not always close, before any UI is involved:
 
 ## States covered
 
-Loading, error, empty, partial depth (branches with no employees, advisors with no channels), keyboard-only, 375px.
+Loading and error for the first paint and for each expanded level, empty depth (branches without employees, advisers without channels), keyboard-only, 375px.
 
 ## Accessibility
 
