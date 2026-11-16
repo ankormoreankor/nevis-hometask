@@ -77,7 +77,7 @@ The brief asks for the calls made where it left things open, and for anything th
 - Routing: `/` and `/dashboard` redirect in loaders with `replace` to `/dashboard/2024`; `/dashboard/:year` renders the page; `*` renders not found. The redirect is on an incomplete URL only. A valid four-digit year always renders, including one with no data, and `/dashboard/abc` is not found rather than a redirect, so a typo stays visible.
 - Fiscal calendar: one file, `apps/web/src/lib/period.ts`, holds the twelve-month table, `formatMonthLabel`, `formatPeriod` and `currentFiscalYear`. February is first because the fiscal year says so, not because the dataset happens to start there, and the year in the labels comes from the route. Nothing else formats a date.
 - Empty year: `/dashboard/2025` renders "No data for fiscal year 2025", a form with a labelled select over valid fiscal years (2000 to the current one) and a Go button, and a link to `/`. The select always shows a disabled "Select a fiscal year" placeholder and resets on every submit: it is an action, not a display of the current year, which the heading already states. The range is valid years, not populated ones, so the picker never needs to know what the API holds. A year change uses `push`, so Back returns to the previous year.
-- Avatars: initials circles for advisers, no image field in the payload and no extra endpoint. The design shows photographs; serving them would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes.
+- Avatars: a 20px circle with the adviser's initials on adviser rows, coloured with the same `--chart-N` token that adviser's series uses in the chart, so a legend swatch and a row circle match. The payload has no image field and the design's photograph would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes. The circle is the token mixed 25% into the card: white on `--chart-1` is under 2:1 and dark on `--chart-3` is under 4:1, so one ink works for all five tokens.
 
 ## Data quirks found so far
 
@@ -101,6 +101,8 @@ The hierarchy is a real treegrid: rows carry `aria-level`, `aria-posinset`, `ari
 Cells are not focusable, only rows. APG says a treegrid whose cells cannot be focused should be a tree view, and a treeview with columns is only advised when the columns fit without horizontal scrolling. Ours scroll at 375px, so this is a deliberate simplification and the one place the implementation departs from the pattern.
 
 The chart is not the only route to its numbers. The table below holds every level, so any scope the chart can show is readable in text form, and the page announces each scope change in a live region.
+
+The adviser circle is decoration and carries `aria-hidden`, because the name sits next to it. The colour is never the only signal: the same adviser is named in the row, in the legend and in the chart tooltip.
 
 ## Tests
 

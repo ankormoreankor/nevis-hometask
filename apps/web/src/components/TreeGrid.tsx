@@ -22,10 +22,10 @@ import type { Company } from "@nevis/shared";
  *   }
  *   export default function TreeGrid(props: TreeGridProps)
  *
- *   Company from "@nevis/shared". childrenOf, hasChildren, ancestorIds from
- *   "@/lib/tree". formatMonthLabel from "@/lib/period". shadcn Table primitives
- *   from "@/components/ui/table"; its container already scrolls horizontally,
- *   which is what 375px needs.
+ *   Company from "@nevis/shared". childrenOf, hasChildren, ancestorIds and
+ *   initials from "@/lib/tree". formatMonthLabel from "@/lib/period". shadcn
+ *   Table primitives from "@/components/ui/table"; its container already scrolls
+ *   horizontally, which is what 375px needs.
  *
  * Data
  *   Everything arrives in the `company` prop. This component fetches nothing and
@@ -65,10 +65,43 @@ import type { Company } from "@nevis/shared";
  *   "Expand {name}" or "Collapse {name}". Pointer-only: aria-expanded lives on
  *   the row, never on the button. Hit area at least 32x32px, icon 16px. Call
  *   stopPropagation on its click, or the row click also selects.
- *   Adviser rows also show a 24px circular avatar before the name. The payload
- *   has no image field, so the avatar is initials on a token background, empty
- *   alt because the name is adjacent, no layout shift. Branch and company rows
- *   have no avatar, channel rows have neither avatar nor chevron.
+ *
+ * Adviser avatar
+ *   Adviser rows carry a 20px circle before the name: Anna Blackwood shows AB.
+ *   The design has a photograph there, a 20x20 rectangle with cornerRadius 40.
+ *   The payload has no image field, so the circle holds initials and nothing
+ *   else.
+ *   Which rows get one is the node kind, not the depth. Only an Advisor does.
+ *   A branch is level 2 and gets none, a channel is level 4 and gets none. The
+ *   flattened row list therefore carries the kind of each row, not only its id
+ *   and its level.
+ *   The colour is the adviser's chart colour. The chart already gives a
+ *   branch's employees one series each and decides the colour by position, so
+ *   the first employee is --chart-1, the second --chart-2, and so on. The
+ *   circle uses the same token, so a legend swatch and a row circle are the
+ *   same colour. An adviser's position is its index among its branch's
+ *   employees, which is its aria-posinset.
+ *   Five tokens and five employees in the largest branch, so nothing wraps. A
+ *   sixth employee would need a sixth token in the chart and the circle
+ *   together.
+ *   The circle is the token mixed into the card:
+ *     background-color: color-mix(in oklab, var(--avatar-color) 25%, var(--card));
+ *   with the initials in --foreground. Full strength does not work: white on
+ *   --chart-1 (#B29DF8) is under 2:1, dark on --chart-3 (#A75E6E) is under 4:1.
+ *   One rule in apps/web/src/index.css, and the row sets --avatar-color to
+ *   var(--chart-N). Mixing keeps one ink for all five tokens in both themes.
+ *   The circle is decorative. The name sits next to it, so it is a span with
+ *   aria-hidden="true" and it is not a focus target. "Empty alt" is img
+ *   language and does not apply to a span.
+ *   Initials: the first letter of the first and last word, uppercase. Anna
+ *   Blackwood is AB, Sarah Smith is SS, a one-word name gives one letter, an
+ *   empty name gives no circle. The helper is initials(name) in
+ *   "@/lib/tree", beside the other pure helpers, so it is testable without
+ *   React.
+ *   Size: 20px circle, 10px initials at weight 500, 8px of gap on each side,
+ *   between the chevron and the name. The design puts the circle at x 2956 and
+ *   the name at x 2984. The design holds a photo, so there is no reference for
+ *   the initials type; 10px fits two letters in a 20px circle.
  *
  * Keyboard, APG treegrid, rows-first model
  *   Tab          enters at the tab stop, then leaves the grid.
@@ -114,6 +147,10 @@ import type { Company } from "@nevis/shared";
  *     alone. Double-clicking the row does both.
  *   - Expanding Anna Blackwood shows three channel rows at aria-level 4, with no
  *     chevron and no avatar.
+ *   - An adviser row shows a 20px circle with the adviser's initials before the
+ *     name; a branch row and a channel row show none.
+ *   - The adviser circle uses the same --chart-N token as that adviser's
+ *     series in the chart.
  *   - Exactly one row carries aria-selected="true" at any time.
  *   - ArrowDown from the company row reaches Branch 1, not a hidden child.
  *   - ArrowLeft on an adviser row focuses Branch 1; ArrowLeft on Branch 1
@@ -136,7 +173,8 @@ import type { Company } from "@nevis/shared";
  * Tests
  *   none in this file. Playwright covers keyboard expand and collapse,
  *   aria-expanded transitions, focus after insertion, aria-selected moving with
- *   the selection, the deep link, and focus surviving a row click.
+ *   the selection, the deep link, the initials circle on an adviser row, and
+ *   focus surviving a row click.
  *
  * Delete this comment when the code is in place.
  */

@@ -10,6 +10,7 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 
 - **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. The dashboard is `/dashboard/:year`; `/` and `/dashboard` redirect in a loader to `/dashboard/2024`, replacing the entry. A valid four-digit year always renders, including one with no data; `/dashboard/abc` is not found. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`. Same shape as the employer's own app.
 - **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Rows are the only focus target; cells are not, which is a stated deviation from APG. Expansion is local state, selection is `?node=<id>`.
+- **Avatars:** a 20px circle with the adviser's initials on adviser rows, coloured with the same `--chart-N` token that adviser's series uses in the chart, so a legend swatch and a row circle match. The circle is the token mixed 25% into the card, because white on `--chart-1` is under 2:1 and dark on `--chart-3` is under 4:1, so one ink works for all five tokens. The payload has no image field, so the design's photograph is not served.
 - **Chart:** `MonthlyChart`, shadcn Chart over Recharts 3 with `accessibilityLayer`. It stacks the selected node's immediate children: branches, then advisers, then channels, and a single series for a leaf. The title and the axis follow the scope, the month labels follow the year in the route. The treegrid is the accessible alternative.
 - **Selection:** a row click selects and the chart remaps. A chevron click expands without selecting, a double-click does both. The URL records the selection with `replace`, so a drill is shareable and Back leaves the dashboard.
 - **Backend:** Express, in the same repo, deliberately thin. `GET /api/dashboard/:year` returns the payload object itself or 404 `{"error":"No data for this year"}`; `GET /api/health`; `?simulate=slow|error` on the data route so loading and error states can be demonstrated in the reviewer's browser. One route, because the chart can be remapped to any node and the whole tree is twelve nodes.
@@ -42,7 +43,7 @@ File `1qKUKrXJEGzIUoryLIOlJ7`, five frames, node trees and 2x renders in `design
 
 - Chart: y axis 0-400, gridlines every 100, twelve month labels, legend under the plot. Bars have rounded tops, 88px columns at 1408 width.
 - Table: header row with month labels, then company and branch rows. Chevron in the first cell, name beside it, numbers in month columns. Rows about 56px.
-- Adviser rows carry a 24px circular avatar; branch and company rows do not. Channel rows sit one indent deeper with no chevron and no avatar, and are leaves.
+- Adviser rows carry a 20px circular avatar with a photograph in it; branch and company rows do not. Channel rows sit one indent deeper with no chevron and no avatar, and are leaves.
 - Expansion is chevron-only, and only rows with children get a chevron.
 
 Two design issues to resolve in code and record in the README:
