@@ -15,15 +15,17 @@ import type { Company } from "@nevis/shared";
  *   export type TreeGridProps = {
  *     company: Company
  *     selectedId: string
+ *     fiscalYear: number
  *     onSelect: (id: string) => void
  *     caption?: string
  *     className?: string
  *   }
  *   export default function TreeGrid(props: TreeGridProps)
  *
- *   Company, MONTHS from "@nevis/shared". childrenOf, hasChildren, ancestorIds
- *   from "@/lib/tree". shadcn Table primitives from "@/components/ui/table";
- *   its container already scrolls horizontally, which is what 375px needs.
+ *   Company from "@nevis/shared". childrenOf, hasChildren, ancestorIds from
+ *   "@/lib/tree". formatMonthLabel from "@/lib/period". shadcn Table primitives
+ *   from "@/components/ui/table"; its container already scrolls horizontally,
+ *   which is what 375px needs.
  *
  * Data
  *   Everything arrives in the `company` prop. This component fetches nothing and
@@ -34,8 +36,9 @@ import type { Company } from "@nevis/shared";
  *   <table role="treegrid" aria-label={caption}>, default caption
  *   "Monthly figures by branch, adviser and acquisition channel".
  *   Header row: a visually hidden "Name" in the first th, then the twelve month
- *   labels from MONTHS, formatted with Intl.DateTimeFormat, month: "short",
- *   year: "numeric", timeZone: "UTC", so MONTHS[i] reads "Feb 2024".
+ *   labels from formatMonthLabel(fiscalYear, i), so FY2024 reads "Feb 2024"
+ *   through "Jan 2025" and FY2025 shifts by a year. Do not format a date here;
+ *   period.ts owns the fiscal calendar.
  *   Body rows: role="row", aria-level 1-4, aria-posinset and aria-setsize
  *   relative to the siblings currently loaded, aria-expanded only on rows with
  *   children, aria-selected on every row. Cells: role="gridcell". Month cells
@@ -140,6 +143,7 @@ import type { Company } from "@nevis/shared";
 export type TreeGridProps = {
   company: Company;
   selectedId: string;
+  fiscalYear: number;
   onSelect: (id: string) => void;
   caption?: string;
   className?: string;

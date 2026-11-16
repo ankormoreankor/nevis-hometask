@@ -1,24 +1,34 @@
+import type { Company } from "@nevis/shared";
+
 /**
- * TASK: the payload, verbatim, behind getData()
+ * TASK: the payload, keyed by fiscal year, behind getData(year)
  *
  * Goal
- *   One module owns the data. The route serves the tree whole and the client
- *   keeps it in memory, because the chart can be remapped to any node the user
- *   selects. Moving to a database, or to a file read at boot, touches this file
- *   and nothing else.
+ *   One module owns the data. The route asks for a year and gets that year's
+ *   tree or nothing. Moving to a database, or to a file read at boot, touches
+ *   this file and nothing else.
  *
  * Contract
- *   export const data          the JSON from docs/brief.md, copied unchanged
- *   export function getData(): Company
+ *   export const payload2024   the JSON from docs/brief.md, copied unchanged
+ *   export function getData(year: number): Company | null
  *
  * Steps
  *   1. The payload is already pasted below. Keep it exactly as it stands in the
  *      brief: same keys, same order, same numbers.
- *   2. At module scope, after the payload:
- *      const company: Company = companySchema.parse(data)
+ *   2. Below it, a year map with one entry:
+ *        const dataByYear = new Map<number, unknown>([[2024, payload2024]]);
+ *      A Map, not an object literal. byYear[year] with a crafted string reaches
+ *      the prototype ("constructor", "__proto__"); a Map has no prototype chain.
+ *      The one entry is the honest state of a mock: the README says so, and the
+ *      map is the seam a real data source replaces.
+ *   3. Parse every entry once, at module scope:
+ *        const parsedByYear = new Map<number, Company>(
+ *          [...dataByYear].map(([year, raw]) => [year, companySchema.parse(raw)])
+ *        );
  *      Import from "@nevis/shared" with `import { companySchema, type Company }`.
  *      The inline `type` matters, because verbatimModuleSyntax is on.
- *   3. getData() returns company. No arguments, not async.
+ *   4. getData(year) returns parsedByYear.get(year) ?? null. No arguments beyond
+ *      the year, not async.
  *
  *   Parsing at module scope runs once, when the process boots, before listen().
  *   A payload that drifted from the schema then crashes the boot with a ZodError
@@ -27,8 +37,9 @@
  *
  * Acceptance
  *   - Importing the module throws if the payload stops matching the schema.
- *   - getData().branches has 3 entries, Branch 1 has 5 employees, the first
+ *   - getData(2024).branches has 3 entries, Branch 1 has 5 employees, the first
  *     employee has 3 channels, every values array has 12 entries.
+ *   - getData(2025) is null, getData(0) is null.
  *
  * Edge cases
  *   - Branch 2 and Branch 3 have no employees key, and four of the five
@@ -38,13 +49,14 @@
  *     recorded in README.md stay in the response, on purpose: the query and
  *     filters behind the source figures are unknown, so any correction would be
  *     an invented number.
+ *   - A year with no entry is null, not a throw. The route turns that into a 404.
  *
  * Tests
  *   none. The route exercises the parse.
  *
  * Delete this comment when the code is in place.
  */
-export const data = {
+export const payload2024 = {
   id: "d6e00056-dce4-4ef4-b034-d6467db6187d",
   name: "Company",
   values: [250, 267, 284, 301, 317, 334, 350, 250, 250, 250, 250, 350],
@@ -110,3 +122,9 @@ export const data = {
     },
   ],
 };
+
+// Placeholder. Replace with the year map and the module-scope parse described
+// above; this returns null so the module compiles before the route lands.
+export function getData(_year: number): Company | null {
+  return null;
+}

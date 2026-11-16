@@ -2,14 +2,14 @@
  * TASK: the client data layer
  *
  * Goal
- *   One request for the whole tree, parsed into the shared type. SWR's cache is
+ *   One request for one fiscal year, parsed into the shared type. SWR's cache is
  *   the store. There is no React context for data and no second hook, because
  *   nothing is fetched per level.
  *
  * Contract
  *   export type Simulate = "slow" | "error"
  *
- *   export function useDashboard(simulate?: Simulate): {
+ *   export function useDashboard(year: number, simulate?: Simulate): {
  *     company: Company | undefined
  *     error: unknown
  *     isLoading: boolean
@@ -17,16 +17,18 @@
  *     mutate: () => Promise<Company | undefined>
  *   }
  *
- *   Key: "/api/dashboard", plus "?simulate=slow" or "?simulate=error" when set.
- *   The simulated key is separate from the real one, so an error demo does not
- *   poison the cache entry the normal view uses.
+ *   Key: `/api/dashboard/${year}`, plus "?simulate=slow" or "?simulate=error"
+ *   when set. A different year is a different resource, so it gets its own key
+ *   and its own request. The simulated key is separate again, so an error demo
+ *   does not poison the cache entry the normal view uses.
  *
  *   The fetcher parses the body with companySchema from "@nevis/shared". A
  *   non-2xx response throws an Error carrying the status and the body text, so
- *   the page can show what happened.
+ *   the page can tell a 404 from a 500. The page renders 404 as the empty state,
+ *   not as an error, so the status has to survive.
  *
  * Options
- *   revalidateIfStale: false    the payload is a snapshot of a fixed period.
+ *   revalidateIfStale: false    a fiscal year's payload is a fixed snapshot.
  *                               Re-mounting the page should not refetch it.
  *   revalidateOnFocus: false    tabbing back does not refetch.
  *   shouldRetryOnError: false   ?simulate=error settles instead of backing off.
@@ -40,15 +42,17 @@
  *   leaks between tests.
  *
  * Acceptance
- *   - One page load produces exactly one GET /api/dashboard.
- *   - Selecting rows, expanding rows and navigating between ?node= values
- *     produce no further requests.
+ *   - One page load of /dashboard/2024 produces exactly one
+ *     GET /api/dashboard/2024.
+ *   - Switching to /dashboard/2025 produces one GET /api/dashboard/2025 and
+ *     leaves the 2024 entry cached.
+ *   - Selecting rows and expanding rows produce no further requests.
  *   - ?simulate=error surfaces as error, and isLoading goes false.
- *   - Two components calling useDashboard() produce one request.
+ *   - A 404 surfaces as error with status 404 so the page can branch.
  *
  * Edge cases
- *   - simulate comes from the page's search params and is passed in. This file
- *     does not read the router.
+ *   - year comes from the route and simulate from the search params; both are
+ *     passed in. This file does not read the router.
  *   - The cache is module-level and survives route changes, not reloads. A
  *     persisted cache is out of scope.
  *   - An unknown simulate value is not passed down. The page validates it, so

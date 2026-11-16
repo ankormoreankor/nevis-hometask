@@ -5,22 +5,23 @@ import type { TreeNode } from "@nevis/shared";
  * TASK: the stacked monthly chart, built on the shadcn Chart component
  *
  * Goal
- *   One stacked bar per month, Feb 2024 to Jan 2025, for the selected node,
- *   with a keyboard and screen-reader path that does not depend on seeing
- *   colour. The treegrid below holds the same figures and is the accessible
- *   alternative.
+ *   One stacked bar per month across the fiscal year in the route, for the
+ *   selected node, with a keyboard and screen-reader path that does not depend on
+ *   seeing colour. The treegrid below holds the same figures and is the
+ *   accessible alternative.
  *
  * Contract
  *   export type MonthlyChartProps = {
  *     node: TreeNode
+ *     fiscalYear: number
  *     className?: string
  *   }
  *   export default function MonthlyChart(props: MonthlyChartProps)
  *
- *   TreeNode and MONTHS come from "@nevis/shared". childrenOf comes from
- *   "@/lib/tree". Primitives come from "@/components/ui/chart": ChartContainer,
- *   ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent. Recharts
- *   pieces come from "recharts".
+ *   TreeNode comes from "@nevis/shared". childrenOf from "@/lib/tree".
+ *   formatMonthLabel and formatPeriod from "@/lib/period". Primitives come from
+ *   "@/components/ui/chart": ChartContainer, ChartTooltip, ChartTooltipContent,
+ *   ChartLegend, ChartLegendContent. Recharts pieces come from "recharts".
  *
  * Series
  *   Stack the selected node's immediate children, bottom to top in array order:
@@ -33,7 +34,8 @@ import type { TreeNode } from "@nevis/shared";
  *   branches with no channel data at all.
  *   Data rows: one per month, keyed by position, not by name:
  *   { month, s0, s1, ... sN }, where sN is children[N].values[i]. Month i is
- *   MONTHS[i], formatted like the treegrid.
+ *   formatMonthLabel(fiscalYear, i), so the labels move with the year in the
+ *   route and no date is formatted in this file.
  *   ChartConfig: key s0..sN, label = the child name, color var(--chart-N).
  *   Position decides the colour, so a rename does not reshuffle the palette.
  *
@@ -61,10 +63,10 @@ import type { TreeNode } from "@nevis/shared";
  *   a 38-tall chart from being read as a 350-tall one.
  *
  * Accessibility
- *   Wrap in <figure> with <figcaption>: the scope sentence, then "Feb 2024 to
- *   Jan 2025. The same numbers are in the table below." Do not rely on the
- *   caption to name the chart; a label on the wrapping div does not reach the
- *   svg.
+ *   Wrap in <figure> with <figcaption>: the scope sentence, then
+ *   `${formatPeriod(fiscalYear)}. The same numbers are in the table below.` so
+ *   the period moves with the year. Do not rely on the caption to name the
+ *   chart; a label on the wrapping div does not reach the svg.
  *   Pass accessibilityLayer explicitly on BarChart even though Recharts 3
  *   defaults it on: the README says it is intentional, and the next Recharts
  *   upgrade should not change it silently.
@@ -121,6 +123,7 @@ import type { TreeNode } from "@nevis/shared";
  */
 export type MonthlyChartProps = {
   node: TreeNode;
+  fiscalYear: number;
   className?: string;
 };
 

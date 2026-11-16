@@ -151,3 +151,24 @@ Verified
 
 Open
 - Nothing implemented under `apps/**` or `packages/**`. Five chart tokens still need values; the chart task states the requirement.
+
+## year routing
+
+Decided
+- The fiscal year is a path segment: `/dashboard/2024`, `GET /api/dashboard/:year`. It selects a different payload and can be absent, so it is a resource, not a view. The node stays `?node=`.
+- A malformed year and a year with no data are both 404. There is no path that means "a dashboard without a year", so no 400 exists. `/dashboard` and `/` redirect to `/dashboard/2024`; a valid four-digit year always renders; `/dashboard/abc` is not found.
+- `2024` means FY2024, Feb 2024 to Jan 2025. The audience knows fiscal years, so the page says 2024 and the period line spells out the months.
+- `dataByYear` is a `Map` with one entry, parsed once at boot into `Map<number, Company>`. The map is the seam a real source replaces; one entry is the honest mock.
+- `MONTHS` leaves `shared/`. The wire carries twelve bare numbers; `apps/web/src/lib/period.ts` owns the fiscal table, `formatMonthLabel`, `formatPeriod` and `currentFiscalYear`.
+- The empty year is a state, not an error. NoData renders a heading with the year, a select over 2000 to the current fiscal year plus Go, and a link to `/`. The select always shows a disabled placeholder and resets on every submit; a same-year pick skips navigation. A year change uses `push`.
+
+Done
+- Task blocks rewritten in `packages/shared/src/index.ts`, `apps/api/src/data.ts`, `apps/api/src/index.ts`, `apps/web/src/lib/api.ts`, `TreeGrid.tsx`, `MonthlyChart.tsx`, `routes/Dashboard.tsx`, `router.tsx`.
+- `apps/web/src/lib/period.ts`, `apps/web/src/routes/NoData.tsx`, `apps/web/src/routes/NotFound.tsx` added as task blocks with compiling placeholders.
+- README and `docs/context.md` updated; `MONTHS` references removed.
+
+Verified
+- `npm run typecheck` and `npm run build` at the root.
+
+Open
+- Nothing implemented under `apps/**` or `packages/**`. Five chart tokens still need values. No tests yet.

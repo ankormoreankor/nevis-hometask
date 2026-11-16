@@ -18,14 +18,13 @@
  *     The union exists so the chart and the tree helpers accept any node
  *     without a cast. It is a type, not a schema.
  *
- *   MONTHS, readonly tuple of the twelve ISO months, "2024-02" to "2025-01"
- *
- *   values   z.array(z.number()).length(12), Feb 2024 to Jan 2025
+ *   values   z.array(z.number()).length(12), the twelve months of a fiscal year
  *   id       z.uuid()
  *
- *   MONTHS sits beside the schemas because the chart and the treegrid label the
- *   same axis. Index i of values is MONTHS[i]. Components format it with Intl,
- *   so the wire format stays sortable and locale-free.
+ *   No month labels here. The wire carries twelve bare numbers, and which twelve
+ *   depends on the fiscal year in the route, so the labels are a presentation
+ *   concern and live in apps/web/src/lib/period.ts. The one fact this package
+ *   keeps is the length: twelve.
  *
  * Steps
  *   1. The four source schemas, child first: channel, advisor, branch, company.
@@ -34,7 +33,7 @@
  *      deprecated, and the installed version is 4.6.
  *   3. z.strictObject, not z.object: an unexpected key in the payload becomes a
  *      parse error instead of being stripped without a word.
- *   4. No response schemas. GET /api/dashboard returns the company object
+ *   4. No response schemas. GET /api/dashboard/:year returns the company object
  *      itself, so the client parses the body with companySchema and the wire
  *      shape is the payload. A wrapper would be a second shape to keep in sync
  *      for no gain.
@@ -48,7 +47,6 @@
  *     throws a ZodError whose path points at that array.
  *   - A branch without an employees key parses to an object with no employees
  *     key, and a channel with an extra key throws.
- *   - MONTHS has 12 entries, starts "2024-02" and ends "2025-01".
  *   - TreeNode accepts each of the four levels without a cast.
  *
  * Edge cases
