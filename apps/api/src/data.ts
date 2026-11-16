@@ -1,65 +1,46 @@
 /**
- * TASK: the payload and the projections the routes serve
+ * TASK: the payload, verbatim, behind getData()
  *
  * Goal
- *   One module owns the data. The full tree stays in memory and the routes ask
- *   for a projection of it. Moving to a database touches this file and nothing
- *   else.
+ *   One module owns the data. The route serves the tree whole and the client
+ *   keeps it in memory, because the chart can be remapped to any node the user
+ *   selects. Moving to a database, or to a file read at boot, touches this file
+ *   and nothing else.
  *
  * Contract
- *   export const data       the JSON from docs/brief.md, copied unchanged
+ *   export const data          the JSON from docs/brief.md, copied unchanged
  *   export function getData(): Company
- *   export function getDashboard(): DashboardResponse
- *   export function getChildren(id: string): NodeSummary[] | null
- *   export function toSummary(
- *     node: Company | Branch | Advisor | Channel
- *   ): NodeSummary
  *
  * Steps
- *   1. Paste the payload below the task comment exactly as it stands in the
+ *   1. The payload is already pasted below. Keep it exactly as it stands in the
  *      brief: same keys, same order, same numbers.
  *   2. At module scope, after the payload:
  *      const company: Company = companySchema.parse(data)
- *      Import from "@nevis/shared" with `import { companySchema, type Company,
- *      ... }`. The inline `type` matters, because verbatimModuleSyntax is on.
- *   3. toSummary copies id, name and values and sets hasChildren from the
- *      node's own children array. The union does not share the keys, so narrow
- *      with "employees" in node for branches and "channels" in node for
- *      advisors; channels get false. hasChildren is true only when the array
- *      has at least one entry.
- *   4. getDashboard returns
- *      { company: toSummary(company), branches: company.branches.map(toSummary) }.
- *   5. getChildren walks the tree depth-first for a matching id and returns that
- *      node's children mapped to summaries. The child array depends on the
- *      level: branches for the company, employees for a branch, channels for an
- *      advisor, none for a channel. Return null when no node has the id, so the
- *      route can answer 404 without guessing. Carry a Set of visited ids so a
- *      malformed payload cannot loop.
+ *      Import from "@nevis/shared" with `import { companySchema, type Company }`.
+ *      The inline `type` matters, because verbatimModuleSyntax is on.
+ *   3. getData() returns company. No arguments, not async.
  *
  *   Parsing at module scope runs once, when the process boots, before listen().
  *   A payload that drifted from the schema then crashes the boot with a ZodError
- *   naming the path, instead of turning every request into a 500.
+ *   naming the path, instead of turning every request into a 500. Parsing per
+ *   request re-checks the same numbers on every call.
  *
  * Acceptance
  *   - Importing the module throws if the payload stops matching the schema.
- *   - getDashboard().company.name is "Company"; branches has 3 entries.
- *   - getChildren(company.id) returns 3 summaries, getChildren(<Branch 1 id>)
- *     returns 5, getChildren(<channel id>) returns [].
- *   - getChildren("nope") returns null.
- *   - Branch 1 is the only branch with hasChildren true; Branch 2 and 3 are
- *     false. Anna Blackwood is the only advisor with true; the other four are
- *     false. Every channel is false.
+ *   - getData().branches has 3 entries, Branch 1 has 5 employees, the first
+ *     employee has 3 channels, every values array has 12 entries.
  *
  * Edge cases
  *   - Branch 2 and Branch 3 have no employees key, and four of the five
- *     advisors have no channels key. Leave them absent.
- *   - The data is copied, not corrected. The arithmetic mismatches recorded in
- *     README.md stay in the response.
- *   - A node id from any level is found by the same walk. The function does not
- *     assume the caller knows the level.
+ *     advisors have no channels key. Leave them absent. The UI reads the
+ *     absence as a leaf.
+ *   - The data is copied, not corrected. The three arithmetic mismatches
+ *     recorded in README.md stay in the response, on purpose: the query and
+ *     filters behind the source figures are unknown, so any correction would be
+ *     an invented number.
  *
  * Tests
- *   none. The routes exercise these functions.
+ *   none. The route exercises the parse.
  *
  * Delete this comment when the code is in place.
  */

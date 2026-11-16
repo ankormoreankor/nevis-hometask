@@ -26,6 +26,10 @@
  *     before render, so it avoids the flash.
  *   - Do not mount the dashboard at "/" as well. Two URLs for one screen makes
  *     the redirect pointless and doubles the links that can go stale.
+ *   - The selected node is a query parameter on /dashboard, not a route. Do not
+ *     add "/dashboard/:nodeId": a path segment promises a page that renders from
+ *     a cold load and obliges a not-found state, while ?node= can fall back to
+ *     the company view. Two routes for one screen would also split the links.
  *
  * Tests
  *   none here. The redirect is covered with the page tests.

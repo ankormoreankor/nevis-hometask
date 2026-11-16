@@ -67,11 +67,11 @@ The brief asks for the calls made where it left things open, and for anything th
 - Deploy: one Render web service on the Starter plan, `nevis-hometask.ankormoreankor.com`, Cloudflare in front. A static site plus a separate API would need CORS or a Worker; one service avoids both. Starter for the review month avoids the free tier's one-minute cold start.
 - Table: native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model, not Accordion or Collapsible over divs. A div grid means rebuilding row, gridcell, header association and hierarchy by hand, then writing the same keyboard layer, and a reviewer reads it as a red flag. No TanStack Table either: flattening twelve rows is fifteen lines and the library does nothing for the part that is graded.
 - Chart: shadcn Chart over Recharts 3. `accessibilityLayer` is on by default and passed explicitly, so a Recharts upgrade cannot turn it off silently. The treegrid below is the accessible alternative: `role="application"` is a blunt instrument, and the table carries the same figures with real table semantics.
-- Chart stacking: the three branches, bottom to top. Branch values sum to the company row in every month but May, while the design's channel legend is illustrative: channels exist under one adviser and reach 27 against a company bar of 350. The legend names the branches and the colours keep the design palette.
-- Chart scope: fixed at company level. Expanding a row in the table does not change the chart, because its series are the branches from the first response.
-- API: `GET /api/dashboard` returns the company and its branches; `GET /api/nodes/:id/children` returns one level. Expansion never changes a query parameter: the node id is the path and the cache key, and a `?nodeId=&depth=` pair cannot describe two open rows at once.
-- Client data: SWR, one key per request, in-memory cache, no context for data. `revalidateIfStale: false` means a collapsed row reopens from cache with no request, and `shouldRetryOnError: false` lets the error demo settle. `SWRConfig` appears only in tests, for a fresh cache per test.
-- Lazy levels: the first paint is the company plus its branches, because the chart stacks branches. A branch or adviser row fetches its children on expand and shows one skeleton row while it loads.
+- Chart stacking: the selected node's immediate children, bottom to top in array order. The company stacks its three branches, a branch stacks its advisers, an adviser stacks her channels, and a leaf shows one series named after itself. Channels exist under one adviser, so a channel breakdown higher up the tree has four advisers and two branches with no channel data; stacking the immediate children is the only model the payload supports.
+- Chart scope: follows the selection, with a title that names the node and the breakdown, and an axis derived from the current stack. The design's Existing clients / New organic / New paid legend appears only under Anna Blackwood, where the bars top out at 38 rather than 350.
+- Selection: a row click selects, `?node=<id>` records it with `replace`, and the chart remaps. A chevron click expands without selecting, a double-click does both. Selecting the company clears the parameter. An unknown id falls back to the company view, which is why the id is a query parameter and not a path segment.
+- API: one route. `GET /api/dashboard` returns the company object, which is the payload as given. The chart can be remapped to any node the user picks, so the whole tree has to be client-side; a per-node endpoint would add a second contract and a loading state per row for no gain at twelve nodes.
+- Client data: SWR, one key, in-memory cache, no context for data. `revalidateIfStale: false` because the payload is a snapshot of a fixed period, and `shouldRetryOnError: false` so the error demo settles. `SWRConfig` appears only in tests, for a fresh cache per test.
 - Routing: `/dashboard` is canonical and `/` redirects in a loader with `replace`, so Back leaves the app instead of bouncing. One URL for one screen, with a named path that leaves room for a second route.
 - Avatars: initials circles for advisers, no image field in the payload and no extra endpoint. The design shows photographs; serving them would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes.
 
@@ -82,14 +82,21 @@ Arithmetic in the payload does not always close, before any UI is involved:
 - Branch 1, Jul 2024 reads 291 in the design against 201 in the payload. The payload value is the one that keeps 201 + 92 + 41 = 334, the company total for July.
 - May 2024: branches sum to 279 (156 + 87 + 36) against a company value of 301.
 - Aug 2024: advisors sum to 216 (38 + 16 + 51 + 58 + 53) against a branch value of 214.
+- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September.
+
+The payload is served as given and nothing is reconciled. The source figures may come from an aggregated query with filters that are not visible here, so correcting a cell would mean inventing a rule for which one is wrong. The chart and the table show the numbers as received, and this section is the only place the disagreement is surfaced.
 
 ## States covered
 
-Loading and error for the first paint and for each expanded level, empty depth (branches without employees, advisers without channels), keyboard-only, 375px.
+Loading and error for the first paint, empty depth (branches without employees, advisers without channels), selection and deep links, keyboard-only, 375px.
 
 ## Accessibility
 
-To fill in: hierarchy exposed as a tree or nested table semantics, expand and collapse from the keyboard, focus kept on the toggled row.
+The hierarchy is a real treegrid: rows carry `aria-level`, `aria-posinset`, `aria-setsize`, `aria-expanded` on parents and `aria-selected` on every row. Right and Left expand and collapse, Enter selects, and focus stays on the row that was toggled. A deep link opens the path to the selected node.
+
+Cells are not focusable, only rows. APG says a treegrid whose cells cannot be focused should be a tree view, and a treeview with columns is only advised when the columns fit without horizontal scrolling. Ours scroll at 375px, so this is a deliberate simplification and the one place the implementation departs from the pattern.
+
+The chart is not the only route to its numbers. The table below holds every level, so any scope the chart can show is readable in text form, and the page announces each scope change in a live region.
 
 ## Tests
 

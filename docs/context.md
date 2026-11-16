@@ -9,13 +9,14 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 ## What is already decided
 
 - **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. The dashboard is `/dashboard`; `/` redirects there in a loader, replacing the entry. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`. Same shape as the employer's own app.
-- **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Expansion is internal state; URL state is cut.
-- **Chart:** `MonthlyChart`, shadcn Chart over Recharts 3 with `accessibilityLayer`, stacking the three branches. Fixed at company level: expanding a row does not change it. The treegrid is the accessible alternative.
-- **Backend:** Express, in the same repo, deliberately thin. `GET /api/dashboard` returns the company and its branches; `GET /api/nodes/:id/children` returns one level; `GET /api/health`; `?simulate=slow|error` on the data routes so loading and error states can be demonstrated in the reviewer's browser.
-- **Contract:** one Zod contract in `shared/`, holding the source tree schemas plus `NodeSummary` and the two response schemas. The server validates what it sends, the client parses what it receives, and no interface is duplicated.
-- **Client data:** SWR, one key per request, in-memory cache, no context for data. `revalidateIfStale: false` so a collapsed row reopens from cache with no request.
+- **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Rows are the only focus target; cells are not, which is a stated deviation from APG. Expansion is local state, selection is `?node=<id>`.
+- **Chart:** `MonthlyChart`, shadcn Chart over Recharts 3 with `accessibilityLayer`. It stacks the selected node's immediate children: branches, then advisers, then channels, and a single series for a leaf. The title and the axis follow the scope. The treegrid is the accessible alternative.
+- **Selection:** a row click selects and the chart remaps. A chevron click expands without selecting, a double-click does both. The URL records the selection with `replace`, so a drill is shareable and Back leaves the dashboard.
+- **Backend:** Express, in the same repo, deliberately thin. `GET /api/dashboard` returns the payload object itself; `GET /api/health`; `?simulate=slow|error` on the data route so loading and error states can be demonstrated in the reviewer's browser. One route, because the chart can be remapped to any node and the whole tree is twelve nodes.
+- **Contract:** one Zod contract in `shared/`, holding the four source schemas, their types and a `TreeNode` union. The server validates what it sends, the client parses what it receives, and no interface is duplicated. There are no response schemas: the wire shape is the payload.
+- **Client data:** SWR, one key, in-memory cache, no context for data. `revalidateIfStale: false` because the payload is a snapshot of a fixed period.
 - **Deploy:** one service. Express serves the built client and the API from the same origin, so no CORS and no base URL. In dev, Vite proxies `/api` to the API port.
-- **Data:** the payload is the source of truth, served unchanged. `getData()` holds the parsed tree; `getDashboard()` and `getChildren(id)` project it. Moving to a real database touches one file, and the README says so in a sentence instead of shipping a database that holds twelve numbers.
+- **Data:** the payload is the source of truth, served unchanged. `getData()` holds the parsed tree. No projections, no corrections, no derived totals: the source query and filters are unknown, so a correction would be invented. Moving to a real database touches one file, and the README says so in a sentence instead of shipping a database that holds twelve numbers.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
 
@@ -44,7 +45,7 @@ File `1qKUKrXJEGzIUoryLIOlJ7`, five frames, node trees and 2x renders in `design
 
 Two design issues to resolve in code and record in the README:
 
-1. **The chart legend does not match the data.** It names Existing clients / New organic / New paid, but channels exist only under one adviser, whose August total is 27 against a bar that reaches 350. The design's segments sum to roughly company-scale values, so the legend is illustrative. Branch values do sum to the company row. Resolved: the stack is the three branches and the legend names them.
+1. **The chart legend does not match the data.** It names Existing clients / New organic / New paid at company scale, but channels exist only under one adviser, where the bars top out at 38. The legend is illustrative. Resolved: the chart stacks the selected node's children, so those three names appear only when Anna Blackwood is selected.
 2. **The design's bars drift from its own table** by up to about 12 units in Sep and Jan, so match the visual treatment rather than pixel positions.
 
 ## Data facts
@@ -54,9 +55,9 @@ Arithmetic in the payload, verified:
 - Branch 1, Jul 2024 is 291 in the design and 201 in the payload. 201 + 92 + 41 = 334, the company figure, so the payload is right and the design has a typo.
 - May 2024: branches sum to 279 (156 + 87 + 36), company says 301.
 - Aug 2024: advisers sum to 216, branch says 214.
-- Channels sum to their adviser in every month. Adviser totals match their branch except in August.
+- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September. Every other channel month matches, and every other adviser matches their branch.
 
-Decide and document: serve the payload as given, or surface the mismatch. Either is defensible; silence is not.
+Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded in the README and nowhere else.
 
 ## Ideas worth building, in order of value
 
@@ -65,7 +66,7 @@ Decide and document: serve the payload as given, or surface the mismatch. Either
 3. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale).
 4. **A data-quality note** in the README, with a UI decision behind it: a footnote, a tooltip, or a dev-only badge on inconsistent months.
 5. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container rather than squeezed columns at 375px.
-6. **States:** pending per row, error per row with retry, empty depth, reduced motion.
+6. **States:** empty depth, reduced motion, a slow response that resolves after the page moved on.
 
 ## Constraints to check before calling it done
 
@@ -80,4 +81,3 @@ Decide and document: serve the payload as given, or surface the mismatch. Either
 ## Open questions to answer in the README
 
 - Whether numbers are counts, money or something else. The brief says figures; the design shows plain integers.
-- What to do with months whose totals disagree across levels.

@@ -128,3 +128,26 @@ Verified
 
 Open
 - Nothing implemented under `apps/**` or `packages/**`. `App.tsx` stays until `main.tsx` mounts the router.
+
+## selection drives the chart
+
+Decided
+- Supersedes the lazy-levels decision above. One request: `GET /api/dashboard` returns the payload object. A chart that remaps to a selected node needs that node client-side, so per-level fetching and selection pull against each other. The tree is twelve nodes.
+- Selecting a row remaps the chart to its immediate children: branches, then advisers, then channels, and a single series for a leaf. Channels exist under one adviser, so a channel breakdown higher up is undefined, not merely expensive.
+- Selection is `?node=<id>`, written with `replace`. A path segment would promise a page that renders from a cold load and oblige a not-found state; a query value can fall back to the company.
+- Row click selects, chevron click expands, double-click does both. Enter and Space select, which is the APG default action; Right and Left expand and collapse.
+- Cells stay unfocusable, rows only. APG calls that a tree view and advises against it when the columns scroll, so it is a stated deviation in the README.
+- `aria-selected` on every row, and a live region announcing the chart's scope.
+- The payload is served as given. The source query and filters are unknown, so correcting a cell would invent a rule for which one is wrong. Three mismatches stay in the README and nowhere else.
+
+Done
+- Task blocks rewritten in `packages/shared/src/index.ts`, `apps/api/src/data.ts`, `apps/api/src/index.ts`, `apps/web/src/lib/api.ts`, `TreeGrid.tsx`, `MonthlyChart.tsx`, `routes/Dashboard.tsx`.
+- `apps/web/src/lib/tree.ts` added: `childrenOf`, `hasChildren`, `findNode`, `ancestorIds`.
+- Dropped from the task blocks: the children endpoint, `NodeSummary`, both response schemas, `useChildren`, the skeleton row and the per-row error contract.
+- README and `docs/context.md` rewritten, including two wrong sentences about the channel sums.
+
+Verified
+- `npm run typecheck` and `npm run build` at the root.
+
+Open
+- Nothing implemented under `apps/**` or `packages/**`. Five chart tokens still need values; the chart task states the requirement.
