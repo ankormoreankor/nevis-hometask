@@ -31,14 +31,15 @@ npm run build
 npm run test
 npm run lint
 npm run typecheck
+npm run api:check
 npm run analyze    # fallow: dead code, duplication, complexity
 ```
 
-The web client runs on http://localhost:5173 and the API on http://localhost:3000. `npm run dev` starts both. The API entry points are task blocks for now, so the API process starts and exits until the code in `apps/api/src/index.ts` and `packages/shared/src/index.ts` replaces the placeholders.
+The web client runs on http://localhost:5173 and the API on http://localhost:3000. `npm run dev` starts both. `npm run api:check` runs the API contract checks against the running server.
 
 ## Deploy
 
-One Render web service on the Starter plan, with Cloudflare in front. The service builds the workspace, starts the API, and the API serves the built client from `apps/web/dist`.
+One Render web service on the Starter plan, with Cloudflare in front. The service builds the workspace and starts the API. The API does not serve the client build yet, so the deployed domain answers `/api` only.
 
 - Live: https://nevis-hometask.ankormoreankor.com
 - Blueprint: `render.yaml`
@@ -53,7 +54,7 @@ First setup:
 
 Render auto-deploy is off in the blueprint. GitHub Actions owns the deploy.
 
-Production notes: the API binds `0.0.0.0` on `PORT`, serves `apps/web/dist`, and exposes `/api/health` for the Render health check. The API build bundles `@nevis/shared`, so the runtime does not resolve TypeScript source. Hashed assets are cached for a year, `index.html` and `/api` are not.
+Production notes: the API binds `0.0.0.0` on `PORT` and exposes `/api/health` for the Render health check. The API build bundles `@nevis/shared`, so the runtime does not resolve TypeScript source. Serving the built client from this process is the remaining gap: `/dashboard/2024` is an unmatched path and answers the text 404 on the deployed domain. The fix is a static mount plus an `index.html` fallback for non-API paths, both in front of the catch-all.
 
 ## Decisions
 
