@@ -1,4 +1,4 @@
-import type { Company } from "@nevis/shared";
+import { companySchema, type Company } from "@nevis/shared";
 
 /**
  * TASK: the payload, keyed by fiscal year, behind getData(year)
@@ -52,7 +52,8 @@ import type { Company } from "@nevis/shared";
  *   - A year with no entry is null, not a throw. The route turns that into a 404.
  *
  * Tests
- *   none. The route exercises the parse.
+ *   none. Importing the module exercises the parse, and the route serves the
+ *   parsed tree.
  *
  * Delete this comment when the code is in place.
  */
@@ -123,8 +124,9 @@ export const payload2024 = {
   ],
 };
 
-// Placeholder. Replace with the year map and the module-scope parse described
-// above; this returns null so the module compiles before the route lands.
-export function getData(_year: number): Company | null {
-  return null;
-}
+const dataToYearMap = new Map<number, unknown>()
+dataToYearMap.set(2024, payload2024)
+
+const parsedDataMap = new Map<number, Company>([...dataToYearMap].map(([year, rawData]) => [year, companySchema.parse(rawData)]))
+
+export const getData = (year: number): Company | undefined => parsedDataMap.get(year)

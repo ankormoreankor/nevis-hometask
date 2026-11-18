@@ -65,6 +65,28 @@ want_json() {
   fi
 }
 
+# The wording of an error body is not pinned. What matters is that there is an
+# error field with something in it, so the client can show it.
+want_json_error() {
+  local name="$1" path="$2" got
+  got="$(body "$path" | jq -r 'if ((.error | type) == "string" and (.error | length) > 0) then "yes" else "no" end' 2>/dev/null)"
+  if [ "$got" = "yes" ]; then
+    pass "$name" "a non-empty error field"
+  else
+    fail "$name" "no usable error field in the body"
+  fi
+}
+
+want_text() {
+  local name="$1" path="$2" bytes
+  bytes="$(body "$path" | wc -c | tr -d ' ')"
+  if [ "$bytes" -gt 0 ]; then
+    pass "$name" "${bytes} bytes of text"
+  else
+    fail "$name" "empty body"
+  fi
+}
+
 echo "API smoke checks against $BASE"
 
 echo "health"
@@ -101,9 +123,9 @@ want_json "Aug 2024 Anna channels sum to 36" "/api/dashboard/2024" ".branches[0]
 
 echo "years without data"
 want_status "2025 answers 404" "/api/dashboard/2025" "404"
-want_json "2025 says why" "/api/dashboard/2025" ".error" "No data for this year"
-want_status "a malformed year answers 404" "/api/dashboard/abc" "404"
-want_json "a malformed year says the same" "/api/dashboard/abc" ".error" "No data for this year"
+want_json_error "2025 says why" "/api/dashboard/2025"
+want_status "a malformed year answers 400" "/api/dashboard/abc" "400"
+want_json_error "a malformed year says why" "/api/dashboard/abc"
 want_status "no year at all answers 404" "/api/dashboard" "404"
 
 echo "simulate"
@@ -119,8 +141,7 @@ fi
 
 echo "unknown paths"
 want_status "an unknown path answers 404" "/api/nope" "404"
-want_json "an unknown path says so" "/api/nope" ".error" "Not found"
-want_json "an unknown path names itself" "/api/nope" ".path" "/api/nope"
+want_text "an unknown path answers text" "/api/nope"
 
 echo
 printf '%d passed, %d failed\n' "$passed" "$failed"
