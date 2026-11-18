@@ -28,7 +28,8 @@ import type { TreeNode } from "@nevis/shared";
  *   branches for the company, employees for a branch, channels for an adviser.
  *   The legend names those children.
  *   A leaf has no children, so it renders one series from node.values and the
- *   legend names the node itself.
+ *   legend names the node itself. A company with no branches takes that path
+ *   too, so the chart never assumes three series.
  *   This is the only model the payload supports. Channels exist under one
  *   adviser, so a channel breakdown above her level has four advisers and two
  *   branches with no channel data at all.

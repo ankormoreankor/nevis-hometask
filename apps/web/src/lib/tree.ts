@@ -21,7 +21,9 @@ import type { Company, TreeNode } from "@nevis/shared";
  *   1. childrenOf switches on the level. The union does not share the child key,
  *      so narrow with "branches" in node for the company, "employees" in node
  *      for a branch, "channels" in node for an adviser. A channel has no child
- *      key and returns [].
+ *      key and returns []. Every child key is optional, so an absent key and an
+ *      undefined value both mean no children: return node.branches ?? [], not
+ *      node.branches, because the `in` check does not narrow away undefined.
  *   2. hasChildren is childrenOf(node).length > 0. Absent and empty are the same
  *      thing here: the UI draws a leaf.
  *   3. findNode walks depth-first from the company, comparing id, and returns
@@ -46,6 +48,7 @@ import type { Company, TreeNode } from "@nevis/shared";
  * Acceptance
  *   - childrenOf(company) has 3 entries, childrenOf(Branch 1) has 5,
  *     childrenOf(Anna Blackwood) has 3, childrenOf(a channel) is [].
+ *   - childrenOf on a company without branches is [].
  *   - hasChildren is true for the company, Branch 1 and Anna Blackwood, false
  *     for Branch 2, Branch 3, the four other advisers and every channel.
  *   - findNode(company, branchId) returns the branch; findNode(company, "nope")

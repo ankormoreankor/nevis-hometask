@@ -162,8 +162,9 @@ import type { Company } from "@nevis/shared";
  *   - Nothing overflows the viewport at 375px; the table scrolls sideways.
  *
  * Edge cases
- *   - A branch without employees and an adviser without channels is a leaf:
- *     hasChildren false, no chevron, no aria-expanded. It can still be selected.
+ *   - A company without branches, a branch without employees and an adviser
+ *     without channels is a leaf: hasChildren false, no chevron, no
+ *     aria-expanded. It can still be selected.
  *   - Collapsing the company while a descendant is selected leaves the selection
  *     in place and the row hidden. Re-expanding shows it still selected. Do not
  *     clear the selection on collapse.
