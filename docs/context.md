@@ -58,7 +58,7 @@ Arithmetic in the payload, verified:
 - Branch 1, Jul 2024 is 291 in the design and 201 in the payload. 201 + 92 + 41 = 334, the company figure, so the payload is right and the design has a typo.
 - May 2024: branches sum to 279 (156 + 87 + 36), company says 301.
 - Aug 2024: advisers sum to 216, branch says 214.
-- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September. Every other channel month matches, and every other adviser matches their branch.
+- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month. Every other channel month matches, and every other adviser matches their branch.
 
 Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded in the README and nowhere else.
 

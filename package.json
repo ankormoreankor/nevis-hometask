@@ -12,6 +12,7 @@
     "dev": "concurrently -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "npm run dev -w @nevis/web",
     "dev:api": "npm run dev -w @nevis/api",
+    "api:check": "bash scripts/api-smoke.sh",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",

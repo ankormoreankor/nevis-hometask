@@ -86,7 +86,7 @@ Arithmetic in the payload does not always close, before any UI is involved:
 - Branch 1, Jul 2024 reads 291 in the design against 201 in the payload. The payload value is the one that keeps 201 + 92 + 41 = 334, the company total for July.
 - May 2024: branches sum to 279 (156 + 87 + 36) against a company value of 301.
 - Aug 2024: advisors sum to 216 (38 + 16 + 51 + 58 + 53) against a branch value of 214.
-- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September.
+- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month.
 
 The payload is served as given and nothing is reconciled. The source figures may come from an aggregated query with filters that are not visible here, so correcting a cell would mean inventing a rule for which one is wrong. The chart and the table show the numbers as received, and this section is the only place the disagreement is surfaced.
 
