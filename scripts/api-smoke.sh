@@ -5,8 +5,8 @@
 #   npm run dev:api        one terminal, tsx watch restarts on save
 #   npm run api:check      another terminal, prints ok or FAIL per check
 #
-# BASE points the checks somewhere else:
-#   BASE=https://nevis-hometask.ankormoreankor.com npm run api:check
+# BASE points the checks somewhere else, for example another port:
+#   BASE=http://localhost:4000 npm run api:check
 #
 # The numbers in here are the payload from docs/brief.md, month by month:
 # index 0 is Feb 2024 and index 11 is Jan 2025. The quirk checks exist on

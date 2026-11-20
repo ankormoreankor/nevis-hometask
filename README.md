@@ -37,24 +37,7 @@ npm run analyze    # fallow: dead code, duplication, complexity
 
 The web client runs on http://localhost:5173 and the API on http://localhost:3000. `npm run dev` starts both. `npm run api:check` runs the API contract checks against the running server.
 
-## Deploy
-
-One Render web service on the Starter plan, with Cloudflare in front. The service builds the workspace and starts the API. The API does not serve the client build yet, so the deployed domain answers `/api` only.
-
-- Live: https://nevis-hometask.ankormoreankor.com
-- Blueprint: `render.yaml`
-- CI: `.github/workflows/ci.yml`
-
-First setup:
-
-1. Create a Render Blueprint from this repository. Render reads `render.yaml`.
-2. Add a Cloudflare CNAME: `nevis-hometask` -> `nevis-hometask.onrender.com`, proxy on, SSL mode Full (strict).
-3. Copy the Render deploy hook URL and add it to the GitHub repository as the `RENDER_DEPLOY_HOOK_URL` secret.
-4. Push to `main`. CI runs the checks; the deploy job triggers Render only when they pass.
-
-Render auto-deploy is off in the blueprint. GitHub Actions owns the deploy.
-
-Production notes: the API binds `0.0.0.0` on `PORT` and exposes `/api/health` for the Render health check. The API build bundles `@nevis/shared`, so the runtime does not resolve TypeScript source. Serving the built client from this process is the remaining gap: `/dashboard/2024` is an unmatched path and answers the text 404 on the deployed domain. The fix is a static mount plus an `index.html` fallback for non-API paths, both in front of the catch-all.
+CI runs lint, typecheck, test and build on every push and pull request. Nothing is deployed: the project runs locally.
 
 ## Decisions
 
@@ -65,7 +48,7 @@ The brief asks for the calls made where it left things open, and for anything th
 - Type: Inter Variable, self-hosted through `@fontsource-variable/inter`. The design and Nevis' own app both use Inter; Geist ships with shadcn's base preset and was removed. Self-hosting avoids a third-party font request and keeps the build reproducible offline.
 - TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
 - API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
-- Deploy: one Render web service on the Starter plan, `nevis-hometask.ankormoreankor.com`, Cloudflare in front. A static site plus a separate API would need CORS or a Worker; one service avoids both. Starter for the review month avoids the free tier's one-minute cold start.
+- No deploy: the project runs locally with `npm run dev`, and there is no hosted demo. The brief asks for a repository and a README, not a URL. A public copy would need one service serving both the API and the client build, plus a domain and a deploy pipeline, which is setup that shows none of the work being graded.
 - Table: native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model, not Accordion or Collapsible over divs. A div grid means rebuilding row, gridcell, header association and hierarchy by hand, then writing the same keyboard layer, and a reviewer reads it as a red flag. No TanStack Table either: flattening twelve rows is fifteen lines and the library does nothing for the part that is graded.
 - Chart: shadcn Chart over Recharts 3. `accessibilityLayer` is on by default and passed explicitly, so a Recharts upgrade cannot turn it off silently. The treegrid below is the accessible alternative: `role="application"` is a blunt instrument, and the table carries the same figures with real table semantics.
 - Chart stacking: the selected node's immediate children, bottom to top in array order. The company stacks its three branches, a branch stacks its advisers, an adviser stacks her channels, and a leaf shows one series named after itself. Channels exist under one adviser, so a channel breakdown higher up the tree has four advisers and two branches with no channel data; stacking the immediate children is the only model the payload supports.

@@ -24,7 +24,7 @@ Configuration belongs to the agent. Implementation belongs to the user.
 
 The agent writes without asking:
 
-- config: `opencode.jsonc`, root and workspace `package.json`, `package-lock.json`, tsconfig files, Vite, ESLint, Vitest, Playwright, CI workflows, `render.yaml`, `.gitignore`, `.editorconfig`
+- config: `opencode.jsonc`, root and workspace `package.json`, `package-lock.json`, tsconfig files, Vite, ESLint, Vitest, Playwright, CI workflows, `.gitignore`, `.editorconfig`
 - docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/task-template.md`
 - scaffolding: folders, empty files, `.gitkeep`, placeholder exports
 

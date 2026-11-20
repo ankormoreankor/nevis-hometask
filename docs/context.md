@@ -18,7 +18,7 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 - **Client data:** SWR, one key per year, in-memory cache, no context for data. `revalidateIfStale: false` because a fiscal year's payload is a fixed snapshot. A 404 is an empty state, not an error, so the fetcher keeps the status and the page branches on it.
 - **Fiscal calendar:** `apps/web/src/lib/period.ts` holds the twelve-month table, `formatMonthLabel`, `formatPeriod` and `currentFiscalYear`. February is first because the fiscal year says so; the year in the labels comes from the route.
 - **Empty year:** `/dashboard/2025` renders a heading with the year, a form with a labelled select over 2000 to the current fiscal year and a Go button, and a link to `/`. The select always shows a disabled placeholder and resets on every submit: it is an action, not a display of the current year. The range is valid years, not populated ones, so no endpoint is needed. A year change uses `push`.
-- **Deploy:** one service. Express and the client share an origin, so no CORS and no base URL. The client build is not served from the API yet: the deployed service answers `/api` only, and `express.static` over `apps/web/dist` plus an `index.html` fallback for non-API paths is the next step. In dev, Vite proxies `/api` to the API port.
+- **Deploy:** none. The project runs locally with `npm run dev`; there is no hosted demo, so no CORS question, no base URL and no deploy pipeline. In dev, Vite proxies `/api` to the API port.
 - **Data:** the payload is the source of truth, served unchanged. `dataByYear` is a `Map` with one entry, FY2024, parsed once at module scope; `getData(year)` returns that tree or null. No projections, no corrections, no derived totals: the source query and filters are unknown, so a correction would be invented. Moving to a real database touches one file.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
@@ -65,7 +65,7 @@ Settled: the payload is served as given. The source query and filters are unknow
 ## Ideas worth building, in order of value
 
 1. **Keyboard and screen-reader parity for the chart.** Not just the table: expose the same numbers through a companion data table or a focusable bar series with an accessible description. Almost no take-home does this and their interview bank asks about keyboard access to charted data.
-2. **`?simulate=slow|error`.** Makes the loading, retry and error states reviewable without touching code. Document the switch next to the live link.
+2. **`?simulate=slow|error`.** Makes the loading, retry and error states reviewable without touching code. Document the switch in the README.
 3. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale).
 4. **A data-quality note** in the README, with a UI decision behind it: a footnote, a tooltip, or a dev-only badge on inconsistent months.
 5. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container rather than squeezed columns at 375px.
