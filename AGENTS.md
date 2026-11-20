@@ -34,6 +34,10 @@ Direct request overrides this. If the user says "build X", the agent builds X an
 
 Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent follows, checked against the diff. `design/`, `docs/brief.md` and `docs/jd.md` stay denied at the config level because they are employer material.
 
+## Opus delegation
+
+`/opus <task>` and a message starting with `Opus:` hand the task to Claude Opus 4.6 through the local Antigravity CLI. The plugin is installed globally at `~/work/opus-plugin` and registered in `~/.config/opencode/opencode.jsonc`, so it is available in every project; the prompt hook there rewrites the prefix into an `ask_opus` call, and `opus.sh` beside it owns the `agy` flags. The mode comes from the session's agent: plan in Plan mode, build in Build mode. One delegation runs at a time per project, and a nested delegation is refused. Opus cannot see this conversation: pass the whole task.
+
 ## Project log
 
 `docs/log.md` is the session log: what happened, what was decided, what is next. It is the only channel that survives a session change. It is committed with the repo. If it is missing, create it.
