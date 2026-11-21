@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // shadcn/ui components import from "@/...".
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   css: {
@@ -20,8 +20,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // The API runs on its own port in development. In production Express
-      // serves both, so this proxy never applies there.
+      // The API runs on its own port and nothing is deployed, so this proxy is
+      // how the client reaches it in every environment.
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
