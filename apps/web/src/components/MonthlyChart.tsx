@@ -18,50 +18,63 @@ import type { TreeNode } from "@nevis/shared";
  *   }
  *   export default function MonthlyChart(props: MonthlyChartProps)
  *
- *   TreeNode comes from "@nevis/shared". childrenOf from "@/lib/tree".
- *   formatMonthLabel and formatPeriod from "@/lib/period". Primitives come from
- *   "@/components/ui/chart": ChartContainer, ChartTooltip, ChartTooltipContent,
- *   ChartLegend, ChartLegendContent. Recharts pieces come from "recharts".
+ *   TreeNode comes from "@nevis/shared". toSeries, toRows, toDomain and
+ *   scopeTitle come from "@/lib/chart". formatPeriod from "@/lib/period".
+ *   Primitives come from "@/components/ui/chart": ChartContainer, ChartTooltip,
+ *   ChartTooltipContent, ChartLegend, ChartLegendContent. Recharts pieces come
+ *   from "recharts".
+ *
+ *   The mapping from a node to chart data lives in "@/lib/chart", not in this
+ *   file. This component renders what that module returns. The brief grades
+ *   "how the data maps into the chart", and a pure module turns that into a
+ *   vitest file of a few dozen lines instead of a browser test.
  *
  * Series
- *   Stack the selected node's immediate children, bottom to top in array order:
- *   branches for the company, employees for a branch, channels for an adviser.
- *   The legend names those children.
- *   A leaf has no children, so it renders one series from node.values and the
+ *   toSeries(node) returns the series in the order they stack: the selected
+ *   node's immediate children, bottom to top in array order, which is branches
+ *   for the company, employees for a branch and channels for an adviser. The
+ *   legend names those children.
+ *   A leaf has no children, so it returns one series from node.values and the
  *   legend names the node itself. A company with no branches takes that path
  *   too, so the chart never assumes three series.
  *   This is the only model the payload supports. Channels exist under one
  *   adviser, so a channel breakdown above her level has four advisers and two
  *   branches with no channel data at all.
- *   Data rows: one per month, keyed by position, not by name:
- *   { month, s0, s1, ... sN }, where sN is children[N].values[i]. Month i is
- *   formatMonthLabel(fiscalYear, i), so the labels move with the year in the
- *   route and no date is formatted in this file.
+ *   toRows(series, fiscalYear) returns one row per month, keyed by position,
+ *   not by name: { month, s0, s1, ... sN }, where sN is children[N].values[i].
+ *   Month i is formatMonthLabel(fiscalYear, i), so the labels move with the
+ *   year in the route and no date is formatted in this file.
  *   ChartConfig: key s0..sN, label = the child name, color var(--chart-N).
  *   Position decides the colour, so a rename does not reshuffle the palette.
+ *   The token is scope-relative: --chart-1 is Branch 1 in the company view and
+ *   Anna Blackwood in the Branch 1 view. The scope title names the scope, so
+ *   the colour follows the series rather than the entity.
  *
  * Axes and marks
- *   Y: domain [0, max], where max is the stacked maximum rounded up to the next
- *   multiple of 100 when it is at least 100, and to the next multiple of 10
- *   below that. Company gives 400, which reproduces the design; Branch 1 gives
- *   300; Anna Blackwood gives 40. Ticks every 100 or every 10. No axis line, no
- *   tick marks, horizontal dashed gridlines only (CartesianGrid
- *   vertical={false}), allowDecimals={false}.
+ *   Y: domain [0, max], where toDomain(series) is the stacked maximum rounded
+ *   up to the next multiple of 100 when it is at least 100, and to the next
+ *   multiple of 10 below that. Company gives 400, which reproduces the design;
+ *   Branch 1 gives 300; Anna Blackwood gives 40. Ticks every 100 or every 10.
+ *   No axis line, no tick marks, horizontal dashed gridlines only
+ *   (CartesianGrid vertical={false}), allowDecimals={false}.
  *   Do not hardcode 400 any more: a drilled scope peaks at 38 and would render
  *   as a flat line under a fixed company scale.
  *   X: month labels with interval="preserveStartEnd" and minTickGap={24}, so
  *   all twelve fit at 1408 and thin out instead of overlapping at 375.
  *   tickLine={false}, axisLine={false}.
  *   Bars: one stackId, maxBarSize 88, only the top series gets
- *   radius={[4, 4, 0, 0]}. The design's bars drift from its own table by up to
- *   12 units, so match the treatment and never hardcode a value.
+ *   radius={[4, 4, 0, 0]}. The design's bars drift from the design's own table:
+ *   Sep, Oct, Nov and Dec draw about 12.5 units high where the table says 250,
+ *   and Jan draws about 14 above 350. Match the treatment and never hardcode a
+ *   value.
  *   Height 430px at the 1408px design width, full width of its column.
  *
  * Scope title
- *   A visible title above the plot names what is stacked: "Company, by branch",
- *   "Branch 1, by adviser", "Anna Blackwood, by channel", and for a leaf just
- *   the node name. The axis rescales with the scope, so the title is what keeps
- *   a 38-tall chart from being read as a 350-tall one.
+ *   A visible title above the plot names what is stacked. scopeTitle(node) in
+ *   "@/lib/chart" returns "Company, by branch", "Branch 1, by adviser",
+ *   "Anna Blackwood, by channel", and for a leaf just the node name. The axis
+ *   rescales with the scope, so the title is what keeps a 38-tall chart from
+ *   being read as a 350-tall one.
  *
  * Accessibility
  *   Wrap in <figure> with <figcaption>: the scope sentence, then
@@ -111,14 +124,15 @@ import type { TreeNode } from "@nevis/shared";
  *     series carries the rounded corners, so a zero at the top leaves a square
  *     edge; that is the point to add a custom bar shape rather than pre-build
  *     one.
- *   - childrenOf returns [] for a leaf, which is the single-series path. Do not
- *     treat an empty array as an error.
+ *   - toSeries returns one series for a leaf, which is the single-series path.
+ *     An empty array of children is not an error.
  *   - Changing node replaces the series and the domain together. Never keep the
  *     previous domain while the bars change.
  *
  * Tests
- *   none in this file. The chart mapping test covers payload values to segment
- *   heights, the domain, and the legend after a selection change.
+ *   none in this file. vitest covers "@/lib/chart": payload values to segment
+ *   heights, the domain, the legend labels after a selection change and the
+ *   scope title. Playwright covers the rendered chart reaching the keyboard.
  *
  * Delete this comment when the code is in place.
  */

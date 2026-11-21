@@ -46,6 +46,9 @@
  *   States
  *     isLoading  a skeleton that reserves the chart at 430px and the table
  *                header plus four rows, so nothing jumps when data lands.
+ *                Skeleton from "@/components/ui/skeleton", the shadcn one, so
+ *                the pulse comes from the tokens rather than a hand-rolled
+ *                animation.
  *     error      one message, the status if the error carries one, and a Retry
  *                button calling mutate(). Do not replace a page that already has
  *                data with an error screen; show the message above the stale
@@ -77,8 +80,11 @@
  *   - Clicking Branch 1 puts ?node=<id> in the URL with replace, remaps the
  *     chart, and leaves the table's expansion alone.
  *   - Clicking the company row removes ?node=.
- *   - /dashboard/2024?node=<branch 1 id> renders with the company and Branch 1
- *     expanded, Branch 1 selected, and the chart broken down by adviser.
+ *   - /dashboard/2024?node=<branch 1 id> renders with the company expanded,
+ *     Branch 1 selected, and the chart broken down by adviser. Branch 1 stays
+ *     collapsed: a deep link opens the path to the selected node, not the node
+ *     itself. The TreeGrid contract decides that, and this item has to agree
+ *     with it.
  *   - /dashboard/2024?node=nope renders the company view. No error, no crash.
  *   - The heading shows "Feb 2024 to Jan 2025" on /dashboard/2024 and
  *     "Feb 2025 to Jan 2026" on /dashboard/2025's empty state, if it shows a

@@ -4,9 +4,10 @@ import type { Company, TreeNode } from "@nevis/shared";
  * TASK: tree helpers
  *
  * Goal
- *   The five pure functions both components need: which children a node has,
- *   where a node sits, which ancestors must be open for it to be visible, and
- *   the initials on an adviser row. No React, no fetching, no state.
+ *   The pure functions both components need: which children a node has, where a
+ *   node sits, which ancestors must be open for it to be visible, the rows the
+ *   table actually draws, and the initials on an adviser row. No React, no
+ *   fetching, no state.
  *
  * Contract
  *   export function childrenOf(node: TreeNode): TreeNode[]
@@ -14,6 +15,20 @@ import type { Company, TreeNode } from "@nevis/shared";
  *   export function findNode(root: Company, id: string): TreeNode | null
  *   export function ancestorIds(root: Company, id: string): string[]
  *   export function initials(name: string): string
+ *
+ *   export type FlatRow = {
+ *     id: string
+ *     name: string
+ *     node: TreeNode
+ *     level: number
+ *     kind: "company" | "branch" | "advisor" | "channel"
+ *     posInSet: number
+ *     setSize: number
+ *     hasChildren: boolean
+ *     isExpanded: boolean
+ *   }
+ *
+ *   export function flattenVisible(root: Company, expanded: ReadonlySet<string>): FlatRow[]
  *
  *   Company, TreeNode from "@nevis/shared".
  *
@@ -45,6 +60,23 @@ import type { Company, TreeNode } from "@nevis/shared";
  *   The target itself is never included, so selecting a collapsed branch does
  *   not expand it as a side effect.
  *
+ *   6. flattenVisible(root, expanded) walks the tree depth-first from the root,
+ *      in array order, and returns the rows the table draws.
+ *      - the root is always in the list, at level 1.
+ *      - a node's children are in the list only when the node is expanded. The
+ *        set decides it, so the component owns the starting state.
+ *      - level is one more than the parent's level.
+ *      - posInSet is the 1-based position among the siblings and setSize is how
+ *        many siblings there are. They count the whole sibling group, not the
+ *        rows that happen to be on screen.
+ *      - kind comes from the parent, not from the keys on the node: the root is
+ *        a company, a child of a company is a branch, a child of a branch is an
+ *        adviser, a child of an adviser is a channel. Branch 2 has no
+ *        employees key at all, so a test on the keys would call it a channel.
+ *      - hasChildren is childrenOf(node).length > 0, and isExpanded is
+ *        expanded.has(node.id).
+ *      - the tree is not mutated.
+ *
  * Acceptance
  *   - childrenOf(company) has 3 entries, childrenOf(Branch 1) has 5,
  *     childrenOf(Anna Blackwood) has 3, childrenOf(a channel) is [].
@@ -57,6 +89,15 @@ import type { Company, TreeNode } from "@nevis/shared";
  *   - ancestorIds(company, companyId) is [].
  *   - initials("Anna Blackwood") is "AB", initials("Sarah Smith") is "SS",
  *     initials("Cher") is "C", initials("") is "".
+ *   - flattenVisible(company, new Set([companyId])) has 4 rows: the company at
+ *     level 1, then Branch 1, Branch 2 and Branch 3 at level 2 with posInSet 1,
+ *     2 and 3 and setSize 3.
+ *   - flattenVisible(company, new Set()) has 1 row.
+ *   - With the company and Branch 1 expanded, Anna Blackwood is at level 3,
+ *     kind "advisor", posInSet 1, setSize 5.
+ *   - With Anna expanded, her three channels are at level 4, kind "channel",
+ *     setSize 3, and none of them has children.
+ *   - Branch 2 is kind "branch" with hasChildren false.
  *
  * Edge cases
  *   - ids are unique in this payload. Do not rely on it: the visited set and the
@@ -65,8 +106,8 @@ import type { Company, TreeNode } from "@nevis/shared";
  *     live in the components.
  *
  * Tests
- *   vitest for initials, the four cases above. The other four are covered
- *   through the treegrid and the page.
+ *   vitest for initials, the four cases above and flattenVisible. The other
+ *   four are covered through the treegrid and the page.
  *
  * Delete this comment when the code is in place.
  */
@@ -89,4 +130,23 @@ export function ancestorIds(_root: Company, _id: string): string[] {
 // Placeholder. Replace with the initials rule described above.
 export function initials(_name: string): string {
   return "";
+}
+
+export type FlatRow = {
+  id: string;
+  name: string;
+  node: TreeNode;
+  level: number;
+  kind: "company" | "branch" | "advisor" | "channel";
+  posInSet: number;
+  setSize: number;
+  hasChildren: boolean;
+  isExpanded: boolean;
+};
+
+export function flattenVisible(
+  _root: Company,
+  _expanded: ReadonlySet<string>,
+): FlatRow[] {
+  return [];
 }

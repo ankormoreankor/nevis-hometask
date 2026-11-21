@@ -22,15 +22,23 @@ import type { Company } from "@nevis/shared";
  *   }
  *   export default function TreeGrid(props: TreeGridProps)
  *
- *   Company from "@nevis/shared". childrenOf, hasChildren, ancestorIds and
- *   initials from "@/lib/tree". formatMonthLabel from "@/lib/period". shadcn
- *   Table primitives from "@/components/ui/table"; its container already scrolls
- *   horizontally, which is what 375px needs.
+ *   Company from "@nevis/shared". childrenOf, hasChildren, ancestorIds,
+ *   flattenVisible and initials from "@/lib/tree". formatMonthLabel from
+ *   "@/lib/period". shadcn Table primitives from "@/components/ui/table"; its
+ *   container already scrolls horizontally, which is what 375px needs.
  *
  * Data
  *   Everything arrives in the `company` prop. This component fetches nothing and
  *   has no loading or error state of its own. A node with children gets a
  *   chevron, aria-expanded and a child level. A leaf gets none of the three.
+ *
+ *   The visible row list comes from flattenVisible(company, expanded) in
+ *   "@/lib/tree". It returns the rows in document order with the level, the
+ *   position among the siblings, the size of the sibling group and the kind of
+ *   node each one is. The component renders that list and handles the DOM,
+ *   the focus and the keys. It does not walk the tree itself: one pure
+ *   function that owns the flattening can be tested without a browser, and the
+ *   component stays about behaviour.
  *
  * Markup
  *   <table role="treegrid" aria-label={caption}>, default caption
@@ -53,8 +61,9 @@ import type { Company } from "@nevis/shared";
  *   and a chevron click never selects.
  *
  * Expansion
- *   A Set of node ids in this file. The company starts expanded, everything else
- *   collapsed. Toggled by the chevron and by a double-click on the row.
+ *   A Set of node ids in this file, passed to flattenVisible to produce the
+ *   rows. The company starts expanded, everything else collapsed. Toggled by
+ *   the chevron and by a double-click on the row.
  *   When selectedId changes, every id in ancestorIds(company, selectedId) joins
  *   the set; the selected node itself is never added. That covers a deep link
  *   and Back without making a row click expand anything.
@@ -80,16 +89,27 @@ import type { Company } from "@nevis/shared";
  *   the first employee is --chart-1, the second --chart-2, and so on. The
  *   circle uses the same token, so a legend swatch and a row circle are the
  *   same colour. An adviser's position is its index among its branch's
- *   employees, which is its aria-posinset.
+ *   employees, which is posInSet on the flattened row and the same number as
+ *   its aria-posinset.
  *   Five tokens and five employees in the largest branch, so nothing wraps. A
  *   sixth employee would need a sixth token in the chart and the circle
  *   together.
  *   The circle is the token mixed into the card:
  *     background-color: color-mix(in oklab, var(--avatar-color) 25%, var(--card));
- *   with the initials in --foreground. Full strength does not work: white on
- *   --chart-1 (#B29DF8) is under 2:1, dark on --chart-3 (#A75E6E) is under 4:1.
+ *   with the initials in --foreground.
+ *
+ *   The mix is what makes one ink work, not the token. Measured against the
+ *   tokens at full strength, neither ink is safe on every one of them: white on
+ *   --chart-1 (#B29DF8) is 2.32:1, which passes 2:1 and fails 3:1, and
+ *   --foreground (rgb(10,10,10)) on --chart-3 (#A75E6E) is 4.21:1, which passes
+ *   4:1 by a hair. At 25% into --card the three known tokens become #EBE7FF,
+ *   #FDEFEC and #EBD5D9, and --foreground on those reads between 14:1 and
+ *   18:1. Any fifth token mixed the same way lands in the same light range, so
+ *   the rule holds for values the palette has not fixed yet.
+ *
  *   One rule in apps/web/src/index.css, and the row sets --avatar-color to
- *   var(--chart-N). Mixing keeps one ink for all five tokens in both themes.
+ *   var(--chart-N). The ink stays --foreground in both themes, because the
+ *   dark theme mixes into a dark card and lightens the swatch the same way.
  *   The circle is decorative. The name sits next to it, so it is a span with
  *   aria-hidden="true" and it is not a focus target. "Empty alt" is img
  *   language and does not apply to a span.
@@ -175,7 +195,8 @@ import type { Company } from "@nevis/shared";
  *   none in this file. Playwright covers keyboard expand and collapse,
  *   aria-expanded transitions, focus after insertion, aria-selected moving with
  *   the selection, the deep link, the initials circle on an adviser row, and
- *   focus surviving a row click.
+ *   focus surviving a row click. vitest covers flattenVisible in lib/tree.ts:
+ *   the row order, the level, the sibling counts and the kind of each row.
  *
  * Delete this comment when the code is in place.
  */

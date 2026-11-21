@@ -28,7 +28,8 @@ npm run dev:web
 npm run dev:api
 
 npm run build
-npm run test
+npm run test        # vitest, the unit suite under apps/web/src
+npm run test:e2e    # playwright, the browser suite under apps/web/e2e
 npm run lint
 npm run typecheck
 npm run api:check
@@ -37,21 +38,26 @@ npm run analyze    # fallow: dead code, duplication, complexity
 
 The web client runs on http://localhost:5173 and the API on http://localhost:3000. `npm run dev` starts both. `npm run api:check` runs the API contract checks against the running server.
 
-CI runs lint, typecheck, test and build on every push and pull request. Nothing is deployed: the project runs locally.
+The browser suite needs a Chromium build once, `npm exec playwright install chromium`. It starts the API and the dev server itself, so nothing has to be running before it.
+
+CI runs lint, typecheck, test and build on every push and pull request, and the browser suite on every push once it has specs. Nothing is deployed: the project runs locally.
 
 ## Decisions
 
 The brief asks for the calls made where it left things open, and for anything that looks wrong on their side. One line per decision, with the alternative and the reason.
 
 - Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
-- Styling: Tailwind v4 with shadcn/ui for the two data components, CSS modules for the page shell. The shadcn Table and Chart primitives give the markup, so the diff shows the ARIA and the chart wiring rather than a rebuilt table. Tokens live in one file, `apps/web/src/index.css`.
+- Styling: Tailwind v4 with shadcn/ui for the two data components and the loading skeleton, CSS modules for the page shell. The shadcn Table, Chart and Skeleton primitives give the markup, so the diff shows the ARIA and the chart wiring rather than a rebuilt table. Tokens live in one file, `apps/web/src/index.css`.
 - Type: Inter Variable, self-hosted through `@fontsource-variable/inter`. The design and Nevis' own app both use Inter; Geist ships with shadcn's base preset and was removed. Self-hosting avoids a third-party font request and keeps the build reproducible offline.
 - TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
+- Lint: Biome, not ESLint. `typescript-eslint` declares a peer range of `typescript >=4.8.4 <6.1.0`, and this repo is on TypeScript 7, so the usual pairing does not install. Biome parses TypeScript on its own, so it does not depend on the compiler version, and it lints the workspace in milliseconds. The shadcn components under `src/components/ui` are excluded: they are copied from the shadcn CLI and are not ours to restyle.
+- Tests: vitest for the pure modules under `src/lib`, Playwright for the browser suite in `e2e`. The brief grades how the data maps into the chart, and the chart mapping is a pure function, so that test is a unit test rather than a browser test. The treegrid keyboard model and the hierarchy announcement belong in a browser, where the focus ring and the accessibility tree are real.
 - API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
 - No deploy: the project runs locally with `npm run dev`, and there is no hosted demo. The brief asks for a repository and a README, not a URL. A public copy would need one service serving both the API and the client build, plus a domain and a deploy pipeline, which is setup that shows none of the work being graded.
 - Table: native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model, not Accordion or Collapsible over divs. A div grid means rebuilding row, gridcell, header association and hierarchy by hand, then writing the same keyboard layer, and a reviewer reads it as a red flag. No TanStack Table either: flattening twelve rows is fifteen lines and the library does nothing for the part that is graded.
 - Chart: shadcn Chart over Recharts 3. `accessibilityLayer` is on by default and passed explicitly, so a Recharts upgrade cannot turn it off silently. The treegrid below is the accessible alternative: `role="application"` is a blunt instrument, and the table carries the same figures with real table semantics.
-- Chart stacking: the selected node's immediate children, bottom to top in array order. The company stacks its three branches, a branch stacks its advisers, an adviser stacks her channels, and a leaf shows one series named after itself. Channels exist under one adviser, so a channel breakdown higher up the tree has four advisers and two branches with no channel data; stacking the immediate children is the only model the payload supports.
+- Chart library: Recharts, not ECharts. Nevis' own app draws its charts with ECharts, so matching the house library was the default answer. Recharts was picked because it ships an accessibility layer with it: a focusable chart, arrow-key navigation of the months and a tooltip that a screen reader announces. That is the part of the brief that is graded, and the part a chart library decides for you. Inside the Nevis codebase this chart would be rebuilt on ECharts with the same series and the same domain rule.
+- Chart stacking: the selected node's immediate children, bottom to top in array order. The company stacks its three branches, a branch stacks its advisers, an adviser stacks her channels, and a leaf shows one series named after itself. Channels exist under one adviser, so a channel breakdown higher up the tree has four advisers and two branches with no channel data; stacking the immediate children is the only model the payload supports. A series takes the colour of its position in the stack, so `--chart-1` is Branch 1 in the company view and Anna Blackwood in the Branch 1 view. The scope title names the scope, so the colour follows the series rather than the entity.
 - Chart scope: follows the selection, with a title that names the node and the breakdown, and an axis derived from the current stack. The design's Existing clients / New organic / New paid legend appears only under Anna Blackwood, where the bars top out at 38 rather than 350.
 - Selection: a row click selects, `?node=<id>` records it with `replace`, and the chart remaps. A chevron click expands without selecting, a double-click does both. Selecting the company clears the parameter. An unknown id falls back to the company view, which is why the id is a query parameter and not a path segment.
 - API: one route, keyed by fiscal year. `GET /api/dashboard/:year` returns the company object for that year, which is the payload as given. A malformed year is 400 `{"error":"Invalid year format"}` and a year with no data is 404 `{"error":"Data not found for the given year"}`: a bad parameter and a missing resource are different things, and 400 is the status that says so without needing a defence in front of the Nevis team. The client checks the year in the route before it fetches, so it never sees the 400. The chart can be remapped to any node the user picks, so the whole year has to be client-side; a per-node endpoint would add a second contract and a loading state per row for no gain at twelve nodes.
@@ -62,23 +68,26 @@ The brief asks for the calls made where it left things open, and for anything th
 - Routing: `/` and `/dashboard` redirect in loaders with `replace` to `/dashboard/2024`; `/dashboard/:year` renders the page; `*` renders not found. The redirect is on an incomplete URL only. A valid four-digit year always renders, including one with no data, and `/dashboard/abc` is not found rather than a redirect, so a typo stays visible.
 - Fiscal calendar: one file, `apps/web/src/lib/period.ts`, holds the twelve-month table, `formatMonthLabel`, `formatPeriod` and `currentFiscalYear`. February is first because the fiscal year says so, not because the dataset happens to start there, and the year in the labels comes from the route. Nothing else formats a date.
 - Empty year: `/dashboard/2025` renders "No data for fiscal year 2025", a form with a labelled select over valid fiscal years (2000 to the current one) and a Go button, and a link to `/`. The select always shows a disabled "Select a fiscal year" placeholder and resets on every submit: it is an action, not a display of the current year, which the heading already states. The range is valid years, not populated ones, so the picker never needs to know what the API holds. A year change uses `push`, so Back returns to the previous year.
-- Avatars: a 20px circle with the adviser's initials on adviser rows, coloured with the same `--chart-N` token that adviser's series uses in the chart, so a legend swatch and a row circle match. The payload has no image field and the design's photograph would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes. The circle is the token mixed 25% into the card: white on `--chart-1` is under 2:1 and dark on `--chart-3` is under 4:1, so one ink works for all five tokens.
+- Avatars: a 20px circle with the adviser's initials on adviser rows, coloured with the same `--chart-N` token that adviser's series uses in the chart, so a legend swatch and a row circle match. The payload has no image field and the design's photograph would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes. The circle is the token mixed 25% into the card. The mix is what carries the contrast, not the token: at full strength white on `--chart-1` (#B29DF8) is 2.32:1 and `--foreground` on `--chart-3` (#A75E6E) is 4.21:1, while the mixed swatches read between 14:1 and 18:1 against `--foreground`. One ink for all five tokens in both themes.
+- States: the API reads `?simulate=slow` and `?simulate=error` on the dashboard route and answers accordingly, so the loading skeleton, the retry and the error message are reviewable in a browser without touching the code. The switch lives on the server, so the client handles a slow response and a 500 the same way it would in production. `/dashboard/2024?simulate=error` is the demo, and the parameter survives a selection change.
 - Opus delegation: `/opus` and an `Opus:` prefix route a task to Claude Opus 4.6 through the local Antigravity CLI. The plugin lives outside this repo at `~/work/opus-plugin` and is registered in the global OpenCode config, so it loads in every project rather than one. Opus plans in Plan mode and acts in Build mode, read from the session's agent rather than stated in the prompt. A skill cannot register a slash command, and a rule cannot execute anything, so neither covers the trigger. The plugin adds no dependency: opencode supplies the SDK at runtime. Build mode runs Opus with Antigravity's own tools, which do not read `opencode.jsonc`, so `design/**` is protected by instruction there rather than by permission, and one delegation runs at a time per project so two of them cannot write the same tree.
 
 ## Data quirks found so far
 
 Arithmetic in the payload does not always close, before any UI is involved:
 
-- Branch 1, Jul 2024 reads 291 in the design against 201 in the payload. The payload value is the one that keeps 201 + 92 + 41 = 334, the company total for July.
+- Branch 1, Jul 2024 reads 291 in the design's tree frame `0:1498` and 201 in the design's table frame `1:2901`, against 201 in the payload. The payload value is the one that keeps 201 + 92 + 41 = 334, the company total for July.
 - May 2024: branches sum to 279 (156 + 87 + 36) against a company value of 301.
 - Aug 2024: advisors sum to 216 (38 + 16 + 51 + 58 + 53) against a branch value of 214.
 - Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month.
 
 The payload is served as given and nothing is reconciled. The source figures may come from an aggregated query with filters that are not visible here, so correcting a cell would mean inventing a rule for which one is wrong. The chart and the table show the numbers as received, and this section is the only place the disagreement is surfaced.
 
+The design disagrees with itself in one more place. Its chart bars drift from its own table: Sep, Oct, Nov and Dec draw about 12.5 units high where the table says 250, and Jan draws about 14 above 350. The code copies the treatment, the gridlines, the bar shapes and the axis range, and never a value.
+
 ## States covered
 
-Loading and error for the first paint, an empty fiscal year, an invalid year, empty depth (branches without employees, advisers without channels), selection and deep links, keyboard-only, 375px.
+Loading and error for the first paint, an empty fiscal year, an invalid year, empty depth (branches without employees, advisers without channels), selection and deep links, keyboard-only, 375px. The loading and error states are reviewable on the dashboard URL with `?simulate=slow` and `?simulate=error`.
 
 ## Accessibility
 
@@ -93,6 +102,8 @@ The adviser circle is decoration and carries `aria-hidden`, because the name sit
 ## Tests
 
 To fill in: expand and collapse behaviour, data-to-chart mapping.
+
+The split is decided: vitest for the pure modules under `apps/web/src/lib`, Playwright for the browser suite in `apps/web/e2e`. The chart mapping and the tree flattening were pulled out of the components for that reason.
 
 ## AI use
 
