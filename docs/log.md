@@ -172,3 +172,66 @@ Verified
 
 Open
 - Nothing implemented under `apps/**` or `packages/**`. Five chart tokens still need values. No tests yet.
+
+## superseding the year status codes
+
+Decided
+- The "year routing" entry above said a malformed year and a year with no data are both 404, and that no 400 exists. That is reversed.
+- A malformed year is 400 `{"error":"Invalid year format"}` and a year with no data is 404 `{"error":"Data not found for the given year"}`. A bad parameter and a missing resource are different things, and 400 says so.
+- The client never sees the 400. The route and the page both reject a year that is not four digits before anything is fetched, so the branch is there for any other caller, and `scripts/api-smoke.sh` exercises it directly.
+
+Done
+- `apps/api/src/index.ts` answers 400 for a malformed year and 404 for a year with no data.
+- README and `docs/context.md` carry the two status codes.
+
+## superseding the deploy decision
+
+Decided
+- The "repository setup" entry above picked one Render web service, with Express serving `apps/web/dist` and `/api` from the same origin. That is reversed.
+- No deploy. The project runs locally with `npm run dev`, and the brief asks for a repository and a README, not a URL. A public copy would need one service for both, a domain and a pipeline, and it would show none of the work being graded.
+- In development Vite proxies `/api` to the API port.
+
+Done
+- `render.yaml` and the deploy workflow are gone.
+- README says nothing is deployed.
+
+## review fixes
+
+Decided
+- The chart mapping moves out of the component into `apps/web/src/lib/chart.ts`: `toSeries`, `toRows`, `toDomain` and `scopeTitle`. The brief grades how the data maps into the chart, and a pure module makes that a vitest file instead of a browser test.
+- The visible row list moves into `apps/web/src/lib/tree.ts` as `flattenVisible`. The treegrid renders rows instead of walking the tree, and the level, the sibling counts and the kind of each row come back with them.
+- The route table is four sibling routes. A loader on a parent route runs on every navigation to its children, so nesting `dashboard` under `/` made the `/` loader redirect to the URL it was already on.
+
+Done
+- Task blocks rewritten in `router.tsx`, `routes/Dashboard.tsx`, `TreeGrid.tsx`, `MonthlyChart.tsx`, `lib/tree.ts`. `apps/web/src/lib/chart.ts` added.
+- The contrast figures in README and `docs/context.md` are recomputed, and the design drift note names Sep, Oct, Nov and Dec.
+- The task block in `apps/api/src/data.ts` is gone, the file holds only code.
+
+Verified
+- `npm run typecheck`, `npm run build` and `npm run lint` at the root, and `npm run api:check` against a running API: 32 checks pass.
+
+Open
+- Nothing implemented under `apps/**` or `packages/**`. Five chart tokens still need values.
+
+## the router, the toolchain and the skeleton
+
+Decided
+- The router is done. Four sibling routes, two redirects with `replace`, the dashboard route and the not-found route. The parent-loader nesting that made "/" redirect to the URL it was already on is gone.
+- The placeholder shell goes with it: `App.tsx`, `App.module.css` and `lib/utils.ts` are deleted, and the sidebar tokens that came with the shadcn init are out of `index.css`.
+- The cn helper is imported from the "cn" package everywhere, so no file reads a local utils module. `components.json` keeps its utils alias, because that is where the shadcn CLI would write the helper if a component is added later.
+- The loading state uses the shadcn Skeleton, so the pulse comes from the tokens.
+- fallow stays. It reports the scaffolding as dead code until the components land, and it becomes a real check after that.
+
+Done
+- `main.tsx` mounts the router and `router.tsx` holds the flat route table, both without a task block.
+- `vite.config.ts` uses `import.meta.dirname`, so the build stops warning about the native config loader.
+- vitest, Playwright and Biome are installed for the web workspace, with the `test`, `test:e2e` and `lint` scripts, and CI runs the browser suite once it has specs.
+- `apps/web/src/components/ui/skeleton.tsx` added.
+
+Verified
+- In a browser: "/" lands on /dashboard/2024 in one hop, Back lands on the dashboard and not on the pre-redirect URL, a valid year never redirects, and the console stays clean.
+- `npm run typecheck`, `npm run build` and `npm run lint` at the root, and `npm run api:check` against a running API: 32 checks pass.
+
+Open
+- `DEFAULT_FISCAL_YEAR` still moves out of the router's two literals and into `lib/period.ts`.
+- The dashboard components are still task blocks. Five chart tokens need values.
