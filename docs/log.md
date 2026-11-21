@@ -235,3 +235,22 @@ Verified
 Open
 - `DEFAULT_FISCAL_YEAR` still moves out of the router's two literals and into `lib/period.ts`.
 - The dashboard components are still task blocks. Five chart tokens need values.
+
+## one Biome config at the root
+
+Decided
+- Biome formats as well as lints. Prettier was the alternative and loses: one tool, one config the editor and CI read, and Biome parses TypeScript without the compiler.
+- One `biome.json` at the repo root, style pinned to the shape the code was already written in: two spaces, 100 columns, double quotes, semicolons. The nested `apps/web/biome.json` is gone. The editor's language server looks for a config at the workspace root and walks up, so the nested one was invisible to it, and Biome rejects a root config beside a nested one.
+- Import sorting is the `organizeImports` assist, applied on save through `editor.codeActionsOnSave`. Safe lint fixes stay off on save.
+
+Done
+- Root `biome.json` and root `.vscode/settings.json`: format on save for TypeScript, import sorting on save.
+- `@biomejs/biome` moved to the root package with `lint`, `format` and `check` scripts. CI runs `npm run check`.
+- README, `docs/context.md` and `AGENTS.md` carry the style and the scripts.
+
+Verified
+- `biome rage` on the daemon the editor talks to: config loaded from `biome.json`, formatter enabled. The extension's LSP log shows the nested-config error before the change and a clean start after it.
+- `npm run lint` passes at the root over 19 files.
+
+Open
+- `npx biome check --write .` has not been run. Five files are unformatted, three have unsorted imports, and `apps/api/src/data.ts` still carries the tab reformat the broken config produced.

@@ -31,6 +31,8 @@ npm run build
 npm run test        # vitest, the unit suite under apps/web/src
 npm run test:e2e    # playwright, the browser suite under apps/web/e2e
 npm run lint
+npm run format      # biome format --write: two spaces, 100 columns, sorted imports
+npm run check       # biome check: lint, formatting and import order in one pass
 npm run typecheck
 npm run api:check
 npm run analyze    # fallow: dead code, duplication, complexity
@@ -40,7 +42,7 @@ The web client runs on http://localhost:5173 and the API on http://localhost:300
 
 The browser suite needs a Chromium build once, `npm exec playwright install chromium`. It starts the API and the dev server itself, so nothing has to be running before it.
 
-CI runs lint, typecheck, test and build on every push and pull request, and the browser suite on every push once it has specs. Nothing is deployed: the project runs locally.
+CI runs check, typecheck, test and build on every push and pull request, and the browser suite on every push once it has specs. Nothing is deployed: the project runs locally.
 
 ## Decisions
 
@@ -51,6 +53,7 @@ The brief asks for the calls made where it left things open, and for anything th
 - Type: Inter Variable, self-hosted through `@fontsource-variable/inter`. The design and Nevis' own app both use Inter; Geist ships with shadcn's base preset and was removed. Self-hosting avoids a third-party font request and keeps the build reproducible offline.
 - TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
 - Lint: Biome, not ESLint. `typescript-eslint` declares a peer range of `typescript >=4.8.4 <6.1.0`, and this repo is on TypeScript 7, so the usual pairing does not install. Biome parses TypeScript on its own, so it does not depend on the compiler version, and it lints the workspace in milliseconds. The shadcn components under `src/components/ui` are excluded: they are copied from the shadcn CLI and are not ours to restyle.
+- Formatting: Biome's formatter, not Prettier. One tool for lint and format, one config that the editor and CI read, and Biome parses TypeScript without the compiler. Prettier would be a second formatter with a second config to keep in step, and the repo has no Prettier dependency today. The config lives at the repo root because that is the file the editor's language server looks for; a nested one under `apps/web` is invisible to it, and a root config beside a nested one is an error for Biome. The style is pinned to the shape the code was already written in: two spaces, 100 columns, double quotes, semicolons. Import order is Biome's `organizeImports` assist, applied on save through `editor.codeActionsOnSave`, so the specifiers in a file are sorted the same way on every machine.
 - Tests: vitest for the pure modules under `src/lib`, Playwright for the browser suite in `e2e`. The brief grades how the data maps into the chart, and the chart mapping is a pure function, so that test is a unit test rather than a browser test. The treegrid keyboard model and the hierarchy announcement belong in a browser, where the focus ring and the accessibility tree are real.
 - API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
 - No deploy: the project runs locally with `npm run dev`, and there is no hosted demo. The brief asks for a repository and a README, not a URL. A public copy would need one service serving both the API and the client build, plus a domain and a deploy pipeline, which is setup that shows none of the work being graded.
