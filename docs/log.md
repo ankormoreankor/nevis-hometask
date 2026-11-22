@@ -308,3 +308,27 @@ Open
 
 Next
 - Write the browser specs, starting with the error state and the loading state.
+
+## the chart on the dashboard page
+
+Decided
+- The mock payload moves to `@nevis/shared/payload`, its own entry point, so the API serves it and the web tests read the same tree instead of keeping a second copy of the numbers.
+- The chart axis comes from the stack, not from the row of the node: the company stacks to 350 and rounds to 400, Branch 1 to 216 and 300, Anna Blackwood to 38 and 40.
+- The chevron is pointer only and leaves the focus on the row, so Enter on a row selects and never toggles.
+- The client checks the year for four digits and asks for it as written, so it and the server ask for the same one.
+
+Done
+- `lib/period.ts`, `lib/tree.ts` and `lib/chart.ts`: the fiscal calendar, the tree helpers and the chart mapping.
+- `MonthlyChart`, `TreeGrid` and the dashboard page, with the loading, error, empty-year and invalid-year states.
+- The design palette in the chart tokens, the adviser circle in `index.css`, 32 unit tests and 14 browser specs.
+
+Verified
+- `check`, `test`, `typecheck`, `build`, `test:e2e` and `api:check` pass.
+- In a browser: the chart remaps on selection, the deep link opens the path, the keyboard model works, 375px does not overflow.
+
+Open
+- The chart has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+- The bundle is one chunk and Recharts is most of it.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

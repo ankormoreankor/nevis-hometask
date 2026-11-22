@@ -1,90 +1,213 @@
-/**
- * TASK: the browser specs for the treegrid keyboard model and the selection
- *
- * Goal
- *   The brief grades the keyboard model, the hierarchy reaching assistive
- *   technology and the selection that remaps the chart. Those belong in a
- *   browser, where the focus ring and the accessibility tree are real.
- *
- * Contract
- *   import { expect, test } from "@playwright/test"
- *
- *   The base URL is http://localhost:5173 and is set in playwright.config.ts,
- *   so page.goto("/dashboard/2024") is enough. The config starts the API and
- *   the dev server, so the spec starts neither.
- *
- *   The table is a <table role="treegrid" aria-label="Monthly figures by branch,
- *   adviser and acquisition channel">. Its rows carry role="row", aria-level
- *   from 1 to 4, aria-posinset and aria-setsize, aria-expanded on the rows
- *   that have children and aria-selected on every row. Exactly one row has
- *   tabindex="0" at a time.
- *
- *   The rows are addressed by their text: the company row reads "Company", the
- *   branch rows read "Branch 1", "Branch 2" and "Branch 3", the adviser rows
- *   read the adviser names, and a channel row reads the channel name.
- *
- *   The chevron is a button with the accessible name "Expand {name}" or
- *   "Collapse {name}". It is not a focus target, so the specs click it by name
- *   and never tab to it.
- *
- *   The rows are reached with the keyboard, so focus the grid first:
- *   await page.getByRole("row", { name: "Company" }).focus()
- *
- *   The chart title is the figcaption of the figure above the table.
- *   scopeTitle(node) reads "Company, by branch", "Branch 1, by adviser" and
- *   "Anna Blackwood, by channel".
- *
- * Acceptance
- *   - The first render shows the company row expanded and selected, and three
- *     branch rows at aria-level 2.
- *   - ArrowRight on a collapsed parent expands it, ArrowRight on an expanded
- *     parent moves to its first child, and ArrowLeft on an expanded parent
- *     collapses it and keeps the focus there.
- *   - ArrowLeft on an adviser row focuses Branch 1.
- *   - Enter on Branch 1 selects it and leaves aria-expanded alone.
- *   - Exactly one row carries aria-selected="true" and exactly one carries
- *     tabindex="0".
- *   - Clicking Branch 1 puts ?node=<id> in the URL and the chart title reads
- *     "Branch 1, by adviser".
- *   - A deep link to a channel opens the company, Branch 1 and Anna Blackwood,
- *     and the channel row is selected.
- *   - At 375px the page does not scroll sideways and the table does.
- *
- * Edge cases
- *   - Focus stays on the row that was toggled, so assert on the focused element
- *     after the key press rather than on the number of rows.
- *   - Rows are keyed by node id, so an insert must not drop the focus.
- *   - The 375px check is on the page, not on the table: the table is allowed to
- *     scroll sideways inside its own container.
- *
- * Tests
- *   none here. This file is the test.
- *
- * Delete this comment when the code is in place.
- */
 import { expect, test } from "@playwright/test";
+
+/**
+ * The browser suite for the treegrid keyboard model and the selection.
+ *
+ * The brief grades the keyboard model, the hierarchy reaching assistive
+ * technology and the selection that remaps the chart. Those belong in a
+ * browser, where the focus ring and the accessibility tree are real.
+ *
+ * The base URL is http://localhost:5173 and is set in playwright.config.ts, so
+ * page.goto("/dashboard/2024") is enough. The config starts the API and the
+ * dev server, so the spec starts neither.
+ *
+ * The table is <table role="treegrid" aria-label="Monthly figures by branch,
+ * adviser and acquisition channel">. Its rows carry role="row", aria-level
+ * from 1 to 4, aria-posinset and aria-setsize, aria-expanded on the rows that
+ * have children and aria-selected on every row. Exactly one row has
+ * tabindex="0" at a time.
+ *
+ * The rows are addressed by their text: the company row reads "Company", the
+ * branch rows read "Branch 1", "Branch 2" and "Branch 3", the adviser rows
+ * read the adviser names, and a channel row reads the channel name.
+ *
+ * The chevron is a button named "Expand {name}" or "Collapse {name}". It is
+ * not a focus target, so the specs click it by name and never tab to it.
+ *
+ * The rows are reached with the keyboard, so focus the grid first:
+ * await page.getByRole("row", { name: "Company" }).focus()
+ *
+ * The chart is the figure above the table. Its accessible name is the scope
+ * title, "Company, by branch", "Branch 1, by adviser" or
+ * "Anna Blackwood, by channel".
+ */
+
+const CHANNEL_ID = "716e7c30-b7c3-45c5-aa64-cbcf483917e0";
 
 test("the dashboard route resolves", async ({ page }) => {
   await page.goto("/dashboard/2024");
   await expect(page).toHaveURL(/\/dashboard\/2024$/);
 });
 
-test.fixme("the treegrid renders the tree", async () => {
-  // the assertions belong here
+test("the treegrid renders the tree", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  const company = page.getByRole("row", { name: "Company" });
+  await expect(company).toBeVisible();
+  await expect(company).toHaveAttribute("aria-level", "1");
+  await expect(company).toHaveAttribute("aria-expanded", "true");
+  await expect(company).toHaveAttribute("aria-selected", "true");
+
+  const branches = [
+    { name: "Branch 1", posinset: "1" },
+    { name: "Branch 2", posinset: "2" },
+    { name: "Branch 3", posinset: "3" },
+  ];
+
+  for (const branch of branches) {
+    const row = page.getByRole("row", { name: branch.name });
+    await expect(row).toBeVisible();
+    await expect(row).toHaveAttribute("aria-level", "2");
+    await expect(row).toHaveAttribute("aria-posinset", branch.posinset);
+    await expect(row).toHaveAttribute("aria-setsize", "3");
+  }
+
+  // The branches without employees are leaves, so they carry no aria-expanded.
+  await expect(page.getByRole("row", { name: "Branch 2" })).not.toHaveAttribute("aria-expanded");
+
+  await expect(page.locator("tbody [role='row']")).toHaveCount(4);
+  await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
+  await expect(page.locator("[role='row'][tabindex='0']")).toHaveCount(1);
 });
 
-test.fixme("the keyboard model", async () => {
-  // the assertions belong here
+test("the keyboard model", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  const company = page.getByRole("row", { name: "Company" });
+  const branch1 = page.getByRole("row", { name: "Branch 1" });
+  const anna = page.getByRole("row", { name: "Anna Blackwood" });
+
+  await company.focus();
+
+  // ArrowDown reaches the next visible row.
+  await page.keyboard.press("ArrowDown");
+  await expect(branch1).toBeFocused();
+
+  // ArrowRight on a collapsed parent expands it and keeps the focus there.
+  await expect(branch1).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("ArrowRight");
+  await expect(branch1).toHaveAttribute("aria-expanded", "true");
+  await expect(branch1).toBeFocused();
+
+  // ArrowRight on an expanded parent moves to its first child.
+  await page.keyboard.press("ArrowRight");
+  await expect(anna).toBeFocused();
+
+  // ArrowLeft on a leaf moves to the parent row.
+  await page.keyboard.press("ArrowLeft");
+  await expect(branch1).toBeFocused();
+
+  // ArrowLeft on an expanded parent collapses it and keeps the focus there.
+  await page.keyboard.press("ArrowLeft");
+  await expect(branch1).toHaveAttribute("aria-expanded", "false");
+  await expect(branch1).toBeFocused();
+
+  // Enter selects and leaves the expansion alone.
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?node=[0-9a-f-]{36}$/);
+  await expect(branch1).toHaveAttribute("aria-selected", "true");
+  await expect(branch1).toHaveAttribute("aria-expanded", "false");
+
+  // Home and End reach the ends of the visible rows.
+  await page.keyboard.press("End");
+  await expect(page.getByRole("row", { name: "Branch 3" })).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(company).toBeFocused();
+
+  await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
+  await expect(page.locator("[role='row'][tabindex='0']")).toHaveCount(1);
 });
 
-test.fixme("the selection remaps the chart", async () => {
-  // the assertions belong here
+test("the chevron expands without selecting", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  const branch1 = page.getByRole("row", { name: "Branch 1" });
+
+  // The focus starts on the chart, outside the grid.
+  await page.locator(".recharts-surface").focus();
+
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+
+  await expect(branch1).toHaveAttribute("aria-expanded", "true");
+  await expect(branch1).toHaveAttribute("aria-selected", "false");
+  await expect(page).not.toHaveURL(/\?node=/);
+
+  // The chevron is pointer only, so the focus lands on the row and Enter
+  // selects the row rather than toggling the expansion.
+  await expect(branch1).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(branch1).toHaveAttribute("aria-selected", "true");
+  await expect(branch1).toHaveAttribute("aria-expanded", "true");
 });
 
-test.fixme("the deep link opens the path", async () => {
-  // the assertions belong here
+test("the selection remaps the chart", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  const figure = page.getByRole("figure");
+  await expect(figure).toHaveAccessibleName("Company, by branch");
+
+  await page.getByRole("row", { name: "Branch 1" }).click();
+
+  await expect(page).toHaveURL(/\?node=[0-9a-f-]{36}$/);
+  await expect(figure).toHaveAccessibleName("Branch 1, by adviser");
+
+  // The legend names the advisers of the scope, not the branches.
+  await expect(page.locator(".recharts-surface desc")).toContainText("Anna Blackwood");
+  await expect(page.locator(".recharts-surface desc")).toContainText("Sarah Smith");
+
+  // Clicking the company row clears the parameter.
+  await page.getByRole("row", { name: "Company" }).click();
+  await expect(page).not.toHaveURL(/\?node=/);
+  await expect(figure).toHaveAccessibleName("Company, by branch");
 });
 
-test.fixme("nothing overflows at 375px", async () => {
-  // the assertions belong here
+test("the deep link opens the path", async ({ page }) => {
+  await page.goto(`/dashboard/2024?node=${CHANNEL_ID}`);
+
+  const channel = page.getByRole("row", { name: "Existing clients" });
+  await expect(channel).toBeVisible();
+  await expect(channel).toHaveAttribute("aria-selected", "true");
+  await expect(channel).toHaveAttribute("aria-level", "4");
+
+  // The path to the selected node opens, and the selected node itself does
+  // not expand.
+  await expect(page.getByRole("row", { name: "Company" })).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("row", { name: "Branch 1" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(page.getByRole("row", { name: "Anna Blackwood" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(channel).not.toHaveAttribute("aria-expanded");
+
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Existing clients");
+});
+
+test("an unknown node falls back to the company", async ({ page }) => {
+  await page.goto("/dashboard/2024?node=nope");
+
+  await expect(page.getByRole("row", { name: "Company" })).toBeVisible();
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Company, by branch");
+  await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
+});
+
+test("nothing overflows at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/dashboard/2024");
+  await expect(page.getByRole("row", { name: "Company" })).toBeVisible();
+
+  // The page does not scroll sideways.
+  const pageOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverflow).toBe(0);
+
+  // The table does, inside its own container.
+  const tableScrolls = await page.evaluate(() => {
+    const container = document.querySelector("table")?.parentElement;
+    return container ? container.scrollWidth > container.clientWidth : false;
+  });
+  expect(tableScrolls).toBe(true);
 });

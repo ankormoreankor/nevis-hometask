@@ -1,95 +1,138 @@
-/**
- * TASK: the browser specs for the states the dashboard has to survive
- *
- * Goal
- *   The loading, error, empty-year and invalid-year states are the ones a
- *   reviewer trusts only when something asserts them. The API has no switch
- *   for them on purpose, so the specs drive the states by intercepting the
- *   route instead.
- *
- * Contract
- *   import { expect, test } from "@playwright/test"
- *
- *   The base URL is http://localhost:5173 and is set in playwright.config.ts,
- *   so page.goto("/dashboard/2024") is enough. The config starts the API and
- *   the dev server, so the spec starts neither.
- *
- *   The route to intercept is "/api/dashboard/**". The pattern starts with a
- *   slash, so Playwright resolves it against the base URL and it matches
- *   /api/dashboard/<year> on the dev server. The client asks for that path and
- *   nothing else, so one pattern covers every year.
- *
- *   The error state
- *     await page.route("/api/dashboard/**", route =>
- *       route.fulfill({
- *         status: 500,
- *         contentType: "application/json",
- *         body: JSON.stringify({ error: "Internal Server Error" }),
- *       }),
- *     )
- *     The page renders a role="alert" region with the message, the status and
- *     a button with the accessible name "Retry". Release the route before
- *     clicking Retry, or the retry is answered with the same 500:
- *     await page.unroute("/api/dashboard/**")
- *
- *   The loading state
- *     await page.route("/api/dashboard/**", async route => {
- *       await new Promise(resolve => setTimeout(resolve, 2000))
- *       await route.continue()
- *     })
- *     The page renders a role="status" region with the accessible name
- *     "Loading" while the request is in flight. The skeletons inside it hold
- *     the space the chart and the table will take and are decorative, so the
- *     region is the thing to wait on:
- *     page.getByRole("status", { name: "Loading" })
- *
- *   Requests are counted with page.on("request"). The hook retries a 5xx twice
- *   with a growing backoff, so the count is what tells one attempt from three.
- *
- * Acceptance
- *   - A 500 shows role="alert" carrying the message and the status, and a
- *     button named "Retry".
- *   - Clicking Retry after the route is released shows the treegrid and the
- *     alert is gone.
- *   - A delayed response shows role="status" named "Loading" first and the
- *     treegrid after it.
- *   - /dashboard/2025 shows the empty year, not an error.
- *   - /dashboard/abc shows the not-found page.
- *
- * Edge cases
- *   - The 404 for /dashboard/2025 is an empty state, so it is never retried.
- *     The request count for that page is one.
- *   - The alert can come back while a retry is in flight. Assert that the
- *     message stays visible, not that the request count is one.
- *   - unroute before clicking Retry, or the retry is answered with the same
- *     500 and the spec passes for the wrong reason.
- *   - The status text is "The server answered with status 500." for a 500 and
- *     "The request did not reach the server." for a dropped connection.
- *
- * Tests
- *   none here. This file is the test.
- *
- * Delete this comment when the code is in place.
- */
 import { expect, test } from "@playwright/test";
+
+/**
+ * The browser suite for the states the dashboard has to survive.
+ *
+ * The loading, error, empty-year and invalid-year states are the ones a
+ * reviewer trusts only when something asserts them. The API has no switch for
+ * them on purpose, so the specs drive the states by intercepting the route
+ * instead.
+ *
+ * The base URL is http://localhost:5173 and is set in playwright.config.ts, so
+ * page.goto("/dashboard/2024") is enough. The config starts the API and the
+ * dev server, so the spec starts neither.
+ *
+ * The route to intercept is "**\/api/dashboard/**". The client asks for
+ * /api/dashboard/<year> and nothing else, so one pattern covers every year.
+ *
+ * The error state
+ *   await page.route("**\/api/dashboard/**", route =>
+ *     route.fulfill({
+ *       status: 500,
+ *       contentType: "application/json",
+ *       body: JSON.stringify({ error: "Internal Server Error" }),
+ *     }),
+ *   )
+ *   The page shows the message in a role="alert" element and a button with the
+ *   accessible name "Retry". Release the route before clicking Retry, or the
+ *   retry is answered with the same 500:
+ *     await page.unroute("**\/api/dashboard/**")
+ *
+ * The loading state
+ *   await page.route("**\/api/dashboard/**", async route => {
+ *     await new Promise(resolve => setTimeout(resolve, 2000))
+ *     await route.continue()
+ *   })
+ *   The page shows a role="status" element with the accessible name
+ *   "Loading" while the request is in flight. The skeletons inside it are
+ *   decorative and carry aria-hidden.
+ *
+ * Requests are counted with page.on("request"). The hook retries a 5xx twice
+ * with a growing backoff, so the count is what tells one attempt from three.
+ */
 
 test("the api answers the dashboard route", async ({ request }) => {
   const response = await request.get("/api/dashboard/2024");
   expect(response.status()).toBe(200);
 });
 
-test.fixme("the error state", async () => {
-  // the assertions belong here
+test("the error state", async ({ page }) => {
+  await page.route("**/api/dashboard/**", (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Internal Server Error" }),
+    }),
+  );
+
+  await page.goto("/dashboard/2024");
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText("status 500");
+  await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+
+  // The route is released before the retry, or the retry is answered with the
+  // same 500 and the spec passes for the wrong reason.
+  await page.unroute("**/api/dashboard/**");
+  await page.getByRole("button", { name: "Retry" }).click();
+
+  await expect(page.getByRole("row", { name: "Company" })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
-test.fixme("the loading state", async () => {
-  // the assertions belong here
+test("the loading state", async ({ page }) => {
+  await page.route("**/api/dashboard/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await route.continue();
+  });
+
+  await page.goto("/dashboard/2024");
+
+  const loading = page.getByRole("status", { name: "Loading" });
+  await expect(loading).toBeVisible();
+  await expect(page.getByRole("row", { name: "Company" })).toHaveCount(0);
+
+  await expect(page.getByRole("row", { name: "Company" })).toBeVisible({ timeout: 15000 });
+  await expect(loading).toHaveCount(0);
 });
 
-test.fixme("the empty year", async () => {
-  // the assertions belong here
+test("the empty year", async ({ page }) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/dashboard/")) {
+      requests.push(request.url());
+    }
+  });
+
+  await page.goto("/dashboard/2025");
+
+  await expect(page.getByRole("heading", { name: "No data for fiscal year 2025" })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+
+  // The 404 is an empty state, so it is never retried.
+  expect(requests).toHaveLength(1);
 });
 
-test.fixme("the invalid year", async () => {
-  // the assertions belong here
+test("the invalid year", async ({ page }) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/dashboard/")) {
+      requests.push(request.url());
+    }
+  });
+
+  await page.goto("/dashboard/abc");
+
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expect(page.getByText("The page /dashboard/abc does not exist.")).toBeVisible();
+
+  // The year is checked in the route, so the request is never made.
+  expect(requests).toHaveLength(0);
+});
+
+test("the year is asked for as it was written", async ({ page }) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/dashboard/")) {
+      requests.push(new URL(request.url()).pathname);
+    }
+  });
+
+  await page.goto("/dashboard/0024");
+
+  // Four digits is a well formed year, so the server decides whether there is
+  // data for it. The client asks for the year it was given, so the two agree.
+  await expect(page.getByRole("heading", { name: "No data for fiscal year 24" })).toBeVisible();
+  expect(requests).toEqual(["/api/dashboard/0024"]);
 });

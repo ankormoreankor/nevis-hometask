@@ -1,138 +1,166 @@
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
+import MonthlyChart from "@/components/MonthlyChart";
+import TreeGrid from "@/components/TreeGrid";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/lib/api";
-import { isNotFound } from "@/lib/http";
+import { scopeTitle } from "@/lib/chart";
+import { isNotFound, statusOf } from "@/lib/http";
+import { formatPeriod, isFiscalYear } from "@/lib/period";
+import { findNode } from "@/lib/tree";
+import styles from "./Dashboard.module.css";
 import NoData from "./NoData";
+import NotFound from "./NotFound";
 
 /**
- * TASK: the dashboard page
+ * The dashboard page.
  *
- * Goal
- *   The screen for one fiscal year: the chart above, the treegrid below, and the
- *   selection that connects them. The page owns the route param, the URL, the
- *   first-paint states and the announcement of a scope change.
+ * The screen for one fiscal year: the chart above, the treegrid below, and the
+ * selection that connects them. The page owns the route param, the URL, the
+ * first-paint states and the announcement of a scope change.
  *
- * Contract
- *   export default function Dashboard()
- *
- *   const { year } = useParams()
- *   if year is not four digits -> render <NotFound /> from "./NotFound". Do not
- *     redirect a typo to 2024; the router task states why.
- *   const fiscalYear = Number(year)
- *
- *   const [params, setParams] = useSearchParams()
- *   const nodeParam = params.get("node")
- *
- *   const { company, error, isLoading, mutate } = useDashboard(fiscalYear)
- *
- *   If error has status 404 -> render <NoData fiscalYear={fiscalYear} />. A 404
- *   is an empty state, not a failure. Every other error goes through the error
- *   branch below. Read the status off the Error the fetcher throws.
- *
- *   const selected = company
- *     ? (findNode(company, nodeParam ?? "") ?? company)
- *     : null
- *
- *   onSelect(id):
- *     setParams(prev => { copy prev; id === company.id ? delete node : set node = id; return next },
- *               { replace: true })
- *     Keep simulate and keep the year: the year is the path, so it survives
- *     already. A replace, not a push, so Back leaves the dashboard instead of
- *     walking through selections. A year change is a real navigation and uses
- *     push; it happens through the NoData form or the address bar.
- *
- *   Heading: "Book of business" or the node name, with the period from
- *   formatPeriod(fiscalYear) ("Feb 2024 to Jan 2025") beside it. The heading is
- *   the only place the period is stated; the chart's scope title stays about the
- *   breakdown.
- *
- *   States
- *     The order of the branches is part of the contract. SWR can hold an error
- *     and no data at the same time, and a background retry sets isLoading back
- *     to true while nothing is cached, so a skeleton checked first would
- *     replace the error message on every retry.
- *
- *     1. error and no company    the error screen
- *     2. no company and loading  the skeleton
- *     3. company                 the page, with the error message above it
- *                                when a revalidation failed
- *
- *     skeleton  reserves the chart at 430px and the table header plus four
- *               rows, so nothing jumps when data lands. Skeleton from
- *               "@/components/ui/skeleton", the shadcn one, so the pulse
- *               comes from the tokens rather than a hand-rolled animation.
- *     error     one message, the status if the error carries one, and a Retry
- *               button calling mutate(). Do not replace a page that already
- *               has data with an error screen; show the message above the
- *               stale content.
- *     data      <MonthlyChart node={selected} fiscalYear={fiscalYear} /> above
- *               <TreeGrid company={company} selectedId={selected.id}
- *                         fiscalYear={fiscalYear} onSelect={onSelect} />
- *
- *   The page knows nothing below the branches: no per-level loading, no per-row
- *   errors. Everything is in the one response for the year.
- *
- *   Live region: a visually hidden <p aria-live="polite"> carrying the current
- *   scope, e.g. "Showing Branch 1, broken down by adviser". Selecting a row
- *   remaps the chart silently otherwise, and the chart is the only place the
- *   change is visible.
- *
- *   Add Dashboard.module.css next to this file. The page shell is the only place
- *   CSS modules are still used: heading, max width, vertical rhythm. The two
- *   components own their insides.
- *
- * Acceptance
- *   - Cold load of /dashboard/2024: both skeletons, then the chart for the
- *     company and the company row with three branches.
- *   - /dashboard/2025 renders the NoData page, not an error page.
- *   - /dashboard/abc renders NotFound.
- *   - Clicking Branch 1 puts ?node=<id> in the URL with replace, remaps the
- *     chart, and leaves the table's expansion alone.
- *   - Clicking the company row removes ?node=.
- *   - /dashboard/2024?node=<branch 1 id> renders with the company expanded,
- *     Branch 1 selected, and the chart broken down by adviser. Branch 1 stays
- *     collapsed: a deep link opens the path to the selected node, not the node
- *     itself. The TreeGrid contract decides that, and this item has to agree
- *     with it.
- *   - /dashboard/2024?node=nope renders the company view. No error, no crash.
- *   - The heading shows "Feb 2024 to Jan 2025" on /dashboard/2024 and
- *     "Feb 2025 to Jan 2026" on /dashboard/2025's empty state, if it shows a
- *     period at all.
- *   - The live region text changes with every selection.
- *   - Focus stays on the clicked row after the URL change.
- *   - Selecting rows does not refetch: one request per page load per year.
- *   - 375px: the page does not scroll sideways; the table does.
- *
- * Edge cases
- *   - SWR can hold data and an error at once after a failed revalidation. Render
- *     the data and the message; a blank error page loses what the user had.
- *   - The hook retries a 5xx twice, so the error screen can come back while a
- *     retry is in flight. The message stays on screen and the Retry button
- *     stays clickable.
- *   - The selected id is a view parameter, not a route. It lives in the query
- *     string, so a bogus value can fall back to the company instead of needing a
- *     not-found page.
- *   - A year switch unmounts nothing: the same Dashboard instance gets a new
- *     param. The SWR key changes, so the request happens; the skeleton shows only
- *     if that year has no cached entry.
- *
- * Tests
- *   none here. Playwright covers the states, the empty year, the invalid year,
- *   the selection remap, the deep link, the focus assertion and the request
- *   count. The states are reached by intercepting the route in the browser
- *   suite, not by a switch on the API: the page reads no query parameter for
- *   them.
- *
- * Delete this comment when the code is in place.
+ * The order of the branches is part of the contract. SWR can hold an error
+ * and no data at the same time, and a background retry sets the loading flag
+ * back to true while nothing is cached, so a skeleton checked first would
+ * replace the error message on every retry.
  */
+
+function ErrorState({ status, onRetry }: { status?: number; onRetry: () => void }) {
+  return (
+    <main className={styles.shell}>
+      <div role="alert" className={styles.notice}>
+        <p>The dashboard could not be loaded.</p>
+        <p>
+          {status === undefined
+            ? "The request did not reach the server."
+            : `The server answered with status ${status}.`}
+        </p>
+      </div>
+      <button
+        type="button"
+        className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+        onClick={onRetry}
+      >
+        Retry
+      </button>
+    </main>
+  );
+}
+
+function LoadingState() {
+  return (
+    <main className={styles.shell}>
+      <div role="status" aria-label="Loading">
+        {/* The skeletons hold the space the chart and the table will take, so
+            nothing jumps when the data lands. They carry no information. */}
+        <div aria-hidden="true" className="flex flex-col gap-6">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-[430px] w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function Dashboard() {
   const { year } = useParams();
+  const [params, setParams] = useSearchParams();
+
+  const isValidYear = year !== undefined && isFiscalYear(year);
   const fiscalYear = Number(year);
 
-  const { error } = useDashboard(fiscalYear);
+  // A year the route already rejected never reaches the server. The request
+  // would only earn a 400.
+  const { company, error, mutate } = useDashboard(isValidYear ? (year ?? "") : "");
 
+  if (!isValidYear) {
+    return <NotFound />;
+  }
+
+  // A 404 is an empty state, not a failure.
   if (isNotFound(error)) {
     return <NoData fiscalYear={fiscalYear} />;
   }
 
-  return null;
+  if (!company) {
+    if (error) {
+      return <ErrorState status={statusOf(error)} onRetry={() => void mutate()} />;
+    }
+    return <LoadingState />;
+  }
+
+  const selected = findNode(company, params.get("node") ?? "") ?? company;
+
+  const onSelect = (id: string) => {
+    setParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        if (id === company.id) {
+          next.delete("node");
+        } else {
+          next.set("node", id);
+        }
+        return next;
+      },
+      // A replace, not a push, so Back leaves the dashboard instead of
+      // walking through the selections.
+      { replace: true },
+    );
+  };
+
+  // The scope title is "Name, by adviser". The live region says it in a
+  // sentence, so a screen reader announces the change and not the fragment.
+  const [scopeName, breakdown] = scopeTitle(selected).split(", by ");
+  const announcement = breakdown
+    ? `Showing ${scopeName}, broken down by ${breakdown}.`
+    : `Showing ${scopeName}.`;
+
+  const status = statusOf(error);
+
+  return (
+    <main className={styles.shell}>
+      <header className={styles.header}>
+        <h1 className={styles.heading}>
+          {selected.id === company.id ? "Book of business" : selected.name}
+        </h1>
+        <p className={styles.period}>{formatPeriod(fiscalYear)}</p>
+      </header>
+
+      {error ? (
+        <div className={styles.notice} role="status">
+          <p>
+            The data could not be refreshed
+            {status === undefined ? "." : `, the server answered with status ${status}.`}
+          </p>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+            onClick={() => void mutate()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+
+      <MonthlyChart node={selected} fiscalYear={fiscalYear} />
+
+      <TreeGrid
+        // The grid keeps its own expansion and its own focus, so a new fiscal
+        // year starts from a clean grid. The selection is not the key: the URL
+        // changes on every selection, and a remount would drop the focus.
+        key={fiscalYear}
+        company={company}
+        selectedId={selected.id}
+        fiscalYear={fiscalYear}
+        onSelect={onSelect}
+      />
+    </main>
+  );
 }

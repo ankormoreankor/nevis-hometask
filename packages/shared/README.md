@@ -5,3 +5,9 @@ Zod contract for the dashboard: the four source schemas, their types and a `Tree
 ```ts
 import { companySchema, type TreeNode } from "@nevis/shared";
 ```
+
+The mock payload the brief gave sits next to it, on its own entry point, so the API serves it and the web tests read the same tree instead of keeping a second copy:
+
+```ts
+import { payload2024 } from "@nevis/shared/payload";
+```

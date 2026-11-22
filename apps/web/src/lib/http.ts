@@ -1,10 +1,11 @@
-export const HttpStatuses = {
-  BadRequest: 400,
-  NotFound: 404,
-  ServerError: 500,
-} as const;
-
-export type HttpStatus = (typeof HttpStatuses)[keyof typeof HttpStatuses];
+/**
+ * The status the API answers with for a fiscal year it holds no data for.
+ *
+ * The other two the API uses are a 400 for a malformed year, which the client
+ * never sends because it checks the route first, and a 5xx for a failure on
+ * the server, which isTransient covers.
+ */
+const NotFoundStatus = 404;
 
 interface HttpFailure {
   readonly status: number;
@@ -24,6 +25,14 @@ export class ApiError extends Error implements HttpFailure {
 }
 
 /**
+ * The marker a ResponseError carries.
+ *
+ * A symbol, so it cannot collide with a field of the response body and does
+ * not show up in the object's own keys.
+ */
+const unreadable = Symbol("unreadable");
+
+/**
  * A failure in the client's own reading of the response: a body that is not
  * JSON, or a body that does not match the contract. The server did answer,
  * so the answer is final and the request is not worth another try.
@@ -33,7 +42,7 @@ export class ApiError extends Error implements HttpFailure {
  * still holds the old error.
  */
 export class ResponseError extends Error {
-  readonly unreadable = true;
+  readonly [unreadable] = true;
 
   constructor(message: string) {
     super(message);
@@ -43,7 +52,7 @@ export class ResponseError extends Error {
 
 function isResponseError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
-  return (error as { unreadable?: unknown }).unreadable === true;
+  return (error as Record<symbol, unknown>)[unreadable] === true;
 }
 
 export function statusOf(error: unknown): number | undefined {
@@ -52,21 +61,8 @@ export function statusOf(error: unknown): number | undefined {
   return typeof status === "number" ? status : undefined;
 }
 
-export function isBadRequest(
-  error: unknown,
-): error is HttpFailure & { status: typeof HttpStatuses.BadRequest } {
-  return statusOf(error) === HttpStatuses.BadRequest;
-}
-
-export function isNotFound(
-  error: unknown,
-): error is HttpFailure & { status: typeof HttpStatuses.NotFound } {
-  return statusOf(error) === HttpStatuses.NotFound;
-}
-
-export function isServerError(error: unknown): error is HttpFailure & { status: number } {
-  const status = statusOf(error);
-  return status !== undefined && status >= 500;
+export function isNotFound(error: unknown): error is HttpFailure & { status: 404 } {
+  return statusOf(error) === NotFoundStatus;
 }
 
 /**

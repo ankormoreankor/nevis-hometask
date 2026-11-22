@@ -59,11 +59,11 @@
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --chart-1: #B29DF8;
+    --chart-2: #F4BEB4;
+    --chart-3: #A75E6E;
+    --chart-4: #7EC8E3;
+    --chart-5: #8BC48A;
     --radius: 0.625rem;
 }
 
@@ -86,11 +86,11 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --chart-1: #B29DF8;
+    --chart-2: #F4BEB4;
+    --chart-3: #A75E6E;
+    --chart-4: #7EC8E3;
+    --chart-5: #8BC48A;
 }
 
 @layer base {
@@ -103,4 +103,28 @@
   html {
     @apply font-sans;
     }
+}
+
+/**
+ * The adviser circle in the treegrid.
+ *
+ * The row sets --avatar-color to the token that adviser's series uses in the
+ * chart, so a legend swatch and a row circle are the same colour. The circle
+ * is the token mixed into the card, because the mix is what makes one ink
+ * work: at full strength neither white nor --foreground is safe on every one
+ * of the tokens.
+ */
+.adviser-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: color-mix(in oklab, var(--avatar-color) 25%, var(--card));
+  color: var(--foreground);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
 }

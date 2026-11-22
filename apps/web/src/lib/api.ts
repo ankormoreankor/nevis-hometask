@@ -1,6 +1,7 @@
 import { type Company, companySchema, formatIssues } from "@nevis/shared";
 import useSWR from "swr";
 import { ApiError, isTransient, ResponseError } from "./http";
+import { isFiscalYear } from "./period";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -27,21 +28,21 @@ const fetcher = async (url: string) => {
   return parsed.data;
 };
 
-export function useDashboard(year: number): {
+export function useDashboard(year: string): {
   company: Company | undefined;
   error: unknown;
   isLoading: boolean;
   isValidating: boolean;
   mutate: () => Promise<Company | undefined>;
 } {
-  const { data, error, isLoading, isValidating, mutate } = useSWR(
-    `/api/dashboard/${year}`,
-    fetcher,
-    {
-      shouldRetryOnError: isTransient,
-      errorRetryCount: 2,
-    },
-  );
+  // A year the route already rejected never reaches the server: the page
+  // renders the not-found route for it, and the request would only earn a 400.
+  const key = isFiscalYear(year) ? `/api/dashboard/${year}` : null;
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(key, fetcher, {
+    shouldRetryOnError: isTransient,
+    errorRetryCount: 2,
+  });
 
   return {
     company: data,
