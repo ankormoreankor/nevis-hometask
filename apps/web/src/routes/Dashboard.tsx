@@ -1,3 +1,8 @@
+import { useParams, useSearchParams } from "react-router";
+import { useDashboard } from "@/lib/api";
+import { isNotFound } from "@/lib/http";
+import NoData from "./NoData";
+
 /**
  * TASK: the dashboard page
  *
@@ -114,5 +119,23 @@
  * Delete this comment when the code is in place.
  */
 export default function Dashboard() {
+  const { year } = useParams();
+  const fiscalYear = Number(year);
+
+  const [params] = useSearchParams();
+  const simulateRaw =
+    params.get("simulate") === "slow" || params.get("simulate") === "error"
+      ? params.get("simulate")
+      : undefined;
+  const simulate = simulateRaw === "slow" || simulateRaw === "error" ? simulateRaw : undefined;
+
+  const { company, error, isLoading } = useDashboard(fiscalYear, simulate);
+
+  console.log("🚀 ~ Dashboard ~ data, error, isLoading:", company, error, isLoading);
+  console.dir(error);
+  if (isNotFound(error)) {
+    return <NoData fiscalYear={fiscalYear} />;
+  }
+
   return null;
 }

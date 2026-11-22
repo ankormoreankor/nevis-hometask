@@ -93,6 +93,6 @@ export type NoDataProps = {
   fiscalYear: number;
 };
 
-export default function NoData(_props: NoDataProps) {
-  return null;
+export default function NoData({ fiscalYear }: NoDataProps) {
+  return <h1>{fiscalYear}</h1>;
 }

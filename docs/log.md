@@ -254,3 +254,28 @@ Verified
 
 Open
 - `npx biome check --write .` has not been run. Five files are unformatted, three have unsorted imports, and `apps/api/src/data.ts` still carries the tab reformat the broken config produced.
+
+## status guards and a parsing client data layer
+
+Decided
+- The page branches on the status, not on the transport. `apps/web/src/lib/http.ts` holds `HttpStatuses`, `ApiError` and the guards `isBadRequest`, `isNotFound` and `isServerError`, and the Dashboard never names the fetcher.
+- The guard reads the shape of the error rather than `instanceof ApiError`. Vite gives the class a new identity under HMR while SWR still holds the old error, so the 404 branch would stop working until a reload.
+- `mutate` is exposed as a zero-arg wrapper. SWR's bound mutate forwards any argument it receives, so `onClick={mutate}` would hand React's click event to SWR and it would land in the cache as data.
+- The revalidation switches stay at SWR's defaults, which are already `true`, because the payload can change server-side. `shouldRetryOnError: false` is the only option the hook passes.
+- Zod stays in `packages/shared`, which already owns the schema. `formatIssues` wraps `z.prettifyError` so the web app never imports zod itself.
+
+Done
+- `apps/web/src/lib/http.ts` added, and `packages/shared` exports `formatIssues`.
+- The fetcher parses the JSON, then the schema, and throws `ApiError` with the status and the body text on a non-2xx.
+- `useDashboard` returns `company`, `error`, `isLoading`, `isValidating` and `mutate`.
+- README and `docs/context.md` carry the revalidation decision.
+- `biome check --write .` run over the workspace, so `npm run check` is clean and the payload in `apps/api/src/data.ts` is the same data, reformatted.
+
+Verified
+- In a browser: `/dashboard/2024` renders the company with one GET, `/dashboard/2025` renders the empty year, `?simulate=error` surfaces the status, and no rejection goes unhandled.
+- A malformed payload gives `✖ Invalid UUID → at id` and the rest of the issues, from `z.prettifyError`.
+- `mutate` triggers exactly one refetch and leaves `company` as the object, not the click event.
+
+Open
+- `http.ts` exports neither `statusOf` nor `HttpFailure`, so the page cannot print the status in its error message.
+- `Dashboard.tsx` still carries its `console.log` and `console.dir`.

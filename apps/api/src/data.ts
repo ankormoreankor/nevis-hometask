@@ -1,4 +1,4 @@
-import { companySchema, type Company } from "@nevis/shared";
+import { type Company, companySchema } from "@nevis/shared";
 
 export const payload2024 = {
   id: "d6e00056-dce4-4ef4-b034-d6467db6187d",
@@ -67,9 +67,11 @@ export const payload2024 = {
   ],
 };
 
-const dataToYearMap = new Map<number, unknown>()
-dataToYearMap.set(2024, payload2024)
+const dataToYearMap = new Map<number, unknown>();
+dataToYearMap.set(2024, payload2024);
 
-const parsedDataMap = new Map<number, Company>([...dataToYearMap].map(([year, rawData]) => [year, companySchema.parse(rawData)]))
+const parsedDataMap = new Map<number, Company>(
+  [...dataToYearMap].map(([year, rawData]) => [year, companySchema.parse(rawData)]),
+);
 
-export const getData = (year: number): Company | undefined => parsedDataMap.get(year)
+export const getData = (year: number): Company | undefined => parsedDataMap.get(year);

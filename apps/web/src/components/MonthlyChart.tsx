@@ -1,5 +1,5 @@
-import { ChartContainer } from "@/components/ui/chart";
 import type { TreeNode } from "@nevis/shared";
+import { ChartContainer } from "@/components/ui/chart";
 
 /**
  * TASK: the stacked monthly chart, built on the shadcn Chart component

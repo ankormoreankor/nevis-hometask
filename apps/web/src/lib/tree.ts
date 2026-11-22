@@ -144,9 +144,6 @@ export type FlatRow = {
   isExpanded: boolean;
 };
 
-export function flattenVisible(
-  _root: Company,
-  _expanded: ReadonlySet<string>,
-): FlatRow[] {
+export function flattenVisible(_root: Company, _expanded: ReadonlySet<string>): FlatRow[] {
   return [];
 }

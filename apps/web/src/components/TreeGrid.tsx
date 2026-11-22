@@ -1,5 +1,5 @@
-import { Table } from "@/components/ui/table";
 import type { Company } from "@nevis/shared";
+import { Table } from "@/components/ui/table";
 
 /**
  * TASK: the month table as an accessible treegrid
