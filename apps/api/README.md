@@ -1,6 +1,6 @@
 # @nevis/api
 
-Express API. Serves the dashboard payload as one response, plus a health check, with `?simulate=slow|error` on the data route for the loading and error states.
+Express API. Serves the dashboard payload as one response, plus a health check.
 
 Run from the repo root:
 

@@ -8,27 +8,11 @@ if (Number.isNaN(port)) {
   throw new Error("PORT is not a number");
 }
 
-const simulate = (req: Request, res: Response, next: NextFunction) => {
-  const { simulate: mode } = req.query;
-
-  if (mode === "error") {
-    res.status(500).json({ error: "Simulated failure" });
-    return;
-  }
-
-  if (mode === "slow") {
-    setTimeout(next, 2000);
-    return;
-  }
-
-  next();
-};
-
 app.get("/api/health", (_, res: Response) => {
   res.status(200).json({ ok: true });
 });
 
-app.get("/api/dashboard/:year", simulate, (req: Request, res: Response) => {
+app.get("/api/dashboard/:year", (req: Request, res: Response) => {
   const { year: rawYear } = req.params;
   if (typeof rawYear !== "string" || !/^\d{4}$/.test(rawYear)) {
     res.status(400).json({ error: "Invalid year format" });

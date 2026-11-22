@@ -279,3 +279,32 @@ Verified
 Open
 - `http.ts` exports neither `statusOf` nor `HttpFailure`, so the page cannot print the status in its error message.
 - `Dashboard.tsx` still carries its `console.log` and `console.dir`.
+
+## the simulate feature and the retry rule
+
+Decided
+- `?simulate=slow|error` is gone from the API and from the client. Fault injection does not belong in the product path, and the slow case is one click away in the DevTools throttling dropdown.
+- `shouldRetryOnError` is a function, not a flag. A 5xx and a request that never got an answer get another try; a 4xx never does, because a response the server meant is final and a 404 for a fiscal year with no data would otherwise be fetched again for as long as the page was open.
+- `errorRetryCount: 2` bounds the retries. `errorRetryInterval` stays at SWR's default, so the backoff grows.
+- A body the client cannot read is final too. The server did answer, and a body that is not JSON or does not match the contract comes back the same way.
+- The status is read off the error by shape, never by `instanceof ApiError`, for the reason the guards already have.
+- The loading and error states are covered by the browser suite, which intercepts the route.
+
+Done
+- The middleware, the `Simulate` type and the query-string append are gone. The SWR key is the plain dashboard path again.
+- `apps/web/src/lib/http.ts` holds `statusOf`, `isTransient` and `ResponseError`. The marker on `ResponseError` is read by shape, so it survives HMR like the guards do.
+- The fetcher throws `ResponseError` for a body that is not JSON and for a body that does not match the contract, so a malformed payload costs one request instead of three.
+- The smoke script dropped the simulate checks, the health-delay check and the `elapsed` helper with them: 27 checks, 0 failed.
+- `apps/web/e2e/states.spec.ts` and `apps/web/e2e/treegrid.spec.ts` hold the contracts for the states and the keyboard model, one passing test each and a `test.fixme` per spec still to be written.
+- README and `docs/context.md` carry the retry rule and the states.
+
+Verified
+- `npm run check`, `npm run typecheck` and `npm run build` are clean.
+- `npm run api:check`: 27 checks pass. `npm run test:e2e`: 2 pass, 9 fixme.
+
+Open
+- The browser specs are placeholders, so the states and the keyboard model are not covered yet.
+- The page is the only thing that can announce the two states, and it is written by hand.
+
+Next
+- Write the browser specs, starting with the error state and the loading state.

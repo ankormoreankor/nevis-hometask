@@ -17,7 +17,10 @@ import { defineConfig, devices } from "@playwright/test";
  *   - aria-expanded flips on the row, never on the chevron button.
  *   - A deep link to a channel opens the path to it and selects the channel.
  *   - The chart title follows the selected node.
- *   - /dashboard/2024?simulate=error shows the message, and Retry refetches.
+ *   - The error state: the route is intercepted and answered with a 500, the
+ *     message shows with a Retry button, and Retry refetches.
+ *   - The loading state: the route is intercepted and delayed, so the skeleton
+ *     is on screen before the data lands.
  *   - Nothing overflows the viewport at 375px.
  *
  * The two servers are started from the repo root, so the suite runs against

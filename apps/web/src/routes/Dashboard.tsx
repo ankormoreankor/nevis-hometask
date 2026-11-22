@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from "react-router";
+import { useParams } from "react-router";
 import { useDashboard } from "@/lib/api";
 import { isNotFound } from "@/lib/http";
 import NoData from "./NoData";
@@ -21,11 +21,8 @@ import NoData from "./NoData";
  *
  *   const [params, setParams] = useSearchParams()
  *   const nodeParam = params.get("node")
- *   const simulate = params.get("simulate") === "slow" || params.get("simulate") === "error"
- *     ? params.get("simulate")
- *     : undefined
  *
- *   const { company, error, isLoading, mutate } = useDashboard(fiscalYear, simulate)
+ *   const { company, error, isLoading, mutate } = useDashboard(fiscalYear)
  *
  *   If error has status 404 -> render <NoData fiscalYear={fiscalYear} />. A 404
  *   is an empty state, not a failure. Every other error goes through the error
@@ -49,18 +46,27 @@ import NoData from "./NoData";
  *   breakdown.
  *
  *   States
- *     isLoading  a skeleton that reserves the chart at 430px and the table
- *                header plus four rows, so nothing jumps when data lands.
- *                Skeleton from "@/components/ui/skeleton", the shadcn one, so
- *                the pulse comes from the tokens rather than a hand-rolled
- *                animation.
- *     error      one message, the status if the error carries one, and a Retry
- *                button calling mutate(). Do not replace a page that already has
- *                data with an error screen; show the message above the stale
- *                content.
- *     data       <MonthlyChart node={selected} fiscalYear={fiscalYear} /> above
- *                <TreeGrid company={company} selectedId={selected.id}
- *                          fiscalYear={fiscalYear} onSelect={onSelect} />
+ *     The order of the branches is part of the contract. SWR can hold an error
+ *     and no data at the same time, and a background retry sets isLoading back
+ *     to true while nothing is cached, so a skeleton checked first would
+ *     replace the error message on every retry.
+ *
+ *     1. error and no company    the error screen
+ *     2. no company and loading  the skeleton
+ *     3. company                 the page, with the error message above it
+ *                                when a revalidation failed
+ *
+ *     skeleton  reserves the chart at 430px and the table header plus four
+ *               rows, so nothing jumps when data lands. Skeleton from
+ *               "@/components/ui/skeleton", the shadcn one, so the pulse
+ *               comes from the tokens rather than a hand-rolled animation.
+ *     error     one message, the status if the error carries one, and a Retry
+ *               button calling mutate(). Do not replace a page that already
+ *               has data with an error screen; show the message above the
+ *               stale content.
+ *     data      <MonthlyChart node={selected} fiscalYear={fiscalYear} /> above
+ *               <TreeGrid company={company} selectedId={selected.id}
+ *                         fiscalYear={fiscalYear} onSelect={onSelect} />
  *
  *   The page knows nothing below the branches: no per-level loading, no per-row
  *   errors. Everything is in the one response for the year.
@@ -77,9 +83,6 @@ import NoData from "./NoData";
  * Acceptance
  *   - Cold load of /dashboard/2024: both skeletons, then the chart for the
  *     company and the company row with three branches.
- *   - /dashboard/2024?simulate=slow keeps the skeleton, then renders.
- *   - /dashboard/2024?simulate=error renders the message and a Retry that
- *     refetches.
  *   - /dashboard/2025 renders the NoData page, not an error page.
  *   - /dashboard/abc renders NotFound.
  *   - Clicking Branch 1 puts ?node=<id> in the URL with replace, remaps the
@@ -102,8 +105,9 @@ import NoData from "./NoData";
  * Edge cases
  *   - SWR can hold data and an error at once after a failed revalidation. Render
  *     the data and the message; a blank error page loses what the user had.
- *   - The simulate param belongs in the key, so switching it does not overwrite
- *     the normal cache entry. It also has to survive a selection change.
+ *   - The hook retries a 5xx twice, so the error screen can come back while a
+ *     retry is in flight. The message stays on screen and the Retry button
+ *     stays clickable.
  *   - The selected id is a view parameter, not a route. It lives in the query
  *     string, so a bogus value can fall back to the company instead of needing a
  *     not-found page.
@@ -114,7 +118,9 @@ import NoData from "./NoData";
  * Tests
  *   none here. Playwright covers the states, the empty year, the invalid year,
  *   the selection remap, the deep link, the focus assertion and the request
- *   count.
+ *   count. The states are reached by intercepting the route in the browser
+ *   suite, not by a switch on the API: the page reads no query parameter for
+ *   them.
  *
  * Delete this comment when the code is in place.
  */
@@ -122,17 +128,8 @@ export default function Dashboard() {
   const { year } = useParams();
   const fiscalYear = Number(year);
 
-  const [params] = useSearchParams();
-  const simulateRaw =
-    params.get("simulate") === "slow" || params.get("simulate") === "error"
-      ? params.get("simulate")
-      : undefined;
-  const simulate = simulateRaw === "slow" || simulateRaw === "error" ? simulateRaw : undefined;
+  const { error } = useDashboard(fiscalYear);
 
-  const { company, error, isLoading } = useDashboard(fiscalYear, simulate);
-
-  console.log("🚀 ~ Dashboard ~ data, error, isLoading:", company, error, isLoading);
-  console.dir(error);
   if (isNotFound(error)) {
     return <NoData fiscalYear={fiscalYear} />;
   }

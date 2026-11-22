@@ -43,7 +43,6 @@ fail() {
 
 status() { curl -s -o /dev/null -w '%{http_code}' "$BASE$1"; }
 body() { curl -s "$BASE$1"; }
-elapsed() { curl -s -o /dev/null -w '%{time_total}' "$BASE$1"; }
 
 want_status() {
   local name="$1" path="$2" want="$3" got
@@ -92,12 +91,6 @@ echo "API smoke checks against $BASE"
 echo "health"
 want_status "health answers 200" "/api/health" "200"
 want_json "health body" "/api/health" ".ok" "true"
-health_time="$(elapsed "/api/health")"
-if awk "BEGIN { exit !($health_time < 0.5) }"; then
-  pass "health is not delayed" "${health_time}s"
-else
-  fail "health is not delayed" "${health_time}s, the simulate middleware leaked onto it"
-fi
 
 echo "fiscal year 2024"
 want_status "2024 answers 200" "/api/dashboard/2024" "200"
@@ -127,17 +120,6 @@ want_json_error "2025 says why" "/api/dashboard/2025"
 want_status "a malformed year answers 400" "/api/dashboard/abc" "400"
 want_json_error "a malformed year says why" "/api/dashboard/abc"
 want_status "no year at all answers 404" "/api/dashboard" "404"
-
-echo "simulate"
-want_status "simulate=error answers 500" "/api/dashboard/2024?simulate=error" "500"
-want_json "simulate=error says what" "/api/dashboard/2024?simulate=error" ".error" "Simulated failure"
-want_status "simulate=slow answers 200" "/api/dashboard/2024?simulate=slow" "200"
-slow_time="$(elapsed "/api/dashboard/2024?simulate=slow")"
-if awk "BEGIN { exit !($slow_time > 1.0) }"; then
-  pass "simulate=slow waits" "${slow_time}s"
-else
-  fail "simulate=slow waits" "${slow_time}s, wanted more than 1s"
-fi
 
 echo "unknown paths"
 want_status "an unknown path answers 404" "/api/nope" "404"
