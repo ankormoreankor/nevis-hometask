@@ -262,3 +262,74 @@ test("nothing overflows at 375px", async ({ page }) => {
   });
   expect(tableScrolls).toBe(true);
 });
+
+test("collapsing with the chevron lifts the selection", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+  await page.getByRole("button", { name: "Expand Anna Blackwood" }).click();
+  await page.getByRole("row", { name: "New paid" }).click();
+
+  await page.getByRole("button", { name: "Collapse Anna Blackwood" }).click();
+
+  await expect(page.getByRole("row", { name: "New paid" })).toBeHidden();
+  const anna = page.getByRole("row", { name: "Anna Blackwood" });
+  await expect(anna).toHaveAttribute("aria-selected", "true");
+  await expect(anna).toHaveAttribute("aria-expanded", "false");
+  await expect(page).toHaveURL(/\?node=e3c4637b-2f21-4b7e-883e-b13ae1a6df6a$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Anna Blackwood");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood, by channel");
+  await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
+  await expect(page.locator("[role='row'][tabindex='0']")).toHaveCount(1);
+  await expect(page.getByRole("row", { name: "Branch 1" })).toBeVisible();
+  await expect(page.getByRole("row", { name: "Branch 1" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+});
+
+test("collapsing with ArrowLeft lifts the selection the same way", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+  await page.getByRole("button", { name: "Expand Anna Blackwood" }).click();
+  const newPaid = page.getByRole("row", { name: "New paid" });
+  await newPaid.click();
+  await expect(newPaid).toHaveAttribute("aria-selected", "true");
+
+  await page.keyboard.press("ArrowLeft");
+  const anna = page.getByRole("row", { name: "Anna Blackwood" });
+  await expect(anna).toBeFocused();
+
+  await page.keyboard.press("ArrowLeft");
+
+  await expect(page.getByRole("row", { name: "New paid" })).toBeHidden();
+  await expect(anna).toBeFocused();
+  await expect(anna).toHaveAttribute("aria-selected", "true");
+  await expect(anna).toHaveAttribute("aria-expanded", "false");
+  await expect(page).toHaveURL(/\?node=e3c4637b-2f21-4b7e-883e-b13ae1a6df6a$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Anna Blackwood");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood, by channel");
+  await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
+  await expect(page.locator("[role='row'][tabindex='0']")).toHaveCount(1);
+});
+
+test("collapsing the company row lifts the selection to the company and clears the parameter", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/2024");
+
+  const branch1 = page.getByRole("row", { name: "Branch 1" });
+  await branch1.click();
+  await expect(branch1).toHaveAttribute("aria-selected", "true");
+
+  await page.getByRole("button", { name: "Collapse Company" }).click();
+
+  await expect(page).not.toHaveURL(/\?node=/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Book of business");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Company, by branch");
+  const company = page.getByRole("row", { name: "Company" });
+  await expect(company).toHaveAttribute("aria-selected", "true");
+  await expect(company).toHaveAttribute("aria-expanded", "false");
+  await expect(branch1).toBeHidden();
+});

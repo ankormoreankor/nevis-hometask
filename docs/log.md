@@ -422,3 +422,28 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the selection follows a closed row
+
+Decided
+- Closing a row lifts a selection that sits inside it to that row. The header and the chart follow, because they read the selection. A row that is hidden cannot be the scope.
+- The lift lives in the grid, not on the page. Expansion is local state, so the grid is the only place that knows a row was closed.
+- The open state is read from the render state, never from inside the setExpanded updater: StrictMode runs updaters twice, and a selection write is not something to run twice.
+- The row stays closed after the lift. The deep link effect expands the ancestors of the selection and never the selection itself, so it cannot reopen the row.
+- ArrowLeft on a leaf still only moves the focus. Collapsing a parent keeps its second press.
+
+Done
+- `toggle` in `apps/web/src/components/TreeGrid.tsx` reads `expanded.has(id)` and calls `onSelect(id)` when the selection is inside the row.
+- Three browser specs: the chevron, ArrowLeft, and the company row, which clears `?node=`.
+- README selection bullet and the spec counts. The README count was one behind before this; `docs/context.md` says 20 specs.
+
+Verified
+- `check`, `typecheck`, `test` (42 cases) and `test:e2e` (20 specs) pass.
+- In a browser: collapsing Anna with the chevron leaves Anna selected and closed, the URL on Anna, the heading on Anna Blackwood and the chart on "Anna Blackwood, by channel".
+
+Open
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+- The bundle is one chunk and Recharts is most of it.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

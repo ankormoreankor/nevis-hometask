@@ -98,17 +98,25 @@ export default function TreeGrid({
     });
   }, [company, selectedId]);
 
-  const toggle = useCallback((id: string) => {
-    setExpanded((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
+  const toggle = useCallback(
+    (id: string) => {
+      const isOpen = expanded.has(id);
+      if (isOpen && selectedId !== id && ancestorIds(company, selectedId).includes(id)) {
+        onSelect(id);
       }
-      return next;
-    });
-  }, []);
+
+      setExpanded((previous) => {
+        const next = new Set(previous);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    },
+    [company, expanded, onSelect, selectedId],
+  );
 
   const focusRow = useCallback((id: string) => {
     setFocusedId(id);

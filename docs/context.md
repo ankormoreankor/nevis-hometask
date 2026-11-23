@@ -69,7 +69,7 @@ Settled: the payload is served as given. The source query and filters are unknow
 
 1. **Keyboard and screen-reader parity for the chart.** Not just the table: expose the same numbers through a companion data table or a focusable bar series with an accessible description. Almost no take-home does this and their interview bank asks about keyboard access to charted data. The focusable bar series is done: the chart is focusable once, focus always starts at the first month and resets when focus leaves, the arrow keys step through the months, and a polite live region announces the month with one line per series. The companion data table is not.
 2. **The loading and error states**, reached by intercepting the route in the browser suite. A query parameter that made the API answer 500 would put fault injection in the product path, and the slow case is one click away in the DevTools throttling dropdown. Done: the browser suite intercepts the route for both.
-3. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale). Done: 42 unit cases and 16 browser specs.
+3. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale). Done: 42 unit cases and 20 browser specs.
 4. **A data-quality note** in the README, with a UI decision behind it: a footnote, a tooltip, or a dev-only badge on inconsistent months.
 5. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container rather than squeezed columns at 375px.
 6. **States:** empty depth, reduced motion, a slow response that resolves after the page moved on.
