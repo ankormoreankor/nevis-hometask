@@ -1,7 +1,17 @@
 import type { TreeNode } from "@nevis/shared";
 import { cn } from "cn";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bar, BarChart, CartesianGrid, type TickItem, useXAxisTicks, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  type BarShapeProps,
+  CartesianGrid,
+  Rectangle,
+  type TickItem,
+  useXAxisTicks,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   type ChartConfig,
   ChartContainer,
@@ -10,7 +20,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { type ChartRow, type ChartSeries, toDomain, toRows, toSeries } from "@/lib/chart";
+import {
+  type ChartRow,
+  type ChartSeries,
+  toDomain,
+  toRows,
+  toSeries,
+  toTopSeries,
+} from "@/lib/chart";
 import { formatPeriod } from "@/lib/period";
 
 /**
@@ -122,6 +139,7 @@ export default function MonthlyChart({
   const series = useMemo(() => toSeries(node), [node]);
   const rows = useMemo(() => toRows(series, fiscalYear), [series, fiscalYear]);
   const domain = useMemo(() => toDomain(series), [series]);
+  const tops = useMemo(() => toTopSeries(series), [series]);
   const reducedMotion = usePrefersReducedMotion();
 
   const surface = useRef<SVGSVGElement | null>(null);
@@ -259,7 +277,7 @@ export default function MonthlyChart({
       </p>
       <ChartContainer
         config={config}
-        className="h-[430px] w-full focus-visible:outline-hidden"
+        className="h-[390px] w-full focus-visible:outline-hidden"
         tabIndex={0}
         role="application"
         aria-labelledby={labelledById}
@@ -300,12 +318,17 @@ export default function MonthlyChart({
           />
           {/*
             Scope identity is in the key to force Bar remounting across node and year changes.
-            Recharts interpolates rectangles by array index rather than by month. Zero-value
-            filtering omits zero-height rectangles, so different scopes produce different
-            array lengths and cause horizontal sliding when previous rectangles are reused.
-            Remounting resets the Recharts rectangle cache so columns animate vertically from baseline.
+            A custom shape means Recharts no longer filters zero-height rectangles, so the
+            interpolated arrays stay the same length, but remounting is still what makes a new
+            scope grow from the baseline instead of sliding sideways.
+
+            The radius is chosen per rectangle and per month via toTopSeries: the segment that
+            tops a column changes from month to month and Recharts draws no rectangle for a zero,
+            so a radius fixed on the last series would leave those columns square. Rendering
+            Rectangle inside the shape prop keeps the top corners rounded throughout the grow
+            animation without clipping.
           */}
-          {series.map((item, index) => (
+          {series.map((item) => (
             <Bar
               key={`${node.id}-${fiscalYear}-${item.key}`}
               dataKey={item.key}
@@ -313,14 +336,23 @@ export default function MonthlyChart({
               stackId={STACK_ID}
               fill={`var(--color-${item.key})`}
               maxBarSize={88}
-              radius={index === series.length - 1 ? [4, 4, 0, 0] : undefined}
               isAnimationActive={!reducedMotion}
+              shape={(rect: BarShapeProps) => (
+                <Rectangle
+                  x={rect.x}
+                  y={rect.y}
+                  width={rect.width}
+                  height={rect.height}
+                  fill={`var(--color-${item.key})`}
+                  radius={tops[rect.originalDataIndex] === item.key ? [4, 4, 0, 0] : 0}
+                />
+              )}
             />
           ))}
           <ChartLegend
             verticalAlign="bottom"
             align="center"
-            content={<ChartLegendContent hideIcon />}
+            content={<ChartLegendContent hideIcon className="pt-4 text-muted-foreground" />}
           />
         </BarChart>
       </ChartContainer>

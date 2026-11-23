@@ -32,6 +32,7 @@ import { expect, test } from "@playwright/test";
  */
 
 const CHANNEL_ID = "716e7c30-b7c3-45c5-aa64-cbcf483917e0";
+const ANNA_ID = "e3c4637b-2f21-4b7e-883e-b13ae1a6df6a";
 
 test("the dashboard route resolves", async ({ page }) => {
   await page.goto("/dashboard/2024");
@@ -436,4 +437,45 @@ test("the scope trail wraps at 375px without horizontal overflow", async ({ page
   const boundingBox = await crumbs.boundingBox();
   expect(boundingBox).not.toBeNull();
   expect(boundingBox?.height).toBeGreaterThan(30);
+});
+
+test("the stacked bar chart rounds the topmost segment of each month column", async ({ page }) => {
+  await page.goto(`/dashboard/2024?node=${ANNA_ID}`);
+
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood");
+
+  const rectangles = page.locator("figure path.recharts-rectangle");
+  await expect(rectangles.first()).toBeVisible();
+
+  const paths = await rectangles.evaluateAll((elements) =>
+    elements.map((el) => {
+      const bbox = (el as SVGGraphicsElement).getBBox();
+      return {
+        x: Math.round(bbox.x),
+        y: bbox.y,
+        d: el.getAttribute("d") ?? "",
+      };
+    }),
+  );
+
+  const columns = new Map<number, typeof paths>();
+  for (const item of paths) {
+    const group = columns.get(item.x) ?? [];
+    group.push(item);
+    columns.set(item.x, group);
+  }
+
+  expect(columns.size).toBe(12);
+
+  for (const [, group] of columns) {
+    group.sort((a, b) => a.y - b.y);
+
+    const [top, ...rest] = group;
+    expect(top).toBeDefined();
+    expect(top?.d).toContain("A ");
+
+    for (const segment of rest) {
+      expect(segment.d).not.toContain("A ");
+    }
+  }
 });

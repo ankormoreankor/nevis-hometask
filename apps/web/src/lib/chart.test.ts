@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { at, company2024 } from "@/test/fixtures";
-import { scopeTitle, toDomain, toRows, toSeries } from "./chart";
+import { scopeTitle, toDomain, toRows, toSeries, toTopSeries } from "./chart";
 
 const company = company2024;
 const branch1 = at(company.branches, 0);
@@ -97,5 +97,78 @@ describe("scopeTitle", () => {
   it("stops at a leaf", () => {
     expect(scopeTitle(existingClients)).toBe("Existing clients");
     expect(scopeTitle(branch2)).toBe("Branch 2");
+  });
+});
+
+describe("toTopSeries", () => {
+  it("stacks the branches of the company where the top series is non-zero in every month", () => {
+    expect(toTopSeries(toSeries(company))).toEqual([
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+    ]);
+  });
+
+  it("selects the topmost non-zero channel under Anna Blackwood across zero months", () => {
+    expect(toTopSeries(toSeries(anna))).toEqual([
+      "s0",
+      "s1",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s1",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+      "s2",
+    ]);
+  });
+
+  it("gives a leaf its own key in every month", () => {
+    expect(toTopSeries(toSeries(branch2))).toEqual([
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+      "s0",
+    ]);
+  });
+
+  it("gives null for a month where every series is zero", () => {
+    const zeroMonth = [
+      {
+        key: "s0",
+        label: "Zero",
+        values: [0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        color: "var(--chart-1)",
+      },
+      {
+        key: "s1",
+        label: "Zero2",
+        values: [0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        color: "var(--chart-2)",
+      },
+    ];
+    const tops = toTopSeries(zeroMonth);
+    expect(tops[0]).toBeNull();
+    expect(tops[1]).toBe("s1");
   });
 });

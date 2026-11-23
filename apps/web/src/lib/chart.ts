@@ -137,3 +137,29 @@ export function scopeTitle(node: TreeNode): string {
 
   return node.name;
 }
+
+/**
+ * The key of the series that tops each month in the stack.
+ *
+ * Recharts draws nothing for a zero, so the last series in stack order is not
+ * always the visible top, and the chart asks this helper which segment tops
+ * each month so only the topmost visible segment gets rounded top corners.
+ * Negative values never take the top, and a month where every series is zero
+ * returns null.
+ */
+export function toTopSeries(series: ChartSeries[]): (string | null)[] {
+  const tops: (string | null)[] = [];
+
+  for (let monthIndex = 0; monthIndex < MONTH_COUNT; monthIndex += 1) {
+    let topKey: string | null = null;
+    for (const item of series) {
+      const value = item.values[monthIndex];
+      if (value !== undefined && value > 0) {
+        topKey = item.key;
+      }
+    }
+    tops.push(topKey);
+  }
+
+  return tops;
+}

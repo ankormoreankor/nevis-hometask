@@ -475,3 +475,27 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the column top is rounded where the top segment is
+
+Decided
+- The radius belongs to the rectangle, not to a clip path. Recharts calls the bar shape on every animation frame, so the corners stay rounded while the column grows.
+- The segment that tops a month comes from the values, through `toTopSeries` in `lib/chart.ts`. Recharts draws nothing for a zero, so the last series is not always the visible top.
+- `BarStack` was tried and dropped: its clip path is built from the settled layout, so the rounding appeared only in the last frames of the grow.
+- The radius sits on the rectangle path, so the segment boundaries inside a column stay square.
+
+Done
+- `toTopSeries` gives the key of the last series above zero for each of the twelve months, and `null` for a month with nothing to draw.
+- `MonthlyChart` draws each bar with a `shape` that renders Recharts `Rectangle` with `radius={[4, 4, 0, 0]}` on the topmost segment of that month.
+- Four unit cases for `toTopSeries`, and one browser spec that groups the rendered rectangles per column and checks that the topmost one carries the arc.
+- README and `docs/context.md` carry the decision. 48 unit cases, 37 browser specs.
+
+Verified
+- `check`, `typecheck`, `test` (48 cases), `build` and `test:e2e` (37 specs) pass.
+- In a browser: Feb, Mar and Aug under Anna Blackwood are rounded on the segment that tops the column, the company and Branch 1 keep square boundaries between segments, a leaf scope is rounded, and the corners stay rounded for the whole grow.
+
+Open
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.
