@@ -56,10 +56,12 @@ describe("currentFiscalYear", () => {
 });
 
 describe("isFiscalYear", () => {
-  it("takes four digits", () => {
+  it("takes four digits starting with 1 or 2", () => {
     expect(isFiscalYear("2024")).toBe(true);
     expect(isFiscalYear("1000")).toBe(true);
-    expect(isFiscalYear("9999")).toBe(true);
+    expect(isFiscalYear("2999")).toBe(true);
+    expect(isFiscalYear("3000")).toBe(false);
+    expect(isFiscalYear("9999")).toBe(false);
     expect(isFiscalYear("0024")).toBe(false);
     expect(isFiscalYear("0999")).toBe(false);
     expect(isFiscalYear("0000")).toBe(false);

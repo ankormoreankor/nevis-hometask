@@ -120,6 +120,7 @@ want_json_error "2025 says why" "/api/dashboard/2025"
 want_status "a malformed year answers 400" "/api/dashboard/abc" "400"
 want_json_error "a malformed year says why" "/api/dashboard/abc"
 want_status "a leading zero answers 400" "/api/dashboard/0024" "400"
+want_status "a year past 2999 answers 400" "/api/dashboard/3000" "400"
 want_status "1999 is well formed but has no data" "/api/dashboard/1999" "404"
 want_status "no year at all answers 404" "/api/dashboard" "404"
 

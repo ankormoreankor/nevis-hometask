@@ -135,3 +135,18 @@ test("a leading zero is not a year", async ({ page }) => {
   await expect(page.getByText("The page /dashboard/0024 does not exist.")).toBeVisible();
   expect(requests).toHaveLength(0);
 });
+
+test("a year past 2999 is not a year", async ({ page }) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/dashboard/")) {
+      requests.push(request.url());
+    }
+  });
+
+  await page.goto("/dashboard/3000");
+
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expect(page.getByText("The page /dashboard/3000 does not exist.")).toBeVisible();
+  expect(requests).toHaveLength(0);
+});

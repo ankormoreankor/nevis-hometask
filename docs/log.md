@@ -378,3 +378,24 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## narrow the fiscal year rule
+
+Decided
+- A year is four digits starting with 1 or 2, so 1000 to 2999. This supersedes the "four digits with no leading zero" of the previous entry: a year in the next millennium is a typo as much as "0024" is.
+- The client and the API still read one predicate, so the rule is one character class in the shared package and everything else follows from it.
+
+Done
+- `isFiscalYear` takes 1000 to 2999. The unit cases, the API smoke checks, the browser suite and the docs follow.
+- A browser spec covers `/dashboard/3000`: not found, and no request.
+
+Verified
+- `check`, `typecheck`, `test` (42 cases), `build`, `test:e2e` (16 specs) and `api:check` (30 checks) pass.
+- The API answers 400 for 3000 and 0024, 404 for 1999 and 2999, 200 for 2024. In the browser `/dashboard/3000` and `/dashboard/0024` are not found and make no request, and `/dashboard/1999` is empty.
+
+Open
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+- The bundle is one chunk and Recharts is most of it.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.
