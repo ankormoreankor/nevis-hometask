@@ -5,8 +5,8 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * The unit suite under src covers the pure modules. This suite covers what a
  * browser owns: the keyboard model on the treegrid, the hierarchy reaching
- * assistive technology, the selection moving the chart, and the states the
- * reviewer can reach on a URL.
+ * assistive technology, the selection moving the chart, and the loading, error,
+ * empty-year and invalid-year states.
  *
  * It has to cover at least:
  *   - ArrowRight expands a collapsed row, ArrowLeft collapses it and otherwise

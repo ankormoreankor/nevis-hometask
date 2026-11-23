@@ -1,3 +1,66 @@
+/**
+ * TASK: Add third branch to error copy for unreadable bodies and move Retry button outside refresh status region
+ *
+ * Goal
+ *   Render the dashboard page for a fiscal year with chart, treegrid, selection handling,
+ *   and error/loading states.
+ *
+ * Contract
+ *   - Props: none (page route component for /dashboard/:year).
+ *   - Error copy branching:
+ *     - If isResponseError(error): "The server answered with a body the dashboard could not read."
+ *     - If statusOf(error) === undefined: "The request did not reach the server."
+ *     - Else: "The server answered with status ${status}."
+ *   - ErrorState props: `{ error: unknown; onRetry: () => void }`.
+ *     Renders `{errorMessage(error)}` inside role="alert". Button is outside role="alert".
+ *   - Call site at line 91: `<ErrorState error={error} onRetry={() => void mutate()} />`.
+ *   - Refresh notice:
+ *     Move role="status" from the wrapper div onto the <p> element so the Retry button is
+ *     outside the live region.
+ *     statusOf stays imported because the refresh notice uses it.
+ *   - Ordering constraint:
+ *     The error and no company branch comes before the skeleton branch, because SWR sets
+ *     isLoading back to true on a background retry when nothing is cached.
+ *
+ * Changes
+ *   1. The error copy is wrong for an unreadable body. ErrorState takes status, and lines 33-35
+ *      print "The request did not reach the server." whenever status is undefined. That is also
+ *      true for the ResponseError the fetcher throws for a body that is not JSON or a body that
+ *      does not match the contract, and for those the request did reach the server and the
+ *      server answered. The page needs a third branch.
+ *      - Import `isResponseError` from "@/lib/http" alongside `isNotFound` and `statusOf`.
+ *      - Add helper above ErrorState:
+ *        function errorMessage(error: unknown): string {
+ *          if (isResponseError(error)) return "The server answered with a body the dashboard could not read.";
+ *          const status = statusOf(error);
+ *          if (status === undefined) return "The request did not reach the server.";
+ *          return `The server answered with status ${status}.`;
+ *        }
+ *      - ErrorState takes `{ error, onRetry }: { error: unknown; onRetry: () => void }` and
+ *        renders `{errorMessage(error)}` in place of the current ternary.
+ *      - Call site at line 91 becomes `<ErrorState error={error} onRetry={() => void mutate()} />`.
+ *      - `statusOf` stays imported: the refresh notice at line 122 still uses it.
+ *   2. The refresh notice at lines 133-147 puts the Retry button inside the role="status" region.
+ *      The first-paint ErrorState keeps its button outside the alert on purpose, so the refresh
+ *      notice should match. Move role="status" from the wrapper div at line 134 onto the <p> at
+ *      line 135. The announcement stays and the button leaves the live region.
+ *
+ * Acceptance
+ *   - When body is unreadable, ErrorState renders "The server answered with a body the dashboard could not read."
+ *   - When request failed without reaching server, ErrorState renders "The request did not reach the server."
+ *   - When server answered with status code, ErrorState renders "The server answered with status ${status}."
+ *   - Refresh notice puts role="status" on the <p>, with Retry button outside the live region.
+ *
+ * Edge cases
+ *   - SWR background retry when cache is empty sets isLoading to true, so error check must
+ *     precede loading check.
+ *
+ * Tests
+ *   apps/web/e2e/states.spec.ts
+ *
+ * Delete this comment when the code is in place.
+ */
+
 import { useParams, useSearchParams } from "react-router";
 import MonthlyChart from "@/components/MonthlyChart";
 import TreeGrid from "@/components/TreeGrid";

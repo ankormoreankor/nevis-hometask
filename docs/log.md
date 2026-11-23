@@ -332,3 +332,24 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the state of the project
+
+Done
+- The README's two mock-data notes are merged into one, and the Playwright config names the states the suite covers.
+
+Verified
+- `check`, `typecheck`, `test` (33 cases), `build`, `test:e2e` (14 specs) and `api:check` (27 checks) all pass.
+
+Open
+- Two task blocks landed in the tree unimplemented: the unreadable-body branch on the page, and the exported `isResponseError` with a globally registered symbol.
+- The chart has no data table of its own, so its numbers reach a screen reader only through the treegrid.
+- The browser suite reads ARIA attributes, not the computed accessibility tree.
+- The README never answers the one question in `docs/context.md`: whether the figures are counts, money or something else.
+- The bundle is one chunk, 814 kB, and Recharts is most of it.
+- The README's data-quality note has no UI decision behind it.
+- Reduced motion is implemented but unasserted, and a stale response is uncovered.
+- Small ones: `useDashboard` returns two fields the page never reads, `TreeGrid.tsx` has a duplicated comment, `npm run analyze` fails on 3 unused shadcn exports and on coupling noise.
+
+Next
+- Implement the two pending task blocks, then the chart's data table, the accessibility tree check and the README's open question.
