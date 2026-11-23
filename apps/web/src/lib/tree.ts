@@ -117,6 +117,40 @@ export function ancestorIds(root: Company, id: string): string[] {
 }
 
 /**
+ * The nodes on the path from the company down to and including the target,
+ * root first.
+ *
+ * An unknown id returns an empty array.
+ */
+export function pathTo(root: Company, id: string): TreeNode[] {
+  const visited = new Set<string>();
+  const path: TreeNode[] = [];
+
+  const walk = (node: TreeNode): boolean => {
+    if (visited.has(node.id)) {
+      return false;
+    }
+    visited.add(node.id);
+
+    path.push(node);
+    if (node.id === id) {
+      return true;
+    }
+
+    for (const child of childrenOf(node)) {
+      if (walk(child)) {
+        return true;
+      }
+    }
+    path.pop();
+
+    return false;
+  };
+
+  return walk(root) ? path : [];
+}
+
+/**
  * The first letter of the first and last word of a name, uppercased.
  *
  * "Anna Blackwood" is "AB", "Sarah Smith" is "SS", "Cher" is "C". One word

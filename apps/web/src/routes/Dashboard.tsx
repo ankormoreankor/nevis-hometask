@@ -1,13 +1,15 @@
 import { isFiscalYear } from "@nevis/shared";
+import { useId } from "react";
 import { useParams, useSearchParams } from "react-router";
 import MonthlyChart from "@/components/MonthlyChart";
+import ScopeTrail from "@/components/ScopeTrail";
 import TreeGrid from "@/components/TreeGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/lib/api";
 import { scopeTitle } from "@/lib/chart";
 import { isNotFound, isResponseError, statusOf } from "@/lib/http";
 import { formatPeriod } from "@/lib/period";
-import { findNode } from "@/lib/tree";
+import { findNode, pathTo } from "@/lib/tree";
 import styles from "./Dashboard.module.css";
 import NoData from "./NoData";
 import NotFound from "./NotFound";
@@ -77,6 +79,7 @@ function LoadingState() {
 export default function Dashboard() {
   const { year } = useParams();
   const [params, setParams] = useSearchParams();
+  const scopeLabelId = `chart-scope-${useId().replace(/:/g, "")}`;
 
   const isValidYear = year !== undefined && isFiscalYear(year);
   const fiscalYear = Number(year);
@@ -102,6 +105,8 @@ export default function Dashboard() {
   }
 
   const selected = findNode(company, params.get("node") ?? "") ?? company;
+  const path = pathTo(company, selected.id);
+  const trailPath = path.length > 0 ? path : [company];
 
   const onSelect = (id: string) => {
     setParams(
@@ -132,9 +137,7 @@ export default function Dashboard() {
   return (
     <main className={styles.shell}>
       <header className={styles.header}>
-        <h1 className={styles.heading}>
-          {selected.id === company.id ? "Book of business" : selected.name}
-        </h1>
+        <h1 className={styles.heading}>Clients</h1>
         <p className={styles.period}>{formatPeriod(fiscalYear)}</p>
       </header>
 
@@ -157,7 +160,10 @@ export default function Dashboard() {
         {announcement}
       </p>
 
-      <MonthlyChart node={selected} fiscalYear={fiscalYear} />
+      <div className={styles.chartGroup}>
+        <ScopeTrail path={trailPath} labelId={scopeLabelId} onSelect={onSelect} />
+        <MonthlyChart node={selected} fiscalYear={fiscalYear} labelledById={scopeLabelId} />
+      </div>
 
       <TreeGrid
         // The grid keeps its own expansion and its own focus, so a new fiscal

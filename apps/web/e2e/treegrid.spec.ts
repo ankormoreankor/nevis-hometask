@@ -27,9 +27,8 @@ import { expect, test } from "@playwright/test";
  * The rows are reached with the keyboard, so focus the grid first:
  * await page.getByRole("row", { name: "Company" }).focus()
  *
- * The chart is the figure above the table. Its accessible name is the scope
- * title, "Company, by branch", "Branch 1, by adviser" or
- * "Anna Blackwood, by channel".
+ * The chart is the figure above the table. Its accessible name is the current
+ * crumb name, "Company", "Branch 1" or "Anna Blackwood".
  */
 
 const CHANNEL_ID = "716e7c30-b7c3-45c5-aa64-cbcf483917e0";
@@ -144,12 +143,12 @@ test("the selection remaps the chart", async ({ page }) => {
   await page.goto("/dashboard/2024");
 
   const figure = page.getByRole("figure");
-  await expect(figure).toHaveAccessibleName("Company, by branch");
+  await expect(figure).toHaveAccessibleName("Company");
 
   await page.getByRole("row", { name: "Branch 1" }).click();
 
   await expect(page).toHaveURL(/\?node=[0-9a-f-]{36}$/);
-  await expect(figure).toHaveAccessibleName("Branch 1, by adviser");
+  await expect(figure).toHaveAccessibleName("Branch 1");
 
   // The legend names the advisers of the scope, not the branches.
   await expect(page.locator(".recharts-surface desc")).toContainText("Anna Blackwood");
@@ -158,7 +157,7 @@ test("the selection remaps the chart", async ({ page }) => {
   // Clicking the company row clears the parameter.
   await page.getByRole("row", { name: "Company" }).click();
   await expect(page).not.toHaveURL(/\?node=/);
-  await expect(figure).toHaveAccessibleName("Company, by branch");
+  await expect(figure).toHaveAccessibleName("Company");
 });
 
 test("the deep link opens the path", async ({ page }) => {
@@ -189,7 +188,7 @@ test("an unknown node falls back to the company", async ({ page }) => {
   await page.goto("/dashboard/2024?node=nope");
 
   await expect(page.getByRole("row", { name: "Company" })).toBeVisible();
-  await expect(page.getByRole("figure")).toHaveAccessibleName("Company, by branch");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Company");
   await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
 });
 
@@ -277,8 +276,8 @@ test("collapsing with the chevron lifts the selection", async ({ page }) => {
   await expect(anna).toHaveAttribute("aria-selected", "true");
   await expect(anna).toHaveAttribute("aria-expanded", "false");
   await expect(page).toHaveURL(/\?node=e3c4637b-2f21-4b7e-883e-b13ae1a6df6a$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Anna Blackwood");
-  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood, by channel");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clients");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood");
   await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
   await expect(page.locator("[role='row'][tabindex='0']")).toHaveCount(1);
   await expect(page.getByRole("row", { name: "Branch 1" })).toBeVisible();
@@ -308,8 +307,8 @@ test("collapsing with ArrowLeft lifts the selection the same way", async ({ page
   await expect(anna).toHaveAttribute("aria-selected", "true");
   await expect(anna).toHaveAttribute("aria-expanded", "false");
   await expect(page).toHaveURL(/\?node=e3c4637b-2f21-4b7e-883e-b13ae1a6df6a$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Anna Blackwood");
-  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood, by channel");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clients");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood");
   await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
   await expect(page.locator("[role='row'][tabindex='0']")).toHaveCount(1);
 });
@@ -326,10 +325,115 @@ test("collapsing the company row lifts the selection to the company and clears t
   await page.getByRole("button", { name: "Collapse Company" }).click();
 
   await expect(page).not.toHaveURL(/\?node=/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Book of business");
-  await expect(page.getByRole("figure")).toHaveAccessibleName("Company, by branch");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clients");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Company");
   const company = page.getByRole("row", { name: "Company" });
   await expect(company).toHaveAttribute("aria-selected", "true");
   await expect(company).toHaveAttribute("aria-expanded", "false");
   await expect(branch1).toBeHidden();
+});
+
+test("the scope trail renders at the root", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+  const nav = page.getByRole("navigation", { name: "Chart scope" });
+  await expect(nav).toBeVisible();
+  await expect(nav).toHaveText("Company");
+  const current = nav.locator('[aria-current="location"]');
+  await expect(current).toHaveText("Company");
+});
+
+test("the scope trail updates when a row is selected", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+  const nav = page.getByRole("navigation", { name: "Chart scope" });
+
+  await page.getByRole("row", { name: "Branch 1" }).click();
+  await expect(nav).toHaveText("Company / Branch 1");
+
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+  await page.getByRole("row", { name: "Anna Blackwood" }).click();
+  await expect(nav).toHaveText("Company / Branch 1 / Anna Blackwood");
+
+  await page.getByRole("button", { name: "Expand Anna Blackwood" }).click();
+  await page.getByRole("row", { name: "Existing clients" }).click();
+  await expect(nav).toHaveText("Company / Branch 1 / Anna Blackwood / Existing clients");
+});
+
+test("clicking an ancestor in the trail selects that node and clears the parameter at the company", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/2024");
+
+  await page.getByRole("row", { name: "Branch 1" }).click();
+  await expect(page).toHaveURL(/\?node=[0-9a-f-]{36}$/);
+
+  const nav = page.getByRole("navigation", { name: "Chart scope" });
+  await expect(nav).toHaveText("Company / Branch 1");
+
+  await nav.getByRole("button", { name: "Company" }).click();
+
+  await expect(page).not.toHaveURL(/\?node=/);
+  await expect(nav).toHaveText("Company");
+  await expect(page.getByRole("figure")).toHaveAccessibleName("Company");
+  const company = page.getByRole("row", { name: "Company" });
+  await expect(company).toHaveAttribute("aria-selected", "true");
+});
+
+test("focus moves to the current item after an ancestor click in the trail", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+  await page.getByRole("row", { name: "Anna Blackwood" }).click();
+
+  const nav = page.getByRole("navigation", { name: "Chart scope" });
+  await expect(nav).toHaveText("Company / Branch 1 / Anna Blackwood");
+
+  const current = nav.locator('[aria-current="location"]');
+
+  // Pointer click selects the node without moving focus to the current item.
+  await nav.getByRole("button", { name: "Branch 1" }).click();
+  await expect(current).toHaveText("Branch 1");
+  await expect(current).not.toBeFocused();
+  const isFocused = await current.evaluate((element) => element.matches(":focus"));
+  expect(isFocused).toBe(false);
+  const isFocusVisible = await current.evaluate((element) => element.matches(":focus-visible"));
+  expect(isFocusVisible).toBe(false);
+  const outlineStyle = await current.evaluate(
+    (element) => window.getComputedStyle(element).outlineStyle,
+  );
+  expect(outlineStyle).toBe("none");
+
+  // Keyboard activation focuses the replacement current item.
+  await page.getByRole("row", { name: "Anna Blackwood" }).click();
+  await expect(nav).toHaveText("Company / Branch 1 / Anna Blackwood");
+
+  const branch1Button = nav.getByRole("button", { name: "Branch 1" });
+  await branch1Button.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(current).toBeFocused();
+  await expect(current).toHaveText("Branch 1");
+
+  // Selection made from the table must not steal focus.
+  await page.getByRole("row", { name: "Anna Blackwood" }).click();
+  await expect(page.getByRole("row", { name: "Anna Blackwood" })).toBeFocused();
+  await expect(current).not.toBeFocused();
+});
+
+test("the scope trail wraps at 375px without horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto(`/dashboard/2024?node=${CHANNEL_ID}`);
+
+  const nav = page.getByRole("navigation", { name: "Chart scope" });
+  await expect(nav).toBeVisible();
+  await expect(nav).toHaveText("Company / Branch 1 / Anna Blackwood / Existing clients");
+
+  const pageOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverflow).toBe(0);
+
+  const crumbs = page.locator("nav[aria-label='Chart scope'] ol");
+  const boundingBox = await crumbs.boundingBox();
+  expect(boundingBox).not.toBeNull();
+  expect(boundingBox?.height).toBeGreaterThan(30);
 });

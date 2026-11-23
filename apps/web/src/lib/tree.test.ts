@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { at, company2024 } from "@/test/fixtures";
-import { ancestorIds, childrenOf, findNode, flattenVisible, hasChildren, initials } from "./tree";
+import {
+  ancestorIds,
+  childrenOf,
+  findNode,
+  flattenVisible,
+  hasChildren,
+  initials,
+  pathTo,
+} from "./tree";
 
 const company = company2024;
 const branch1 = at(company.branches, 0);
@@ -51,6 +59,19 @@ describe("ancestorIds", () => {
   it("is empty for the root and for an unknown id", () => {
     expect(ancestorIds(company, company.id)).toEqual([]);
     expect(ancestorIds(company, "nope")).toEqual([]);
+  });
+});
+
+describe("pathTo", () => {
+  it("lists the path from the root down to and including the target", () => {
+    expect(pathTo(company, company.id)).toEqual([company]);
+    expect(pathTo(company, branch1.id)).toEqual([company, branch1]);
+    expect(pathTo(company, anna.id)).toEqual([company, branch1, anna]);
+    expect(pathTo(company, existingClients.id)).toEqual([company, branch1, anna, existingClients]);
+  });
+
+  it("returns an empty array for an unknown id", () => {
+    expect(pathTo(company, "nope")).toEqual([]);
   });
 });
 

@@ -1,6 +1,6 @@
 import type { TreeNode } from "@nevis/shared";
 import { cn } from "cn";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, type TickItem, useXAxisTicks, XAxis, YAxis } from "recharts";
 import {
   type ChartConfig,
@@ -10,14 +10,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  type ChartRow,
-  type ChartSeries,
-  scopeTitle,
-  toDomain,
-  toRows,
-  toSeries,
-} from "@/lib/chart";
+import { type ChartRow, type ChartSeries, toDomain, toRows, toSeries } from "@/lib/chart";
 import { formatPeriod } from "@/lib/period";
 
 /**
@@ -35,6 +28,7 @@ import { formatPeriod } from "@/lib/period";
 export type MonthlyChartProps = {
   node: TreeNode;
   fiscalYear: number;
+  labelledById: string;
   className?: string;
 };
 
@@ -117,13 +111,17 @@ function XAxisTicksBridge({ ticksRef }: { ticksRef: React.RefObject<ReadonlyArra
   return null;
 }
 
-export default function MonthlyChart({ node, fiscalYear, className }: MonthlyChartProps) {
+export default function MonthlyChart({
+  node,
+  fiscalYear,
+  labelledById,
+  className,
+}: MonthlyChartProps) {
   const [announcement, setAnnouncement] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const series = useMemo(() => toSeries(node), [node]);
   const rows = useMemo(() => toRows(series, fiscalYear), [series, fiscalYear]);
   const domain = useMemo(() => toDomain(series), [series]);
-  const title = useMemo(() => scopeTitle(node), [node]);
   const reducedMotion = usePrefersReducedMotion();
 
   const surface = useRef<SVGSVGElement | null>(null);
@@ -254,22 +252,8 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
       .join(", ")}.`;
   }, [series, fiscalYear, node.name]);
 
-  // The figure is named by the scope title alone. The caption carries the
-  // period as well, and a name that read "Company, by branch, Feb 2024 to
-  // Jan 2025, the same numbers are in the table below" says less than the
-  // title does.
-  const titleId = `chart-title-${useId().replace(/:/g, "")}`;
-
   return (
-    <figure className={cn("m-0 flex flex-col gap-4", className)} aria-labelledby={titleId}>
-      <figcaption className="flex flex-col gap-1">
-        <h2 id={titleId} className="text-base leading-none font-medium">
-          {title}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {formatPeriod(fiscalYear)}. The same numbers are in the table below.
-        </p>
-      </figcaption>
+    <figure className={cn("m-0 flex flex-col gap-4", className)} aria-labelledby={labelledById}>
       <p aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </p>
@@ -278,7 +262,7 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
         className="h-[430px] w-full focus-visible:outline-hidden"
         tabIndex={0}
         role="application"
-        aria-labelledby={titleId}
+        aria-labelledby={labelledById}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -288,7 +272,6 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
           accessibilityLayer={false}
           throttleDelay={0}
           data={rows}
-          title={title}
           desc={description}
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
         >
