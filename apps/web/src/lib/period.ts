@@ -10,7 +10,10 @@
  * because reading it should not require arithmetic.
  */
 
-export const FISCAL_YEAR_MIN = 2000;
+/**
+ * The first year the empty-state picker offers, not the first year the route accepts.
+ */
+export const FISCAL_YEAR_PICKER_MIN = 2000;
 
 /**
  * The fiscal year the dashboard falls back to, because it is the one year the
@@ -49,18 +52,6 @@ export const FISCAL_MONTHS: readonly FiscalMonth[] = [
 export function currentFiscalYear(): number {
   const now = new Date();
   return now.getMonth() >= 1 ? now.getFullYear() : now.getFullYear() - 1;
-}
-
-/**
- * Whether a year in the route is well formed.
- *
- * The API answers 400 for anything that is not four digits, so the client
- * checks the same way and never sends a request it knows will fail. The year
- * is sent as it was written, so the client and the server ask for the same
- * one and a year below a thousand is the year the server was asked about.
- */
-export function isFiscalYear(year: string): boolean {
-  return /^\d{4}$/.test(year);
 }
 
 /**

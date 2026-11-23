@@ -193,6 +193,18 @@ test("an unknown node falls back to the company", async ({ page }) => {
   await expect(page.locator("[role='row'][aria-selected='true']")).toHaveCount(1);
 });
 
+test("the chart announces the active month", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+  await page.locator(".recharts-surface").first().focus();
+
+  const reader = page.locator('figure [aria-live="polite"]');
+  await expect(reader).toContainText("Feb 2024");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(reader).toContainText("Mar 2024");
+  await expect(reader).toContainText("Branch 1 157");
+});
+
 test("nothing overflows at 375px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/dashboard/2024");

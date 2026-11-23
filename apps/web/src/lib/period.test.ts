@@ -1,12 +1,12 @@
+import { isFiscalYear } from "@nevis/shared";
 import { describe, expect, it, vi } from "vitest";
 import {
   currentFiscalYear,
   DEFAULT_FISCAL_YEAR,
   FISCAL_MONTHS,
-  FISCAL_YEAR_MIN,
+  FISCAL_YEAR_PICKER_MIN,
   formatMonthLabel,
   formatPeriod,
-  isFiscalYear,
 } from "./period";
 
 describe("formatMonthLabel", () => {
@@ -59,6 +59,10 @@ describe("isFiscalYear", () => {
   it("takes four digits", () => {
     expect(isFiscalYear("2024")).toBe(true);
     expect(isFiscalYear("1000")).toBe(true);
+    expect(isFiscalYear("9999")).toBe(true);
+    expect(isFiscalYear("0024")).toBe(false);
+    expect(isFiscalYear("0999")).toBe(false);
+    expect(isFiscalYear("0000")).toBe(false);
     expect(isFiscalYear("999")).toBe(false);
     expect(isFiscalYear("20245")).toBe(false);
     expect(isFiscalYear("abc")).toBe(false);
@@ -69,6 +73,6 @@ describe("isFiscalYear", () => {
 describe("the constants", () => {
   it("point at the one year the payload covers", () => {
     expect(DEFAULT_FISCAL_YEAR).toBe(2024);
-    expect(FISCAL_YEAR_MIN).toBe(2000);
+    expect(FISCAL_YEAR_PICKER_MIN).toBe(2000);
   });
 });

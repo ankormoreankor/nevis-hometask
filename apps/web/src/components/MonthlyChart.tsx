@@ -10,7 +10,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { scopeTitle, toDomain, toRows, toSeries } from "@/lib/chart";
+import {
+  type ChartRow,
+  type ChartSeries,
+  scopeTitle,
+  toDomain,
+  toRows,
+  toSeries,
+} from "@/lib/chart";
 import { formatPeriod } from "@/lib/period";
 
 /**
@@ -57,7 +64,49 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
+type MonthlyChartTooltipProps = React.ComponentProps<typeof ChartTooltipContent> & {
+  series: ChartSeries[];
+  onAnnounce: (text: string) => void;
+};
+
+function MonthlyChartTooltip({
+  active,
+  payload,
+  label,
+  series,
+  onAnnounce,
+  ...props
+}: MonthlyChartTooltipProps) {
+  useEffect(() => {
+    return () => {
+      onAnnounce("");
+    };
+  }, [onAnnounce]);
+
+  useEffect(() => {
+    if (!active || !payload?.length) {
+      return;
+    }
+    const row = payload[0]?.payload as ChartRow | undefined;
+    if (!row) {
+      return;
+    }
+    const month = label ?? row.month;
+    const parts = [month];
+    for (const item of series) {
+      const value = row[item.key];
+      if (value !== undefined) {
+        parts.push(`${item.label} ${value}`);
+      }
+    }
+    onAnnounce(`${parts.join(". ")}.`);
+  }, [active, payload, label, series, onAnnounce]);
+
+  return <ChartTooltipContent active={active} payload={payload} label={label} {...props} />;
+}
+
 export default function MonthlyChart({ node, fiscalYear, className }: MonthlyChartProps) {
+  const [announcement, setAnnouncement] = useState("");
   const series = useMemo(() => toSeries(node), [node]);
   const rows = useMemo(() => toRows(series, fiscalYear), [series, fiscalYear]);
   const domain = useMemo(() => toDomain(series), [series]);
@@ -114,6 +163,9 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
           {formatPeriod(fiscalYear)}. The same numbers are in the table below.
         </p>
       </figcaption>
+      <p aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </p>
       <ChartContainer config={config} className="h-[430px] w-full">
         <BarChart
           accessibilityLayer
@@ -140,7 +192,9 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
           />
           <ChartTooltip
             cursor={{ fill: "var(--muted)" }}
-            content={<ChartTooltipContent indicator="dot" />}
+            content={
+              <MonthlyChartTooltip series={series} onAnnounce={setAnnouncement} indicator="dot" />
+            }
           />
           {series.map((item, index) => (
             <Bar

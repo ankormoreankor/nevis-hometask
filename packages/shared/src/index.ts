@@ -28,3 +28,16 @@ export type TreeNode = Company | Branch | Advisor | Channel;
 export function formatIssues(error: z.ZodError): string {
   return z.prettifyError(error);
 }
+
+/**
+ * Whether a segment names a fiscal year.
+ *
+ * Four digits with no leading zero: "2024" is a year, "0024" and "abc" are
+ * not. The client checks the route and the API checks the parameter with the
+ * same rule, so neither sends nor accepts a value the other would reject.
+ */
+const FISCAL_YEAR = /^[1-9]\d{3}$/;
+
+export function isFiscalYear(year: string): boolean {
+  return FISCAL_YEAR.test(year);
+}

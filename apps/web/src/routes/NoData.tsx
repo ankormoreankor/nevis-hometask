@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { currentFiscalYear, FISCAL_YEAR_MIN } from "@/lib/period";
+import { currentFiscalYear, FISCAL_YEAR_PICKER_MIN } from "@/lib/period";
 
 /**
  * The empty year state.
@@ -18,8 +18,8 @@ export default function NoData({ fiscalYear }: NoDataProps) {
   const [draft, setDraft] = useState("");
 
   const years = Array.from(
-    { length: currentFiscalYear() - FISCAL_YEAR_MIN + 1 },
-    (_, index) => FISCAL_YEAR_MIN + index,
+    { length: currentFiscalYear() - FISCAL_YEAR_PICKER_MIN + 1 },
+    (_, index) => FISCAL_YEAR_PICKER_MIN + index,
   );
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {

@@ -353,3 +353,28 @@ Open
 
 Next
 - Implement the two pending task blocks, then the chart's data table, the accessibility tree check and the README's open question.
+
+## the year rule and the chart announcement
+
+Decided
+- A year is four digits with no leading zero, 1000 to 9999. "0024" is a typo, not a year, so the route is not found and no request is made.
+- The rule lives in `@nevis/shared` as `isFiscalYear` and the API reads it too, so the client and the server cannot disagree about what a year is.
+- The picker starts at 2000 because that is what it offers, not because the route stops there. The constant is `FISCAL_YEAR_PICKER_MIN`.
+- The chart announces the month it is on from a polite live region inside the figure, fed by the tooltip content.
+
+Done
+- The two task blocks from the previous entry are implemented and their comments are gone: the unreadable-body branch on the page, and `isResponseError` with a globally registered symbol, covered by `http.test.ts`.
+- The chart's live region reads "Mar 2024. Branch 1 157. Branch 2 80. Branch 3 30." on every arrow stop.
+- The Retry button of the stale-data notice sits outside the live region.
+- The README and the e2e README say which two specs were run against the old behaviour, instead of claiming all of them were.
+
+Verified
+- `check`, `typecheck`, `test` (42 cases), `build`, `test:e2e` (15 specs) and `api:check` (29 checks) pass.
+- In a browser: `/dashboard/0024` and `/dashboard/abc` are not found with no request, `/dashboard/1999` is empty, the live region reads the month, and there are no console errors.
+
+Open
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+- The bundle is one chunk and Recharts is most of it.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

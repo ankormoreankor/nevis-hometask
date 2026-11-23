@@ -1,7 +1,6 @@
-import { type Company, companySchema, formatIssues } from "@nevis/shared";
+import { type Company, companySchema, formatIssues, isFiscalYear } from "@nevis/shared";
 import useSWR from "swr";
 import { ApiError, isTransient, ResponseError } from "./http";
-import { isFiscalYear } from "./period";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);

@@ -1,46 +1,69 @@
-/**
- * TASK: Unit tests for http status extraction and retry predicates
- *
- * Goal
- *   Verify statusOf, isTransient, isNotFound, and ResponseError retry behavior.
- *
- * Contract
- *   Cover the following cases:
- *   - statusOf:
- *     - An error carrying status: 500 gives 500.
- *     - An error carrying a string status gives undefined.
- *     - null and undefined give undefined.
- *     - A plain Error gives undefined.
- *   - isTransient:
- *     - 500 gives true.
- *     - 503 gives true.
- *     - 400 gives false.
- *     - 404 gives false.
- *     - An error with no status gives true.
- *     - A ResponseError gives false.
- *   - isNotFound:
- *     - 404 gives true.
- *     - 500 gives false.
- *   - ResponseError behavior:
- *     - A ResponseError thrown by the fetcher path is never transient,
- *       so a malformed payload costs one request and not three.
- *
- * Acceptance
- *   - All specified statusOf cases pass.
- *   - All specified isTransient cases pass.
- *   - All specified isNotFound cases pass.
- *   - ResponseError non-transience check passes.
- *
- * Tests
- *   Self-contained in this file.
- *
- * Delete this comment when the code is in place.
- */
+import { describe, expect, it, vi } from "vitest";
+import {
+  ApiError,
+  isNotFound,
+  isResponseError,
+  isTransient,
+  ResponseError,
+  statusOf,
+} from "./http";
 
-import { describe, expect, it } from "vitest";
+describe("statusOf", () => {
+  it("extracts status when numeric", () => {
+    expect(statusOf({ status: 500 })).toBe(500);
+    expect(statusOf(new ApiError(500, "error"))).toBe(500);
+  });
 
-describe("http", () => {
-  it("is planned", () => {
-    expect(true).toBe(true);
+  it("gives undefined for a string status", () => {
+    expect(statusOf({ status: "500" })).toBeUndefined();
+  });
+
+  it("gives undefined for null and undefined", () => {
+    expect(statusOf(null)).toBeUndefined();
+    expect(statusOf(undefined)).toBeUndefined();
+  });
+
+  it("gives undefined for a plain Error", () => {
+    expect(statusOf(new Error("boom"))).toBeUndefined();
+  });
+});
+
+describe("isTransient", () => {
+  it("is true for 500 and 503", () => {
+    expect(isTransient({ status: 500 })).toBe(true);
+    expect(isTransient({ status: 503 })).toBe(true);
+  });
+
+  it("is false for 400 and 404", () => {
+    expect(isTransient({ status: 400 })).toBe(false);
+    expect(isTransient({ status: 404 })).toBe(false);
+  });
+
+  it("is true for an error with no status", () => {
+    expect(isTransient(new Error("network failure"))).toBe(true);
+    expect(isTransient({})).toBe(true);
+  });
+
+  it("is false for a ResponseError", () => {
+    expect(isTransient(new ResponseError("invalid json"))).toBe(false);
+  });
+});
+
+describe("isNotFound", () => {
+  it("is true for 404 and false for 500", () => {
+    expect(isNotFound({ status: 404 })).toBe(true);
+    expect(isNotFound({ status: 500 })).toBe(false);
+    expect(isNotFound(new Error("not found"))).toBe(false);
+  });
+});
+
+describe("isResponseError across module re-evaluation", () => {
+  it("recognises a ResponseError created before vi.resetModules()", async () => {
+    const errorBefore = new ResponseError("unreadable payload");
+    expect(isResponseError(errorBefore)).toBe(true);
+
+    vi.resetModules();
+    const { isResponseError: isResponseErrorAfter } = await import("./http");
+    expect(isResponseErrorAfter(errorBefore)).toBe(true);
   });
 });

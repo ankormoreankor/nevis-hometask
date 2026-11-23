@@ -1,3 +1,4 @@
+import { isFiscalYear } from "@nevis/shared";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { getData } from "./data";
 
@@ -14,7 +15,7 @@ app.get("/api/health", (_, res: Response) => {
 
 app.get("/api/dashboard/:year", (req: Request, res: Response) => {
   const { year: rawYear } = req.params;
-  if (typeof rawYear !== "string" || !/^\d{4}$/.test(rawYear)) {
+  if (typeof rawYear !== "string" || !isFiscalYear(rawYear)) {
     res.status(400).json({ error: "Invalid year format" });
     return;
   }

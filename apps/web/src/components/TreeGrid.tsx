@@ -260,9 +260,6 @@ export default function TreeGrid({
                     // The chevron is pointer only. Keeping the focus off the
                     // button leaves it on the row, which is the only focus
                     // target in the grid.
-                    // The chevron is pointer only. Keeping the focus off the
-                    // button leaves it on the row, which is the only focus
-                    // target in the grid.
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={(event) => {
                       event.stopPropagation();

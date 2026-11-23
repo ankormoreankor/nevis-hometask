@@ -121,18 +121,17 @@ test("the invalid year", async ({ page }) => {
   expect(requests).toHaveLength(0);
 });
 
-test("the year is asked for as it was written", async ({ page }) => {
+test("a leading zero is not a year", async ({ page }) => {
   const requests: string[] = [];
   page.on("request", (request) => {
     if (request.url().includes("/api/dashboard/")) {
-      requests.push(new URL(request.url()).pathname);
+      requests.push(request.url());
     }
   });
 
   await page.goto("/dashboard/0024");
 
-  // Four digits is a well formed year, so the server decides whether there is
-  // data for it. The client asks for the year it was given, so the two agree.
-  await expect(page.getByRole("heading", { name: "No data for fiscal year 24" })).toBeVisible();
-  expect(requests).toEqual(["/api/dashboard/0024"]);
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expect(page.getByText("The page /dashboard/0024 does not exist.")).toBeVisible();
+  expect(requests).toHaveLength(0);
 });
