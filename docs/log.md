@@ -399,3 +399,26 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the chart owns its focus model
+
+Decided
+- Recharts 3.8 keeps its keyboard index on blur, so a second Tab into the chart opened no tooltip and continued from the old month, and v3 has no controlled active index. `MonthlyChart` owns the focus model instead.
+- The chart container is the one focus stop: `role="application"`, named by the figure's title. No ring around the chart; the highlighted month and its tooltip are the focus indicator.
+- The visible month is a mouse move at the tick position, so the library keeps the cursor, the tooltip, the flipping and the animation. `throttleDelay={0}` so a queued frame cannot reopen the tooltip after a blur.
+
+Done
+- Focus, blur and key handling on the container, an `XAxisTicksBridge` for the tick coordinates, and the announcement cleared when the tooltip goes inactive.
+- Bars are keyed by scope and year, so a scope change animates the columns from the baseline instead of sliding them sideways.
+- The browser specs focus the application element, and one new spec covers the reset on blur. README and `docs/context.md` carry the decision.
+
+Verified
+- `check`, `typecheck`, `test` (42 cases), `build` and `test:e2e` (17 specs) pass.
+- In a browser: Tab into the chart shows Feb 2024 with the tooltip and the cursor band, ArrowRight shows Mar 2024, Tab away hides both, Shift+Tab back shows Feb 2024 again.
+
+Open
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+- The bundle is one chunk and Recharts is most of it.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

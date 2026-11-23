@@ -1,7 +1,7 @@
 import type { TreeNode } from "@nevis/shared";
 import { cn } from "cn";
-import { useEffect, useId, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Bar, BarChart, CartesianGrid, type TickItem, useXAxisTicks, XAxis, YAxis } from "recharts";
 import {
   type ChartConfig,
   ChartContainer,
@@ -85,6 +85,7 @@ function MonthlyChartTooltip({
 
   useEffect(() => {
     if (!active || !payload?.length) {
+      onAnnounce("");
       return;
     }
     const row = payload[0]?.payload as ChartRow | undefined;
@@ -105,13 +106,119 @@ function MonthlyChartTooltip({
   return <ChartTooltipContent active={active} payload={payload} label={label} {...props} />;
 }
 
+function XAxisTicksBridge({ ticksRef }: { ticksRef: React.RefObject<ReadonlyArray<TickItem>> }) {
+  const xAxisTicks = useXAxisTicks();
+  useEffect(() => {
+    if (xAxisTicks) {
+      ticksRef.current = xAxisTicks;
+    }
+  }, [xAxisTicks, ticksRef]);
+
+  return null;
+}
+
 export default function MonthlyChart({ node, fiscalYear, className }: MonthlyChartProps) {
   const [announcement, setAnnouncement] = useState("");
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const series = useMemo(() => toSeries(node), [node]);
   const rows = useMemo(() => toRows(series, fiscalYear), [series, fiscalYear]);
   const domain = useMemo(() => toDomain(series), [series]);
   const title = useMemo(() => scopeTitle(node), [node]);
   const reducedMotion = usePrefersReducedMotion();
+
+  const surface = useRef<SVGSVGElement | null>(null);
+  const ticks = useRef<ReadonlyArray<TickItem>>([]);
+  const retryRef = useRef<number | null>(null);
+
+  function showMonth(index: number | null) {
+    if (retryRef.current !== null) {
+      cancelAnimationFrame(retryRef.current);
+      retryRef.current = null;
+    }
+    const svg = surface.current;
+    if (!svg) return;
+    if (index === null) {
+      svg.dispatchEvent(
+        new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }),
+      );
+      return;
+    }
+    const point = ticks.current[index];
+    if (!point) {
+      retryRef.current = requestAnimationFrame(() => {
+        retryRef.current = null;
+        const retryPoint = ticks.current[index];
+        const currentSvg = surface.current;
+        if (!retryPoint || !currentSvg) return;
+        const rect = currentSvg.getBoundingClientRect();
+        currentSvg.dispatchEvent(
+          new MouseEvent("mousemove", {
+            bubbles: true,
+            clientX: rect.left + retryPoint.coordinate,
+            clientY: rect.top + rect.height / 2,
+          }),
+        );
+      });
+      return;
+    }
+    const rect = svg.getBoundingClientRect();
+    svg.dispatchEvent(
+      new MouseEvent("mousemove", {
+        bubbles: true,
+        clientX: rect.left + point.coordinate,
+        clientY: rect.top + rect.height / 2,
+      }),
+    );
+  }
+
+  useEffect(() => {
+    return () => {
+      if (retryRef.current !== null) {
+        cancelAnimationFrame(retryRef.current);
+      }
+    };
+  }, []);
+
+  const handleFocus = (event: React.FocusEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    setActiveIndex(0);
+    showMonth(0);
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    setActiveIndex(null);
+    showMonth(null);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (activeIndex === null) {
+      return;
+    }
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") {
+      nextIndex = Math.min(activeIndex + 1, rows.length - 1);
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = Math.max(activeIndex - 1, 0);
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = rows.length - 1;
+    }
+
+    if (nextIndex !== null) {
+      event.preventDefault();
+      setActiveIndex(nextIndex);
+      showMonth(nextIndex);
+    }
+  };
 
   const config = useMemo<ChartConfig>(() => {
     const next: ChartConfig = {};
@@ -125,7 +232,7 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
   // the company scale. The ticks are every hundred above a hundred, every ten
   // below it, and the maximum is never zero, so the plot has a range to draw.
   const axisMax = Math.max(domain, 1);
-  const ticks = useMemo(() => {
+  const yTicks = useMemo(() => {
     if (domain <= 0) {
       return [0];
     }
@@ -166,14 +273,26 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
       <p aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </p>
-      <ChartContainer config={config} className="h-[430px] w-full">
+      <ChartContainer
+        config={config}
+        className="h-[430px] w-full focus-visible:outline-hidden"
+        tabIndex={0}
+        role="application"
+        aria-labelledby={titleId}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+      >
         <BarChart
-          accessibilityLayer
+          ref={surface}
+          accessibilityLayer={false}
+          throttleDelay={0}
           data={rows}
           title={title}
           desc={description}
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
         >
+          <XAxisTicksBridge ticksRef={ticks} />
           <CartesianGrid vertical={false} stroke="#ccc" strokeDasharray="3 3" />
           <XAxis
             dataKey="month"
@@ -184,7 +303,7 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
           />
           <YAxis
             domain={[0, axisMax]}
-            ticks={ticks}
+            ticks={yTicks}
             allowDecimals={false}
             tickLine={false}
             axisLine={false}
@@ -196,9 +315,16 @@ export default function MonthlyChart({ node, fiscalYear, className }: MonthlyCha
               <MonthlyChartTooltip series={series} onAnnounce={setAnnouncement} indicator="dot" />
             }
           />
+          {/*
+            Scope identity is in the key to force Bar remounting across node and year changes.
+            Recharts interpolates rectangles by array index rather than by month. Zero-value
+            filtering omits zero-height rectangles, so different scopes produce different
+            array lengths and cause horizontal sliding when previous rectangles are reused.
+            Remounting resets the Recharts rectangle cache so columns animate vertically from baseline.
+          */}
           {series.map((item, index) => (
             <Bar
-              key={item.key}
+              key={`${node.id}-${fiscalYear}-${item.key}`}
               dataKey={item.key}
               name={item.label}
               stackId={STACK_ID}

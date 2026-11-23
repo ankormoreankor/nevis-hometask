@@ -124,7 +124,7 @@ test("the chevron expands without selecting", async ({ page }) => {
   const branch1 = page.getByRole("row", { name: "Branch 1" });
 
   // The focus starts on the chart, outside the grid.
-  await page.locator(".recharts-surface").focus();
+  await page.getByRole("application").focus();
 
   await page.getByRole("button", { name: "Expand Branch 1" }).click();
 
@@ -195,7 +195,7 @@ test("an unknown node falls back to the company", async ({ page }) => {
 
 test("the chart announces the active month", async ({ page }) => {
   await page.goto("/dashboard/2024");
-  await page.locator(".recharts-surface").first().focus();
+  await page.getByRole("application").focus();
 
   const reader = page.locator('figure [aria-live="polite"]');
   await expect(reader).toContainText("Feb 2024");
@@ -203,6 +203,45 @@ test("the chart announces the active month", async ({ page }) => {
   await page.keyboard.press("ArrowRight");
   await expect(reader).toContainText("Mar 2024");
   await expect(reader).toContainText("Branch 1 157");
+});
+
+test("the chart resets its active month on blur", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+
+  const chart = page.getByRole("application");
+  const reader = page.locator('figure [aria-live="polite"]');
+  const tooltip = page.locator(".recharts-tooltip-wrapper");
+  const cursor = page.locator("figure .recharts-tooltip-cursor");
+
+  await expect(chart).toBeVisible();
+
+  // Tab into the chart (the chart is the first tab stop on the page).
+  await page.keyboard.press("Tab");
+  await expect(chart).toBeFocused();
+  await expect(reader).toContainText("Feb 2024");
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText("Feb 2024");
+  await expect(cursor).toBeVisible();
+
+  // ArrowRight shows Mar 2024.
+  await page.keyboard.press("ArrowRight");
+  await expect(reader).toContainText("Mar 2024");
+  await expect(tooltip).toContainText("Mar 2024");
+  await expect(cursor).toBeVisible();
+
+  // Tab away hides the tooltip and cursor.
+  await page.keyboard.press("Tab");
+  await expect(chart).not.toBeFocused();
+  await expect(tooltip).toBeHidden();
+  await expect(cursor).toBeHidden();
+
+  // Shift+Tab back re-focuses the chart and the tooltip and the live region show Feb 2024 again.
+  await page.keyboard.press("Shift+Tab");
+  await expect(chart).toBeFocused();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText("Feb 2024");
+  await expect(reader).toContainText("Feb 2024");
+  await expect(cursor).toBeVisible();
 });
 
 test("nothing overflows at 375px", async ({ page }) => {
