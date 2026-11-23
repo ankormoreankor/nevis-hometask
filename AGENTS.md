@@ -19,6 +19,10 @@ Nevis frontend take-home: dashboard over a company > branch > adviser > channel 
 - Numbers rendered in the UI come from the payload unchanged. Where a level is missing (branches without employees, advisers without channels), the row is a leaf and says so.
 - UI copy is plain and factual: no em dashes, no marketing adjectives, no exclamation.
 
+## Accessibility
+
+Accessibility is a constraint, not a pass at the end. WCAG 2.2 AA is the floor. Every interactive control is reachable by keyboard, has a visible focus ring and an accessible name; icon-only buttons carry the name, not the icon. Any motion that starts on its own honours prefers-reduced-motion and can be paused, stopped or hidden, and a loop longer than five seconds gets a control. Meaning never lives in colour, motion or position alone. Targets are at least 24 by 24 pixels. Structure is announced: landmarks, one h1, and hierarchy in the treegrid. A missing keyboard path is a bug, not a polish item.
+
 ## Who writes what
 
 Configuration belongs to the agent. Implementation belongs to the user.

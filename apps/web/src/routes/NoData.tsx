@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import noDataPoster from "@/assets/no-data-poster.jpg";
+import kevinVideo from "@/assets/the-office-kevin-malone.mp4";
+import StatePage from "@/components/StatePage";
 import { currentFiscalYear, FISCAL_YEAR_PICKER_MIN } from "@/lib/period";
 
 /**
@@ -38,18 +41,18 @@ export default function NoData({ fiscalYear }: NoDataProps) {
   };
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col items-start gap-4 px-4 py-16">
+    <StatePage videoSrc={kevinVideo} poster={noDataPoster} videoWidth={640} videoHeight={360}>
       <h1 className="text-2xl font-semibold">No data for fiscal year {fiscalYear}</h1>
-      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="year" className="text-sm font-medium">
-            Fiscal year
-          </label>
+      <form onSubmit={onSubmit} className="flex flex-wrap items-center justify-center gap-3">
+        <label htmlFor="year" className="sr-only">
+          Fiscal year
+        </label>
+        <div className="relative">
           <select
             id="year"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+            className="h-9 w-56 appearance-none rounded-md border border-border bg-background pl-3 pr-9 text-left text-sm"
           >
             <option value="" disabled>
               Select a fiscal year
@@ -60,11 +63,25 @@ export default function NoData({ fiscalYear }: NoDataProps) {
               </option>
             ))}
           </select>
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </div>
         <button
           type="submit"
           disabled={draft === ""}
-          className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted disabled:opacity-50"
+          className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm enabled:hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           Go
         </button>
@@ -72,6 +89,6 @@ export default function NoData({ fiscalYear }: NoDataProps) {
       <Link to="/" className="text-sm underline">
         Back to the dashboard
       </Link>
-    </main>
+    </StatePage>
   );
 }

@@ -10,6 +10,7 @@ import { scopeTitle } from "@/lib/chart";
 import { isNotFound, isResponseError, statusOf } from "@/lib/http";
 import { formatPeriod } from "@/lib/period";
 import { findNode, pathTo } from "@/lib/tree";
+import { useDelayedFlag } from "@/lib/useDelayedFlag";
 import styles from "./Dashboard.module.css";
 import NoData from "./NoData";
 import NotFound from "./NotFound";
@@ -57,20 +58,24 @@ function ErrorState({ error, onRetry }: { error: unknown; onRetry: () => void })
 }
 
 function LoadingState() {
+  const showSkeletons = useDelayedFlag(true, 200);
+
   return (
     <main className={styles.shell}>
       <div role="status" aria-label="Loading">
         {/* The skeletons hold the space the chart and the table will take, so
             nothing jumps when the data lands. They carry no information. */}
-        <div aria-hidden="true" className="flex flex-col gap-6">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-[430px] w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-        </div>
+        {showSkeletons ? (
+          <div aria-hidden="true" className="flex flex-col gap-6">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-[430px] w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        ) : null}
       </div>
     </main>
   );

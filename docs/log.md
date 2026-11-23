@@ -447,3 +447,31 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the state pages get their own page
+
+Decided
+- The two state pages share a shell: a centred column with a decorative video above the content, 28px between them.
+- Video, not GIF. A GIF is 256 colours and dithered, so a re-encode of one looks worse, and H.264 is smaller at the same quality. The files live in the repo, not hotlinked.
+- The video is decorative and pausable. A loop past five seconds needs a control under WCAG 2.2.2, and prefers-reduced-motion shows the poster frame instead of playing.
+- The empty year keeps its label for screen readers only, and the select gets a fixed width, so a font swap cannot move the row.
+- The dashboard skeleton waits 200ms. The client cannot know a year is empty before the response, and a 404 should not flash a chart skeleton.
+- The font is vendored as the Latin subset and preloaded. Google Fonts is the same swap with a third-party request on top.
+- The year picker opts into `appearance: base-select` inside `@supports`, so the browser anchors the list under the control. Firefox keeps the native popup.
+
+Done
+- `StatePage.tsx` with its module CSS, `useReducedMotion`, `useDelayedFlag`, the two videos and their posters.
+- NoData and NotFound rewritten around the shell. The select lost its visible label, gained a chevron with room and a fixed width, and the Go button lost its hover while disabled.
+- `index.css` carries the font face and the picker rules, `index.html` the preload, `public/fonts` the file and its licence. The fontsource dependency is gone.
+- Accessibility is a standing rule in `AGENTS.md` now. README and `docs/context.md` follow. 44 unit cases, 36 browser specs.
+
+Verified
+- `check`, `typecheck`, `test` (44 cases) and `test:e2e` (36 specs) pass.
+- In a browser: the list opens under the control, the value sits centred in the closed select, and the first paint does not move when the font lands.
+
+Open
+- Firefox keeps the native picker, so the closed control there is the old one.
+- The two clips are from a TV show, and the licence for a public repository is not settled.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

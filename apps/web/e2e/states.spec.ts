@@ -150,3 +150,145 @@ test("a year past 2999 is not a year", async ({ page }) => {
   await expect(page.getByText("The page /dashboard/3000 does not exist.")).toBeVisible();
   expect(requests).toHaveLength(0);
 });
+
+test("the empty year video and pause control", async ({ page }) => {
+  await page.goto("/dashboard/2025");
+
+  const video = page.locator("video");
+  await expect(video).toBeVisible();
+  expect(await video.evaluate((el: HTMLVideoElement) => el.muted && el.loop)).toBe(true);
+
+  const pauseButton = page.getByRole("button", { name: "Pause animation" });
+  await expect(pauseButton).toBeVisible();
+
+  await pauseButton.click();
+  await expect(page.getByRole("button", { name: "Play animation" })).toBeVisible();
+});
+
+test("the empty year does not overflow horizontally at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/dashboard/2025");
+  await expect(page.getByRole("heading", { name: "No data for fiscal year 2025" })).toBeVisible();
+
+  const pageOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverflow).toBe(0);
+});
+
+test("the invalid year video and pause control", async ({ page }) => {
+  await page.goto("/dashboard/abc");
+
+  const video = page.locator("video");
+  await expect(video).toBeVisible();
+  expect(await video.evaluate((el: HTMLVideoElement) => el.muted && el.loop)).toBe(true);
+
+  const pauseButton = page.getByRole("button", { name: "Pause animation" });
+  await expect(pauseButton).toBeVisible();
+
+  await pauseButton.click();
+  await expect(page.getByRole("button", { name: "Play animation" })).toBeVisible();
+});
+
+test("the invalid year does not overflow horizontally at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/dashboard/abc");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+
+  const pageOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverflow).toBe(0);
+});
+
+test("the empty year honours prefers-reduced-motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/dashboard/2025");
+
+  await expect(page.getByRole("button", { name: "Play animation" })).toBeVisible();
+  const isPaused = await page.locator("video").evaluate((el: HTMLVideoElement) => el.paused);
+  expect(isPaused).toBe(true);
+});
+
+test("the empty year select has an accessible name and shows the placeholder", async ({ page }) => {
+  await page.goto("/dashboard/2025");
+
+  const select = page.getByLabel("Fiscal year");
+  await expect(select).toBeVisible();
+  await expect(select).toHaveValue("");
+  await expect(select.locator("option:checked")).toHaveText("Select a fiscal year");
+  const textAlign = await select.evaluate((el) => window.getComputedStyle(el).textAlign);
+  expect(textAlign).toBe("left");
+});
+
+test("the empty year select centres its value", async ({ page }) => {
+  await page.goto("/dashboard/2025");
+
+  const supports = await page.evaluate(() => CSS.supports("appearance", "base-select"));
+  test.skip(!supports, "the browser does not render a customizable select");
+
+  const select = page.getByLabel("Fiscal year");
+  await expect(select).toBeVisible();
+
+  // The closed control is a flex box. Without centring, the selected content
+  // stretches to the full height and the line of text sits at the top.
+  await expect(select).toHaveCSS("align-items", "center");
+});
+
+test("the empty year select has a stable width", async ({ page }) => {
+  await page.goto("/dashboard/2025");
+
+  const select = page.getByLabel("Fiscal year");
+  await expect(select).toBeVisible();
+
+  const widthBefore = await select.evaluate((el) => el.getBoundingClientRect().width);
+  await page.evaluate(() => document.fonts.ready);
+  const widthAfter = await select.evaluate((el) => el.getBoundingClientRect().width);
+
+  expect(Math.abs(widthAfter - widthBefore)).toBeLessThan(1);
+  expect(widthAfter).toBeCloseTo(224, 0);
+});
+
+test("the page does not shift horizontally when the font loads", async ({ page }) => {
+  await page.goto("/dashboard/2025");
+
+  const heading = page.getByRole("heading", { name: "No data for fiscal year 2025" });
+  await expect(heading).toBeVisible();
+
+  const boxBefore = await heading.boundingBox();
+  expect(boxBefore).not.toBeNull();
+
+  await page.evaluate(() => document.fonts.ready);
+
+  const boxAfter = await heading.boundingBox();
+  expect(boxAfter).not.toBeNull();
+
+  if (boxBefore && boxAfter) {
+    expect(Math.abs(boxAfter.x - boxBefore.x)).toBeLessThanOrEqual(2);
+  }
+});
+
+test("the empty year shows no skeleton once on screen", async ({ page }) => {
+  await page.goto("/dashboard/2025");
+
+  await expect(page.getByRole("heading", { name: "No data for fiscal year 2025" })).toBeVisible();
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0);
+});
+
+test("the loading state shows skeletons after delay and cleans them up on resolution", async ({
+  page,
+}) => {
+  await page.route("**/api/dashboard/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await route.continue();
+  });
+
+  await page.goto("/dashboard/2024");
+
+  const skeletons = page.locator('[data-slot="skeleton"]');
+  await expect(skeletons.first()).toBeVisible();
+  expect(await skeletons.count()).toBeGreaterThan(0);
+
+  await expect(page.getByRole("row", { name: "Company" })).toBeVisible({ timeout: 15000 });
+  await expect(skeletons).toHaveCount(0);
+});

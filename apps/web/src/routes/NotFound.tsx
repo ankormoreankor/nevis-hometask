@@ -1,4 +1,7 @@
 import { Link, useLocation } from "react-router";
+import notFoundPoster from "@/assets/not-found-poster.jpg";
+import officeVideo from "@/assets/the-office.mp4";
+import StatePage from "@/components/StatePage";
 
 /**
  * The not-found route.
@@ -11,12 +14,12 @@ export default function NotFound() {
   const { pathname } = useLocation();
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col items-start gap-4 px-4 py-16">
+    <StatePage videoSrc={officeVideo} poster={notFoundPoster} videoWidth={498} videoHeight={358}>
       <h1 className="text-2xl font-semibold">Page not found</h1>
       <p className="text-sm text-muted-foreground">The page {pathname} does not exist.</p>
       <Link to="/" className="text-sm underline">
         Back to the dashboard
       </Link>
-    </main>
+    </StatePage>
   );
 }
