@@ -582,3 +582,23 @@ Open
 Next
 - The chart gets a data table of its own.
 - The treegrid keyboard model could be extended with Home and End on a collapsed tree if the APG needs it.
+
+## the state page videos carry the name of their state
+
+Decided
+- The two clips are named for the state they play on, `not-found.mp4` and `no-data.mp4`, so each sits next to its poster and the folder reads as one set.
+- The name says what the file is for and not where the footage came from, so the filenames do not name the show or the actor.
+
+Done
+- `git mv` on both clips, so the history follows them, and the imports and the local names in `NotFound.tsx` and `NoData.tsx` follow.
+- Biome sorted the imports, so the video comes before the poster in both files.
+
+Verified
+- `check`, `typecheck`, `test` (66 cases), `test:e2e` (41 specs) and `build` pass.
+- The build emits `not-found-*.mp4` and `no-data-*.mp4`.
+
+Open
+- The licence for the footage in a public repository is still open. The names hide the source, the pixels do not.
+
+Next
+- Replace the two clips with footage the project owns, or drop the video and keep the poster.

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import noDataVideo from "@/assets/no-data.mp4";
 import noDataPoster from "@/assets/no-data-poster.jpg";
-import kevinVideo from "@/assets/the-office-kevin-malone.mp4";
 import StatePage from "@/components/StatePage";
 import { currentFiscalYear, FISCAL_YEAR_PICKER_MIN } from "@/lib/period";
 
@@ -89,7 +89,7 @@ function YearPickerForm({ fiscalYear }: { fiscalYear: number }) {
 
 export default function NoData({ fiscalYear }: NoDataProps) {
   return (
-    <StatePage videoSrc={kevinVideo} poster={noDataPoster} videoWidth={640} videoHeight={360}>
+    <StatePage videoSrc={noDataVideo} poster={noDataPoster} videoWidth={640} videoHeight={360}>
       <h1 className="text-2xl font-semibold">No data for fiscal year {fiscalYear}</h1>
       <YearPickerForm fiscalYear={fiscalYear} />
       <Link to="/" className="text-sm underline">
