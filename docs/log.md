@@ -602,3 +602,27 @@ Open
 
 Next
 - Replace the two clips with footage the project owns, or drop the video and keep the poster.
+
+## the chart data table was considered and dropped
+
+Decided
+- A companion data table under the chart is not built. It was not in the design or the brief, the tooltip and the treegrid expose the same values, and a table that sits hidden in the DOM adds markup no user sees.
+- Recharts does not ship the pattern, so the page would own it end to end.
+- The chart keeps its own path: focus enters on the first month, the arrow keys step through the months, and a polite live region announces the month with one line per series.
+
+Done
+- The table and its spec were removed, so the chart is the committed shape again: 40 browser specs over two files, 66 unit cases over five files.
+- README records the decision in `## Decisions` and in `## Accessibility`, and `## What I would do next` no longer proposes it.
+- `docs/context.md` item 1 says the companion table was considered and dropped.
+
+Verified
+- `npm run analyze` exits 0.
+- `check`, `typecheck`, `test` (66 cases), `test:e2e` (40 specs) and `build` pass, and the build has no chunk size warning.
+
+Open
+- The focus-visible suppression is proven on Chromium only.
+- The licence for the footage in a public repository is still open.
+
+Next
+- Run the focus-visible assertion on Firefox and WebKit.
+- Add the data-quality note in the UI on the months where the child sums disagree with the parent total.
