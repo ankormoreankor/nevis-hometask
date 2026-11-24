@@ -12,9 +12,13 @@
     "dev": "concurrently -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "npm run dev -w @nevis/web",
     "dev:api": "npm run dev -w @nevis/api",
+    "api:check": "bash scripts/api-smoke.sh",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
+    "test:e2e": "npm run test:e2e -w @nevis/web",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "analyze": "fallow",
     "analyze:changed": "fallow audit",
@@ -22,6 +26,7 @@
   },
   "license": "ISC",
   "devDependencies": {
+    "@biomejs/biome": "^2.6.8",
     "concurrently": "^10.0.7",
     "fallow": "^3.42.0"
   }

@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/inter-latin-variable.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --color-page: var(--page);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --page: #F9F9F9;
+    --background: oklch(1 0 0);
+    --foreground: #141413;
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: #727271;
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: #ECECEC;
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.556 0 0);
+    --chart-1: #B29DF8;
+    --chart-2: #F4BEB4;
+    --chart-3: #A75E6E;
+    --chart-4: #7EC8E3;
+    --chart-5: #8BC48A;
+    --radius: 0.625rem;
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: #B29DF8;
+    --chart-2: #F4BEB4;
+    --chart-3: #A75E6E;
+    --chart-4: #7EC8E3;
+    --chart-5: #8BC48A;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-page text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+
+/**
+ * The adviser circle in the treegrid.
+ *
+ * The row sets --avatar-color to the token that adviser's series uses in the
+ * chart, so a legend swatch and a row circle are the same colour. The circle
+ * is the token mixed into the card, because the mix is what makes one ink
+ * work: at full strength neither white nor --foreground is safe on every one
+ * of the tokens.
+ */
+.adviser-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: color-mix(in oklab, var(--avatar-color) 25%, var(--card));
+  color: var(--foreground);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/**
+ * Customizable select for the year picker.
+ *
+ * Progressive enhancement for browsers supporting appearance: base-select
+ * (Chrome 135+, Safari 27). The picker popover is anchored directly under
+ * the control rather than shifted by browser chrome positioning.
+ */
+@supports (appearance: base-select) {
+  select,
+  select::picker(select) {
+    appearance: base-select;
+  }
+
+  select::picker-icon {
+    display: none;
+  }
+
+  /* The closed control is a flex box and its selected content stretches to
+     the full height, which leaves the line of text sitting at the top. The
+     content is centred instead, so the value lines up with the chevron. */
+  select {
+    align-items: center;
+    align-content: center;
+  }
+
+  select::picker(select) {
+    background-color: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.25rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    max-height: 16rem;
+    overflow-y: auto;
+  }
+
+  select option {
+    padding: 0.375rem 0.75rem;
+    border-radius: calc(var(--radius) * 0.6);
+    cursor: pointer;
+  }
+
+  select option:disabled {
+    color: var(--muted-foreground);
+    cursor: not-allowed;
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    background-color: var(--muted);
+    color: var(--foreground);
+  }
+
+  select option:checked {
+    background-color: var(--muted);
+    color: var(--foreground);
+    font-weight: 500;
+  }
+}
+
