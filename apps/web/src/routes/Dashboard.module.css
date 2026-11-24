@@ -36,6 +36,25 @@
   gap: 12px;
 }
 
+.card {
+  background-color: var(--card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chartCard {
+  background-color: var(--card);
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 24px 16px 16px;
+}
+
+/* 8px matches the card radius and keeps the selected-row rail and the inset
+   focus ring from being clipped by the rounded corners. */
+.tableCard {
+  padding: 8px;
+}
+
 .trail {
   margin: 0;
 }

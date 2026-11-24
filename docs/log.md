@@ -499,3 +499,31 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the surfaces and the row states follow the design
+
+Decided
+- The page is #F9F9F9 and both blocks are white cards with an 8px radius, no border and no shadow, so they can be reused over any surface. The design's cream #F7F5ED artboard was rejected.
+- The month headers are 14px/400 in the muted ink #727271, which is the design's ink at 60%, on a 56px header row that is not clickable and therefore has no hover.
+- The selected row is a 3px ink rail at its left edge, with no fill and no weight change on the name. The design has no selected state, so the treatment is ours.
+- Every row gets the muted hover band (#F7F7F7), the selected row included, because a table hover is a scanning cue and not only a clickable cue.
+- The focus ring is the neutral gray oklch(0.556 0 0), #737373 at 4.74:1 on white, inset 2px so the table's overflow container cannot clip the horizontal sides.
+- The table card pads 8px inside its radius, so the corner cannot cut the rail or the ring.
+- A bar click focuses one of Recharts' internal layers, so the chart drops the focus outline inside the plot and on the container. The keyboard path still shows the tooltip and the live region.
+
+Done
+- `index.css` carries the page token; the chart legend and the axis ticks follow the muted ink.
+- `TreeGrid` has the 56px header row, the muted month headers, the last column inset, the chevron ink and its overlay, the rail, the hover band and the inset ring.
+- `Dashboard` wraps the chart in a 24/16/16 white card and the table in a white card with 8px of padding. The trail stays above the chart card.
+- README and `docs/context.md` carry the decisions.
+
+Verified
+- `check`, `typecheck`, `test` (48 cases) and `test:e2e` (37 specs) pass.
+- In a browser: the month headers read as the design, the rail marks the selected row, the ring is complete on all four sides, the hover band follows the pointer across a row, and a bar click draws no ring.
+
+Open
+- A click on the chevron still leaves the row focus-visible, so the ring can show after a pointer click on the grid. Only the chart's ring was fixed.
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

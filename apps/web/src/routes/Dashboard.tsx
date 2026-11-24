@@ -167,19 +167,23 @@ export default function Dashboard() {
 
       <div className={styles.chartGroup}>
         <ScopeTrail path={trailPath} labelId={scopeLabelId} onSelect={onSelect} />
-        <MonthlyChart node={selected} fiscalYear={fiscalYear} labelledById={scopeLabelId} />
+        <div className={`${styles.card} ${styles.chartCard}`}>
+          <MonthlyChart node={selected} fiscalYear={fiscalYear} labelledById={scopeLabelId} />
+        </div>
       </div>
 
-      <TreeGrid
-        // The grid keeps its own expansion and its own focus, so a new fiscal
-        // year starts from a clean grid. The selection is not the key: the URL
-        // changes on every selection, and a remount would drop the focus.
-        key={fiscalYear}
-        company={company}
-        selectedId={selected.id}
-        fiscalYear={fiscalYear}
-        onSelect={onSelect}
-      />
+      <div className={`${styles.card} ${styles.tableCard}`}>
+        <TreeGrid
+          // The grid keeps its own expansion and its own focus, so a new fiscal
+          // year starts from a clean grid. The selection is not the key: the URL
+          // changes on every selection, and a remount would drop the focus.
+          key={fiscalYear}
+          company={company}
+          selectedId={selected.id}
+          fiscalYear={fiscalYear}
+          onSelect={onSelect}
+        />
+      </div>
     </main>
   );
 }

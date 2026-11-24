@@ -275,9 +275,13 @@ export default function MonthlyChart({
       <p aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </p>
+      {/*
+        Recharts puts tabindex="-1" on its z-index layer, a bar click focuses it,
+        and the browser outlines the group around the plot.
+      */}
       <ChartContainer
         config={config}
-        className="h-[390px] w-full focus-visible:outline-hidden"
+        className="h-[390px] w-full focus:outline-hidden [&_g:focus]:outline-none"
         tabIndex={0}
         role="application"
         aria-labelledby={labelledById}

@@ -1,4 +1,5 @@
 import type { Company } from "@nevis/shared";
+import { cn } from "cn";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Table,
@@ -212,12 +213,19 @@ export default function TreeGrid({
   return (
     <Table role="treegrid" aria-label={caption} className={className}>
       <TableHeader>
-        <TableRow className="h-10">
+        <TableRow className="h-14 hover:bg-transparent">
           <TableHead role="columnheader" className="sr-only">
             Name
           </TableHead>
-          {months.map((month) => (
-            <TableHead key={month} role="columnheader" className="text-right">
+          {months.map((month, index) => (
+            <TableHead
+              key={month}
+              role="columnheader"
+              className={cn(
+                "text-right font-normal text-muted-foreground",
+                index === months.length - 1 && "pr-6",
+              )}
+            >
               {month}
             </TableHead>
           ))}
@@ -242,7 +250,16 @@ export default function TreeGrid({
             aria-selected={row.id === selectedId}
             tabIndex={row.id === focusedId ? 0 : -1}
             data-state={row.id === selectedId ? "selected" : undefined}
-            className="h-14"
+            // The selected row keeps its resting state transparent so the rail
+            // carries the selection. The hover band is the full muted token so a
+            // row can be scanned across, and the compound data-[state=selected]:hover
+            // variant is needed because the plain hover rule would lose to the
+            // transparent resting rule on specificity.
+            className={cn(
+              "h-14 hover:bg-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-ring",
+              row.id === selectedId &&
+                "data-[state=selected]:bg-transparent data-[state=selected]:hover:bg-muted",
+            )}
             onClick={() => {
               focusRow(row.id);
               onSelect(row.id);
@@ -254,7 +271,17 @@ export default function TreeGrid({
             onFocus={() => setFocusedId(row.id)}
             onKeyDown={(event) => handleKeyDown(event, row)}
           >
-            <TableCell role="gridcell" className="w-[296px] min-w-[160px]">
+            {/* The design has no selected state: a full-row tint read as a stray
+                gray band on a single-row table, and a weight change would reflow
+                the text, so the selection is a rail. */}
+            <TableCell
+              role="gridcell"
+              className={cn(
+                "relative w-[296px] min-w-[160px]",
+                row.id === selectedId &&
+                  "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-foreground before:content-['']",
+              )}
+            >
               <div
                 className="flex items-center gap-2"
                 style={{ paddingLeft: (row.level - 1) * INDENT_PX }}
@@ -264,7 +291,7 @@ export default function TreeGrid({
                     type="button"
                     tabIndex={-1}
                     aria-label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
-                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-foreground/10"
                     // The chevron is pointer only. Keeping the focus off the
                     // button leaves it on the row, which is the only focus
                     // target in the grid.
@@ -296,7 +323,11 @@ export default function TreeGrid({
               </div>
             </TableCell>
             {row.node.values.map((value, index) => (
-              <TableCell key={months[index]} role="gridcell" className="text-right tabular-nums">
+              <TableCell
+                key={months[index]}
+                role="gridcell"
+                className={cn("text-right tabular-nums", index === months.length - 1 && "pr-6")}
+              >
                 {value}
               </TableCell>
             ))}
