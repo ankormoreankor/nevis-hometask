@@ -439,43 +439,207 @@ test("the scope trail wraps at 375px without horizontal overflow", async ({ page
   expect(boundingBox?.height).toBeGreaterThan(30);
 });
 
+test("small screen layout at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/dashboard/2024");
+
+  // The chart renders 12 month labels (count the text nodes in the chart).
+  const yAxisTicks = page.locator("figure .recharts-yAxis-tick-labels text");
+  await expect(yAxisTicks).toHaveCount(12);
+
+  // The spacing between consecutive month rows is at least 24px.
+  const tickBoxes = await yAxisTicks.evaluateAll((elements) =>
+    elements.map((el) => {
+      const box = (el as SVGGraphicsElement).getBBox();
+      return { y: box.y };
+    }),
+  );
+  expect(tickBoxes.length).toBe(12);
+  for (let i = 1; i < tickBoxes.length; i++) {
+    const prev = tickBoxes[i - 1];
+    const curr = tickBoxes[i];
+    if (prev && curr) {
+      expect(Math.abs(curr.y - prev.y)).toBeGreaterThanOrEqual(24);
+    }
+  }
+
+  // The month header reads "Feb".
+  const firstMonthHeader = page.locator("thead th").nth(1);
+  await expect(firstMonthHeader).toBeVisible();
+  const shortSpan = firstMonthHeader.locator("span.sm\\:hidden");
+  await expect(shortSpan).toBeVisible();
+  await expect(shortSpan).toHaveText("Feb");
+
+  // The name cell keeps the same x after the table's scroll container is scrolled to the end.
+  const tableContainer = page.locator("[data-slot='table-container']");
+  const nameCell = page.getByRole("row", { name: "Company" }).locator("td").first();
+  const initialBox = await nameCell.boundingBox();
+  expect(initialBox).not.toBeNull();
+
+  await tableContainer.evaluate((el) => {
+    el.scrollLeft = el.scrollWidth;
+  });
+
+  const scrolledBox = await nameCell.boundingBox();
+  expect(scrolledBox).not.toBeNull();
+  expect(Math.round(scrolledBox?.x ?? 0)).toBe(Math.round(initialBox?.x ?? 0));
+
+  // With Branch 1 selected the legend has 5 items, each on a single line (item height no more than 24px),
+  // and the legend stays inside the chart card.
+  await page.getByRole("row", { name: "Branch 1" }).click();
+
+  const legend = page.locator("figure ul");
+  const legendItems = legend.locator("li");
+  await expect(legendItems).toHaveCount(5);
+
+  const card = page.locator("figure").locator("..");
+  const cardBox = await card.boundingBox();
+  const legendBox = await legend.boundingBox();
+  expect(cardBox).not.toBeNull();
+  expect(legendBox).not.toBeNull();
+
+  if (cardBox && legendBox) {
+    expect(legendBox.x).toBeGreaterThanOrEqual(cardBox.x);
+    expect(legendBox.x + legendBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width + 1);
+    expect(legendBox.y).toBeGreaterThanOrEqual(cardBox.y);
+    expect(legendBox.y + legendBox.height).toBeLessThanOrEqual(cardBox.y + cardBox.height + 1);
+  }
+
+  for (let i = 0; i < 5; i++) {
+    const itemBox = await legendItems.nth(i).boundingBox();
+    expect(itemBox).not.toBeNull();
+    expect(itemBox?.height).toBeLessThanOrEqual(24);
+  }
+});
+
+test("sticky name column capped and truncated at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/dashboard/2024");
+
+  // Measure the name cell width with only the company open.
+  const companyNameCell = page.getByRole("row", { name: "Company" }).locator("td").first();
+  await expect(companyNameCell).toBeVisible();
+  const collapsedBox = await companyNameCell.boundingBox();
+  expect(collapsedBox).not.toBeNull();
+  const collapsedWidth = collapsedBox?.width ?? 0;
+
+  // Expand Branch 1 and Anna Blackwood.
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+  await page.getByRole("button", { name: "Expand Anna Blackwood" }).click();
+
+  const annaRow = page.getByRole("row", { name: "Anna Blackwood" });
+  await expect(annaRow).toBeVisible();
+
+  // Assert the name cell width is the same (within 1px) in both states.
+  const expandedBox = await companyNameCell.boundingBox();
+  expect(expandedBox).not.toBeNull();
+  const expandedWidth = expandedBox?.width ?? 0;
+  expect(Math.abs(expandedWidth - collapsedWidth)).toBeLessThanOrEqual(1);
+
+  const annaCellBox = await annaRow.locator("td").first().boundingBox();
+  expect(annaCellBox).not.toBeNull();
+  expect(Math.abs((annaCellBox?.width ?? 0) - collapsedWidth)).toBeLessThanOrEqual(1);
+
+  // Assert the long adviser name is truncated, meaning scrollWidth > clientWidth,
+  // and that its title attribute holds the full name.
+  const annaNameSpan = annaRow.locator("td").first().locator("span.truncate");
+  await expect(annaNameSpan).toBeVisible();
+  await expect(annaNameSpan).toHaveAttribute("title", "Anna Blackwood");
+  const isTruncated = await annaNameSpan.evaluate((el) => el.scrollWidth > el.clientWidth);
+  expect(isTruncated).toBe(true);
+
+  // Assert the page still does not scroll sideways.
+  const pageOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverflow).toBe(0);
+
+  // Assert that the sticky name cell keeps its x position after the table container is scrolled to the end.
+  const tableContainer = page.locator("[data-slot='table-container']");
+  const annaNameCell = annaRow.locator("td").first();
+  const initialBox = await annaNameCell.boundingBox();
+  expect(initialBox).not.toBeNull();
+
+  await tableContainer.evaluate((el) => {
+    el.scrollLeft = el.scrollWidth;
+  });
+
+  const scrolledBox = await annaNameCell.boundingBox();
+  expect(scrolledBox).not.toBeNull();
+  expect(Math.round(scrolledBox?.x ?? 0)).toBe(Math.round(initialBox?.x ?? 0));
+});
+
 test("the stacked bar chart rounds the topmost segment of each month column", async ({ page }) => {
   await page.goto(`/dashboard/2024?node=${ANNA_ID}`);
 
   await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood");
 
   const rectangles = page.locator("figure path.recharts-rectangle");
-  await expect(rectangles.first()).toBeVisible();
+  await expect(rectangles).toHaveCount(31);
 
-  const paths = await rectangles.evaluateAll((elements) =>
-    elements.map((el) => {
-      const bbox = (el as SVGGraphicsElement).getBBox();
-      return {
-        x: Math.round(bbox.x),
-        y: bbox.y,
-        d: el.getAttribute("d") ?? "",
-      };
-    }),
-  );
+  const isNarrow = await page.evaluate(() => window.innerWidth < 640);
 
-  const columns = new Map<number, typeof paths>();
-  for (const item of paths) {
-    const group = columns.get(item.x) ?? [];
-    group.push(item);
-    columns.set(item.x, group);
-  }
+  let paths: Array<{ x: number; y: number; width: number; d: string }> = [];
 
-  expect(columns.size).toBe(12);
+  await expect(async () => {
+    paths = await rectangles.evaluateAll((elements) =>
+      elements.map((el) => {
+        const bbox = (el as SVGGraphicsElement).getBBox();
+        return {
+          x: Math.round(bbox.x),
+          y: Math.round(bbox.y),
+          width: bbox.width,
+          d: el.getAttribute("d") ?? "",
+        };
+      }),
+    );
+    const xs = new Set(paths.map((p) => p.x));
+    const ys = new Set(paths.map((p) => p.y));
+    const count = isNarrow ? ys.size : xs.size;
+    expect(count).toBe(12);
+  }).toPass();
 
-  for (const [, group] of columns) {
-    group.sort((a, b) => a.y - b.y);
+  if (isNarrow) {
+    const rows = new Map<number, typeof paths>();
+    for (const item of paths) {
+      const group = rows.get(item.y) ?? [];
+      group.push(item);
+      rows.set(item.y, group);
+    }
 
-    const [top, ...rest] = group;
-    expect(top).toBeDefined();
-    expect(top?.d).toContain("A ");
+    expect(rows.size).toBe(12);
 
-    for (const segment of rest) {
-      expect(segment.d).not.toContain("A ");
+    for (const [, group] of rows) {
+      group.sort((a, b) => b.x + b.width - (a.x + a.width));
+
+      const [end, ...rest] = group;
+      expect(end).toBeDefined();
+      expect(end?.d).toContain("A ");
+
+      for (const segment of rest) {
+        expect(segment.d).not.toContain("A ");
+      }
+    }
+  } else {
+    const columns = new Map<number, typeof paths>();
+    for (const item of paths) {
+      const group = columns.get(item.x) ?? [];
+      group.push(item);
+      columns.set(item.x, group);
+    }
+
+    expect(columns.size).toBe(12);
+
+    for (const [, group] of columns) {
+      group.sort((a, b) => a.y - b.y);
+
+      const [top, ...rest] = group;
+      expect(top).toBeDefined();
+      expect(top?.d).toContain("A ");
+
+      for (const segment of rest) {
+        expect(segment.d).not.toContain("A ");
+      }
     }
   }
 });

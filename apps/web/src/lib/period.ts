@@ -77,6 +77,26 @@ export function formatMonthLabel(fiscalYear: number, index: number): string {
 }
 
 /**
+ * The short label of one month of a fiscal year, for example "Feb" and "Jan".
+ *
+ * The date is built in UTC on both sides. An index outside the twelve months
+ * has no label.
+ */
+export function formatMonthShort(fiscalYear: number, index: number): string {
+  const entry = FISCAL_MONTHS[index];
+  if (!entry) {
+    return "";
+  }
+
+  const date = new Date(Date.UTC(fiscalYear + entry.yearOffset, entry.month - 1, 1));
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+/**
  * The span of a fiscal year, for example "Feb 2024 to Jan 2025".
  */
 export function formatPeriod(fiscalYear: number): string {

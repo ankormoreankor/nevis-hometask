@@ -9,14 +9,13 @@ import {
   Rectangle,
   type TickItem,
   useXAxisTicks,
+  useYAxisTicks,
   XAxis,
   YAxis,
 } from "recharts";
 import {
   type ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
@@ -29,6 +28,7 @@ import {
   toTopSeries,
 } from "@/lib/chart";
 import { formatPeriod } from "@/lib/period";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 /**
  * The stacked monthly chart, built on the shadcn Chart component.
@@ -117,13 +117,25 @@ function MonthlyChartTooltip({
   return <ChartTooltipContent active={active} payload={payload} label={label} {...props} />;
 }
 
-function XAxisTicksBridge({ ticksRef }: { ticksRef: React.RefObject<ReadonlyArray<TickItem>> }) {
+function TicksBridge({
+  ticksRef,
+  narrow,
+}: {
+  ticksRef: React.RefObject<ReadonlyArray<TickItem>>;
+  narrow: boolean;
+}) {
   const xAxisTicks = useXAxisTicks();
+  const yAxisTicks = useYAxisTicks();
   useEffect(() => {
-    if (xAxisTicks) {
+    const activeTicks = narrow ? yAxisTicks : xAxisTicks;
+    if (activeTicks && activeTicks.length > 0) {
+      ticksRef.current = activeTicks;
+    } else if (xAxisTicks && xAxisTicks.length > 0) {
       ticksRef.current = xAxisTicks;
+    } else if (yAxisTicks && yAxisTicks.length > 0) {
+      ticksRef.current = yAxisTicks;
     }
-  }, [xAxisTicks, ticksRef]);
+  }, [narrow, xAxisTicks, yAxisTicks, ticksRef]);
 
   return null;
 }
@@ -141,6 +153,9 @@ export default function MonthlyChart({
   const domain = useMemo(() => toDomain(series), [series]);
   const tops = useMemo(() => toTopSeries(series), [series]);
   const reducedMotion = usePrefersReducedMotion();
+
+  // 639 is Tailwind's sm (640) minus one, so the CSS breakpoints and the hook agree.
+  const narrow = useMediaQuery("(max-width: 639px)");
 
   const surface = useRef<SVGSVGElement | null>(null);
   const ticks = useRef<ReadonlyArray<TickItem>>([]);
@@ -170,8 +185,8 @@ export default function MonthlyChart({
         currentSvg.dispatchEvent(
           new MouseEvent("mousemove", {
             bubbles: true,
-            clientX: rect.left + retryPoint.coordinate,
-            clientY: rect.top + rect.height / 2,
+            clientX: narrow ? rect.left + rect.width / 2 : rect.left + retryPoint.coordinate,
+            clientY: narrow ? rect.top + retryPoint.coordinate : rect.top + rect.height / 2,
           }),
         );
       });
@@ -181,8 +196,8 @@ export default function MonthlyChart({
     svg.dispatchEvent(
       new MouseEvent("mousemove", {
         bubbles: true,
-        clientX: rect.left + point.coordinate,
-        clientY: rect.top + rect.height / 2,
+        clientX: narrow ? rect.left + rect.width / 2 : rect.left + point.coordinate,
+        clientY: narrow ? rect.top + point.coordinate : rect.top + rect.height / 2,
       }),
     );
   }
@@ -219,9 +234,9 @@ export default function MonthlyChart({
       return;
     }
     let nextIndex: number | null = null;
-    if (event.key === "ArrowRight") {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       nextIndex = Math.min(activeIndex + 1, rows.length - 1);
-    } else if (event.key === "ArrowLeft") {
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       nextIndex = Math.max(activeIndex - 1, 0);
     } else if (event.key === "Home") {
       nextIndex = 0;
@@ -281,7 +296,7 @@ export default function MonthlyChart({
       */}
       <ChartContainer
         config={config}
-        className="h-[390px] w-full focus:outline-hidden [&_g:focus]:outline-none"
+        className="h-[440px] sm:h-[390px] w-full focus:outline-hidden [&_g:focus]:outline-none"
         tabIndex={0}
         role="application"
         aria-labelledby={labelledById}
@@ -293,27 +308,58 @@ export default function MonthlyChart({
           ref={surface}
           accessibilityLayer={false}
           throttleDelay={0}
+          layout={narrow ? "vertical" : "horizontal"}
           data={rows}
           desc={description}
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
         >
-          <XAxisTicksBridge ticksRef={ticks} />
-          <CartesianGrid vertical={false} stroke="#ccc" strokeDasharray="3 3" />
-          <XAxis
-            dataKey="month"
-            interval="preserveStartEnd"
-            minTickGap={24}
-            tickLine={false}
-            axisLine={false}
+          <TicksBridge ticksRef={ticks} narrow={narrow} />
+          <CartesianGrid
+            vertical={narrow}
+            horizontal={!narrow}
+            stroke="#ccc"
+            strokeDasharray="3 3"
           />
-          <YAxis
-            domain={[0, axisMax]}
-            ticks={yTicks}
-            allowDecimals={false}
-            tickLine={false}
-            axisLine={false}
-            width={44}
-          />
+          {narrow ? (
+            <>
+              <XAxis
+                type="number"
+                domain={[0, axisMax]}
+                ticks={yTicks}
+                allowDecimals={false}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                type="category"
+                dataKey="month"
+                // The tick label wraps to "Feb" over "2024", so the axis only
+                // has to fit the wider of the two.
+                width={40}
+                interval={0}
+                tickLine={false}
+                axisLine={false}
+              />
+            </>
+          ) : (
+            <>
+              <XAxis
+                dataKey="month"
+                interval="preserveStartEnd"
+                minTickGap={24}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                domain={[0, axisMax]}
+                ticks={yTicks}
+                allowDecimals={false}
+                tickLine={false}
+                axisLine={false}
+                width={44}
+              />
+            </>
+          )}
           <ChartTooltip
             cursor={{ fill: "var(--muted)" }}
             content={
@@ -339,7 +385,7 @@ export default function MonthlyChart({
               name={item.label}
               stackId={STACK_ID}
               fill={`var(--color-${item.key})`}
-              maxBarSize={88}
+              maxBarSize={narrow ? 20 : 88}
               isAnimationActive={!reducedMotion}
               shape={(rect: BarShapeProps) => (
                 <Rectangle
@@ -348,18 +394,31 @@ export default function MonthlyChart({
                   width={rect.width}
                   height={rect.height}
                   fill={`var(--color-${item.key})`}
-                  radius={tops[rect.originalDataIndex] === item.key ? [4, 4, 0, 0] : 0}
+                  radius={
+                    tops[rect.originalDataIndex] === item.key
+                      ? narrow
+                        ? [0, 4, 4, 0]
+                        : [4, 4, 0, 0]
+                      : 0
+                  }
                 />
               )}
             />
           ))}
-          <ChartLegend
-            verticalAlign="bottom"
-            align="center"
-            content={<ChartLegendContent hideIcon className="pt-4 text-muted-foreground" />}
-          />
         </BarChart>
       </ChartContainer>
+      <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        {series.map((item) => (
+          <li key={item.key} className="flex items-center gap-1.5 whitespace-nowrap">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-[2px]"
+              style={{ backgroundColor: item.color }}
+            />
+            <span>{item.label}</span>
+          </li>
+        ))}
+      </ul>
     </figure>
   );
 }

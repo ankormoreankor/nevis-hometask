@@ -6,8 +6,20 @@ import {
   FISCAL_MONTHS,
   FISCAL_YEAR_PICKER_MIN,
   formatMonthLabel,
+  formatMonthShort,
   formatPeriod,
 } from "./period";
+
+describe("formatMonthShort", () => {
+  it("labels the fiscal month with short name only", () => {
+    expect(formatMonthShort(2024, 0)).toBe("Feb");
+    expect(formatMonthShort(2024, 11)).toBe("Jan");
+  });
+
+  it("has no label outside the twelve months", () => {
+    expect(formatMonthShort(2024, 12)).toBe("");
+  });
+});
 
 describe("formatMonthLabel", () => {
   it("labels the fiscal year from February", () => {

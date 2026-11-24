@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatMonthLabel } from "@/lib/period";
+import { formatMonthLabel, formatMonthShort } from "@/lib/period";
 import { ancestorIds, type FlatRow, flattenVisible, initials } from "@/lib/tree";
 
 /**
@@ -35,7 +35,6 @@ export type TreeGridProps = {
 
 const DEFAULT_CAPTION = "Monthly figures by branch, adviser and acquisition channel";
 const MONTH_COUNT = 12;
-const INDENT_PX = 16;
 
 function Chevron({ expanded }: { expanded: boolean }) {
   return (
@@ -74,7 +73,11 @@ export default function TreeGrid({
   const rows = useMemo(() => flattenVisible(company, expanded), [company, expanded]);
 
   const months = useMemo(
-    () => Array.from({ length: MONTH_COUNT }, (_, index) => formatMonthLabel(fiscalYear, index)),
+    () =>
+      Array.from({ length: MONTH_COUNT }, (_, index) => ({
+        full: formatMonthLabel(fiscalYear, index),
+        short: formatMonthShort(fiscalYear, index),
+      })),
     [fiscalYear],
   );
 
@@ -211,22 +214,30 @@ export default function TreeGrid({
   };
 
   return (
-    <Table role="treegrid" aria-label={caption} className={className}>
+    <Table
+      role="treegrid"
+      aria-label={caption}
+      className={cn("text-[13px] sm:text-sm [--row-indent:12px] sm:[--row-indent:16px]", className)}
+    >
       <TableHeader>
-        <TableRow className="h-14 hover:bg-transparent">
-          <TableHead role="columnheader" className="sr-only">
-            Name
+        <TableRow className="h-12 sm:h-14 hover:bg-transparent">
+          <TableHead
+            role="columnheader"
+            className="sticky left-0 z-20 w-[clamp(160px,48vw,296px)] min-w-[clamp(160px,48vw,296px)] max-w-[clamp(160px,48vw,296px)] bg-card px-1.5 sm:px-2 border-b border-border after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border sm:after:hidden"
+          >
+            <span className="sr-only">Name</span>
           </TableHead>
-          {months.map((month, index) => (
+          {months.map(({ full, short }, index) => (
             <TableHead
-              key={month}
+              key={full}
               role="columnheader"
               className={cn(
-                "text-right font-normal text-muted-foreground",
-                index === months.length - 1 && "pr-6",
+                "px-1.5 sm:px-2 text-right font-normal text-muted-foreground",
+                index === months.length - 1 && "pr-4 sm:pr-6",
               )}
             >
-              {month}
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{full}</span>
             </TableHead>
           ))}
         </TableRow>
@@ -256,7 +267,7 @@ export default function TreeGrid({
             // variant is needed because the plain hover rule would lose to the
             // transparent resting rule on specificity.
             className={cn(
-              "h-14 hover:bg-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-ring",
+              "group h-12 sm:h-14 hover:bg-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-ring",
               row.id === selectedId &&
                 "data-[state=selected]:bg-transparent data-[state=selected]:hover:bg-muted",
             )}
@@ -277,21 +288,21 @@ export default function TreeGrid({
             <TableCell
               role="gridcell"
               className={cn(
-                "relative w-[296px] min-w-[160px]",
+                "sticky left-0 z-10 w-[clamp(160px,48vw,296px)] min-w-[clamp(160px,48vw,296px)] max-w-[clamp(160px,48vw,296px)] bg-card px-1.5 sm:px-2 group-hover:bg-muted border-b border-border group-last:border-b-0 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border sm:after:hidden group-focus-visible:shadow-[inset_2px_2px_0_0_var(--color-ring),inset_0_-2px_0_0_var(--color-ring)]",
                 row.id === selectedId &&
                   "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-foreground before:content-['']",
               )}
             >
               <div
-                className="flex items-center gap-2"
-                style={{ paddingLeft: (row.level - 1) * INDENT_PX }}
+                className="flex min-w-0 items-center gap-1.5 sm:gap-2"
+                style={{ paddingInlineStart: `calc(var(--row-indent) * ${row.level - 1})` }}
               >
                 {row.hasChildren ? (
                   <button
                     type="button"
                     tabIndex={-1}
                     aria-label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
-                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-foreground/10"
+                    className="inline-flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-foreground/10"
                     // The chevron is pointer only. Keeping the focus off the
                     // button leaves it on the row, which is the only focus
                     // target in the grid.
@@ -306,7 +317,10 @@ export default function TreeGrid({
                     <Chevron expanded={row.isExpanded} />
                   </button>
                 ) : (
-                  <span aria-hidden="true" className="inline-block h-8 w-8 shrink-0" />
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-6 w-6 sm:h-8 sm:w-8 shrink-0"
+                  />
                 )}
                 {row.kind === "advisor" ? (
                   <span
@@ -319,14 +333,19 @@ export default function TreeGrid({
                     {initials(row.name)}
                   </span>
                 ) : null}
-                <span>{row.name}</span>
+                <span className="min-w-0 flex-1 truncate" title={row.name}>
+                  {row.name}
+                </span>
               </div>
             </TableCell>
             {row.node.values.map((value, index) => (
               <TableCell
-                key={months[index]}
+                key={months[index]?.full}
                 role="gridcell"
-                className={cn("text-right tabular-nums", index === months.length - 1 && "pr-6")}
+                className={cn(
+                  "px-1.5 sm:px-2 text-right tabular-nums",
+                  index === months.length - 1 && "pr-4 sm:pr-6",
+                )}
               >
                 {value}
               </TableCell>

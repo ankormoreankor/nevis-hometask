@@ -18,10 +18,20 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 5173,
     proxy: {
       // The API runs on its own port and nothing is deployed, so this proxy is
       // how the client reaches it in every environment.
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    host: true,
+    proxy: {
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,

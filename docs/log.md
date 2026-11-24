@@ -527,3 +527,27 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## the dashboard fits a narrow screen
+
+Decided
+- Below 640px the chart turns on its side, months down the y axis and values along x. Twelve columns do not fit a phone, and 272px of plot cannot hold twelve 24px targets.
+- The legend leaves the Recharts plot and becomes a list under it. The library's legend is a flex row with no wrapping, so a branch with five advisers broke the names mid-word.
+- The treegrid keeps a sticky name column capped at clamp(160px, 48vw, 296px), so the month area does not change with the depth of the tree. A name that does not fit truncates, and the full name stays in the accessible name and in the title.
+- The month headers read "Feb" below 640px and "Feb 2024" from 640px up, because the header text set the column width and not the numbers.
+- The dev server binds to the network, so the dashboard can be opened on a phone on the same Wi-Fi.
+
+Done
+- `useMediaQuery` and `formatMonthShort`, the vertical layout below 640px with the arrow keys up and down, the legend list, the capped sticky column with the truncation, the mobile type scale and row height, and the Vite host and preview proxy.
+- The expanded-row tint is gone, so the rows are white as the design says and the sticky cell has one background. 50 unit cases and 39 browser specs.
+
+Verified
+- `check`, `typecheck`, `test` (50 cases) and `test:e2e` (39 specs) pass.
+- In a browser at 380px: 12 month rows in the chart, all labelled, the name cell 182px whether the tree is collapsed or expanded, four month columns visible, and the LAN address answers.
+
+Open
+- A click on the chevron still leaves the row focus-visible, so the ring can show after a pointer click on the grid.
+- The chart still has no data table of its own, and the ARIA tree is read through attributes rather than the accessibility API.
+
+Next
+- Walk the ARIA tree in the browser suite and split the bundle.

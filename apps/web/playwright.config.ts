@@ -22,6 +22,9 @@ import { defineConfig, devices } from "@playwright/test";
  *   - The loading state: the route is intercepted and delayed, so the skeleton
  *     is on screen before the data lands.
  *   - Nothing overflows the viewport at 375px.
+ *   - Small screen layout at 375px: horizontal bar chart with 12 month labels,
+ *     minimum 24px row spacing, wrapped legend outside the plot, sticky name
+ *     column on the treegrid with capped width and truncated names, and short month labels.
  *
  * The two servers are started from the repo root, so the suite runs against
  * the same setup a reviewer uses: Vite on 5173 proxying /api to the API on
