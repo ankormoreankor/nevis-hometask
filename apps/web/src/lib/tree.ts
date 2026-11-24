@@ -19,6 +19,7 @@ export type FlatRow = {
   setSize: number;
   hasChildren: boolean;
   isExpanded: boolean;
+  parentId: string | null;
 };
 
 /**
@@ -50,33 +51,10 @@ export function hasChildren(node: TreeNode): boolean {
 }
 
 /**
- * The node with this id, or null. The first match wins, and a visited set
- * keeps a malformed payload from looping.
+ * The node with this id, or null. Derived from pathTo.
  */
 export function findNode(root: Company, id: string): TreeNode | null {
-  const visited = new Set<string>();
-
-  const walk = (node: TreeNode): TreeNode | null => {
-    if (visited.has(node.id)) {
-      return null;
-    }
-    visited.add(node.id);
-
-    if (node.id === id) {
-      return node;
-    }
-
-    for (const child of childrenOf(node)) {
-      const found = walk(child);
-      if (found) {
-        return found;
-      }
-    }
-
-    return null;
-  };
-
-  return walk(root);
+  return pathTo(root, id).at(-1) ?? null;
 }
 
 /**
@@ -89,31 +67,9 @@ export function findNode(root: Company, id: string): TreeNode | null {
  * expand it as a side effect.
  */
 export function ancestorIds(root: Company, id: string): string[] {
-  const visited = new Set<string>();
-  const path: string[] = [];
-
-  const walk = (node: TreeNode): boolean => {
-    if (visited.has(node.id)) {
-      return false;
-    }
-    visited.add(node.id);
-
-    if (node.id === id) {
-      return true;
-    }
-
-    path.push(node.id);
-    for (const child of childrenOf(node)) {
-      if (walk(child)) {
-        return true;
-      }
-    }
-    path.pop();
-
-    return false;
-  };
-
-  return walk(root) ? path : [];
+  return pathTo(root, id)
+    .slice(0, -1)
+    .map((node) => node.id);
 }
 
 /**
@@ -191,6 +147,7 @@ export function flattenVisible(root: Company, expanded: ReadonlySet<string>): Fl
     kind: FlatRow["kind"],
     posInSet: number,
     setSize: number,
+    parentId: string | null,
   ): void => {
     const children = childrenOf(node);
     const isExpanded = expanded.has(node.id);
@@ -205,6 +162,7 @@ export function flattenVisible(root: Company, expanded: ReadonlySet<string>): Fl
       setSize,
       hasChildren: children.length > 0,
       isExpanded,
+      parentId,
     });
 
     if (!isExpanded) {
@@ -215,11 +173,11 @@ export function flattenVisible(root: Company, expanded: ReadonlySet<string>): Fl
       kind === "company" ? "branch" : kind === "branch" ? "advisor" : "channel";
 
     children.forEach((child, index) => {
-      walk(child, level + 1, childKind, index + 1, children.length);
+      walk(child, level + 1, childKind, index + 1, children.length, node.id);
     });
   };
 
-  walk(root, 1, "company", 1, 1);
+  walk(root, 1, "company", 1, 1, null);
 
   return rows;
 }

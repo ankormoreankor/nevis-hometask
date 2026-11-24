@@ -551,3 +551,34 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## code analysis, treegrid navigation and chunk split
+
+Decided
+- Fallow runs in CI with default thresholds, health ignores for UI primitives, e2e specs and test files, and default ignores for dead-code and duplication checks.
+- Tree traversals collapse to `pathTo`, deriving `findNode` and `ancestorIds`.
+- The treegrid keyboard model lives in a pure module (`treegrid-nav.ts`) tested with vitest.
+- Pointer clicks suppress the focus-visible ring via `{ focusVisible: false }`, tested on Chromium.
+- The bundle splits recharts and vendor chunks manually in Vite, avoiding route lazy loading.
+
+Done
+- Fallow config `.fallowrc.jsonc` and CI step in `.github/workflows/ci.yml`.
+- Pure `treegrid-nav.ts` with unit tests covering arrow navigation, expand, collapse, parent, Home, End, Enter and Space.
+- Chart decomposed into `MonthlyChart`, `ChartPlot` and `useMonthHover`.
+- Treegrid decomposed into small row components; rows carry `aria-label={row.name}`.
+- State page video playback extracted to `useVideoPlayback`.
+- Unused shadcn exports deleted; vendor chunk split added to Vite config.
+- Playwright specs for ARIA tree walk across four levels and chevron click without focus ring.
+
+Verified
+- `npm run analyze` exits 0.
+- `npm run check`, `npm run typecheck`, `npm run test` (66 cases) and `npm run test:e2e` (40 specs) pass.
+- Production build has no chunk size warning.
+
+Open
+- The chart still has no data table of its own.
+- The focus-visible suppression is proven on Chromium only.
+
+Next
+- The chart gets a data table of its own.
+- The treegrid keyboard model could be extended with Home and End on a collapsed tree if the APG needs it.

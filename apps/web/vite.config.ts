@@ -17,6 +17,20 @@ export default defineConfig({
       localsConvention: "camelCaseOnly",
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/recharts")) {
+            return "recharts";
+          }
+          if (id.includes("node_modules")) {
+            return "vendor";
+          }
+        },
+      },
+    },
+  },
   server: {
     host: true,
     port: 5173,

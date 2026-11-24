@@ -34,6 +34,53 @@ import { expect, test } from "@playwright/test";
 const CHANNEL_ID = "716e7c30-b7c3-45c5-aa64-cbcf483917e0";
 const ANNA_ID = "e3c4637b-2f21-4b7e-883e-b13ae1a6df6a";
 
+test("the accessibility tree reflects the treegrid structure and levels", async ({ page }) => {
+  await page.goto("/dashboard/2024");
+  await expect(
+    page.getByRole("treegrid", {
+      name: "Monthly figures by branch, adviser and acquisition channel",
+    }),
+  ).toBeVisible();
+  await expect(page.locator("tbody")).toMatchAriaSnapshot(`
+    - rowgroup:
+      - row "Company" [expanded] [level=1] [selected]
+      - row "Branch 1" [level=2]
+      - row "Branch 2" [level=2]
+      - row "Branch 3" [level=2]
+  `);
+
+  await page.getByRole("button", { name: "Expand Branch 1" }).click();
+  await expect(page.locator("tbody")).toMatchAriaSnapshot(`
+    - rowgroup:
+      - row "Company" [expanded] [level=1] [selected]
+      - row "Branch 1" [expanded] [level=2]
+      - row "Anna Blackwood" [level=3]
+      - row "James Walker" [level=3]
+      - row "Maria Gutierrez" [level=3]
+      - row "Robert Chen" [level=3]
+      - row "Sarah Smith" [level=3]
+      - row "Branch 2" [level=2]
+      - row "Branch 3" [level=2]
+  `);
+
+  await page.getByRole("button", { name: "Expand Anna Blackwood" }).click();
+  await expect(page.locator("tbody")).toMatchAriaSnapshot(`
+    - rowgroup:
+      - row "Company" [expanded] [level=1] [selected]
+      - row "Branch 1" [expanded] [level=2]
+      - row "Anna Blackwood" [expanded] [level=3]
+      - row "Existing clients" [level=4]
+      - row "New organic" [level=4]
+      - row "New paid" [level=4]
+      - row "James Walker" [level=3]
+      - row "Maria Gutierrez" [level=3]
+      - row "Robert Chen" [level=3]
+      - row "Sarah Smith" [level=3]
+      - row "Branch 2" [level=2]
+      - row "Branch 3" [level=2]
+  `);
+});
+
 test("the dashboard route resolves", async ({ page }) => {
   await page.goto("/dashboard/2024");
   await expect(page).toHaveURL(/\/dashboard\/2024$/);
@@ -135,6 +182,7 @@ test("the chevron expands without selecting", async ({ page }) => {
   // The chevron is pointer only, so the focus lands on the row and Enter
   // selects the row rather than toggling the expansion.
   await expect(branch1).toBeFocused();
+  expect(await branch1.evaluate((el) => el.matches(":focus-visible"))).toBe(false);
   await page.keyboard.press("Enter");
   await expect(branch1).toHaveAttribute("aria-selected", "true");
   await expect(branch1).toHaveAttribute("aria-expanded", "true");

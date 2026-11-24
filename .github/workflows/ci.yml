@@ -26,6 +26,7 @@ jobs:
       - run: npm run check
       - run: npm run typecheck
       - run: npm run test
+      - run: npm run analyze
       - run: npm run build
 
   browser:

@@ -1,0 +1,9 @@
+{
+  "health": {
+    "ignore": [
+      "apps/web/src/components/ui/**",
+      "apps/web/e2e/**",
+      "apps/web/src/**/*.test.ts"
+    ]
+  }
+}

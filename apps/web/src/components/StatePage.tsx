@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "@/lib/useReducedMotion";
+import { useVideoPlayback } from "@/lib/useVideoPlayback";
 import styles from "./StatePage.module.css";
 
 export type StatePageProps = {
@@ -54,59 +53,7 @@ export default function StatePage({
   videoHeight,
   children,
 }: StatePageProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const [isPlaying, setIsPlaying] = useState(!prefersReducedMotion);
-  const userPausedRef = useRef(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) {
-      return;
-    }
-    video.muted = true;
-
-    if (prefersReducedMotion) {
-      video.pause();
-      setIsPlaying(false);
-    } else if (!userPausedRef.current) {
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsPlaying(true);
-          })
-          .catch(() => {
-            setIsPlaying(false);
-          });
-      }
-    }
-  }, [prefersReducedMotion]);
-
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) {
-      return;
-    }
-
-    if (isPlaying) {
-      userPausedRef.current = true;
-      video.pause();
-      setIsPlaying(false);
-    } else {
-      userPausedRef.current = false;
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsPlaying(true);
-          })
-          .catch(() => {
-            setIsPlaying(false);
-          });
-      }
-    }
-  };
+  const { videoRef, isPlaying, prefersReducedMotion, togglePlay } = useVideoPlayback();
 
   return (
     <main className={styles.shell}>

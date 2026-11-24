@@ -1,5 +1,5 @@
 import type { TreeNode } from "@nevis/shared";
-import { formatMonthLabel } from "@/lib/period";
+import { formatMonthLabel, formatPeriod } from "@/lib/period";
 import { childrenOf } from "@/lib/tree";
 
 /**
@@ -162,4 +162,38 @@ export function toTopSeries(series: ChartSeries[]): (string | null)[] {
   }
 
   return tops;
+}
+
+/**
+ * The ticks for the chart axis.
+ *
+ * Every hundred above a hundred, every ten below it. Domain <= 0 returns [0].
+ */
+export function axisTicks(domain: number): number[] {
+  if (domain <= 0) {
+    return [0];
+  }
+  const step = domain >= 100 ? 100 : 10;
+  const values: number[] = [];
+  for (let value = 0; value <= domain; value += step) {
+    values.push(value);
+  }
+  return values;
+}
+
+/**
+ * An accessible description for the chart figure naming the scope and series split.
+ */
+export function chartDescription(
+  series: ChartSeries[],
+  fiscalYear: number,
+  fallbackName = "",
+): string {
+  const period = formatPeriod(fiscalYear);
+  if (series.length === 1) {
+    return `Bar per month for ${period}, showing ${series[0]?.label ?? fallbackName}.`;
+  }
+  return `Stacked bar per month for ${period}, split by ${series
+    .map((item) => item.label)
+    .join(", ")}.`;
 }

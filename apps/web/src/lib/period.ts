@@ -54,6 +54,15 @@ export function currentFiscalYear(): number {
   return now.getMonth() >= 1 ? now.getFullYear() : now.getFullYear() - 1;
 }
 
+function fiscalMonthDate(fiscalYear: number, index: number): Date | null {
+  const entry = FISCAL_MONTHS[index];
+  if (!entry) {
+    return null;
+  }
+
+  return new Date(Date.UTC(fiscalYear + entry.yearOffset, entry.month - 1, 1));
+}
+
 /**
  * The label of one month of a fiscal year, for example "Feb 2024".
  *
@@ -62,12 +71,10 @@ export function currentFiscalYear(): number {
  * no label.
  */
 export function formatMonthLabel(fiscalYear: number, index: number): string {
-  const entry = FISCAL_MONTHS[index];
-  if (!entry) {
+  const date = fiscalMonthDate(fiscalYear, index);
+  if (!date) {
     return "";
   }
-
-  const date = new Date(Date.UTC(fiscalYear + entry.yearOffset, entry.month - 1, 1));
 
   return new Intl.DateTimeFormat("en", {
     month: "short",
@@ -83,12 +90,10 @@ export function formatMonthLabel(fiscalYear: number, index: number): string {
  * has no label.
  */
 export function formatMonthShort(fiscalYear: number, index: number): string {
-  const entry = FISCAL_MONTHS[index];
-  if (!entry) {
+  const date = fiscalMonthDate(fiscalYear, index);
+  if (!date) {
     return "";
   }
-
-  const date = new Date(Date.UTC(fiscalYear + entry.yearOffset, entry.month - 1, 1));
 
   return new Intl.DateTimeFormat("en", {
     month: "short",
