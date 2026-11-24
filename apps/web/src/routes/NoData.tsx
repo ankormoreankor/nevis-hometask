@@ -92,7 +92,7 @@ export default function NoData({ fiscalYear }: NoDataProps) {
     <StatePage videoSrc={noDataVideo} poster={noDataPoster} videoWidth={640} videoHeight={360}>
       <h1 className="text-2xl font-semibold">No data for fiscal year {fiscalYear}</h1>
       <YearPickerForm fiscalYear={fiscalYear} />
-      <Link to="/" className="text-sm underline">
+      <Link to="/" className="inline-block py-1 text-sm underline">
         Back to the dashboard
       </Link>
     </StatePage>

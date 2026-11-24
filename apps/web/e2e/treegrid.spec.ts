@@ -171,6 +171,7 @@ test("the chevron expands without selecting", async ({ page }) => {
   const branch1 = page.getByRole("row", { name: "Branch 1" });
 
   // The focus starts on the chart, outside the grid.
+  await expect(page.locator(".recharts-surface")).toBeVisible();
   await page.getByRole("application").focus();
 
   await page.getByRole("button", { name: "Expand Branch 1" }).click();
@@ -190,6 +191,7 @@ test("the chevron expands without selecting", async ({ page }) => {
 
 test("the selection remaps the chart", async ({ page }) => {
   await page.goto("/dashboard/2024");
+  await expect(page.locator(".recharts-surface")).toBeVisible();
 
   const figure = page.getByRole("figure");
   await expect(figure).toHaveAccessibleName("Company");
@@ -243,6 +245,7 @@ test("an unknown node falls back to the company", async ({ page }) => {
 
 test("the chart announces the active month", async ({ page }) => {
   await page.goto("/dashboard/2024");
+  await expect(page.locator(".recharts-surface")).toBeVisible();
   await page.getByRole("application").focus();
 
   const reader = page.locator('figure [aria-live="polite"]');
@@ -262,6 +265,7 @@ test("the chart resets its active month on blur", async ({ page }) => {
   const cursor = page.locator("figure .recharts-tooltip-cursor");
 
   await expect(chart).toBeVisible();
+  await expect(page.locator(".recharts-surface")).toBeVisible();
 
   // Tab into the chart (the chart is the first tab stop on the page).
   await page.keyboard.press("Tab");
@@ -490,6 +494,7 @@ test("the scope trail wraps at 375px without horizontal overflow", async ({ page
 test("small screen layout at 375px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/dashboard/2024");
+  await expect(page.locator(".recharts-surface")).toBeVisible();
 
   // The chart renders 12 month labels (count the text nodes in the chart).
   const yAxisTicks = page.locator("figure .recharts-yAxis-tick-labels text");
@@ -619,6 +624,7 @@ test("sticky name column capped and truncated at 375px", async ({ page }) => {
 
 test("the stacked bar chart rounds the topmost segment of each month column", async ({ page }) => {
   await page.goto(`/dashboard/2024?node=${ANNA_ID}`);
+  await expect(page.locator(".recharts-surface")).toBeVisible();
 
   await expect(page.getByRole("figure")).toHaveAccessibleName("Anna Blackwood");
 
@@ -690,4 +696,73 @@ test("the stacked bar chart rounds the topmost segment of each month column", as
       }
     }
   }
+});
+
+test("the table card does not move when the chart replaces its placeholder", async ({ page }) => {
+  await page.route("**/api/dashboard/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.continue();
+  });
+
+  await page.route("**/*recharts*", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await route.continue();
+  });
+
+  await page.goto("/dashboard/2024");
+
+  // Wait for the treegrid to be visible (data resolved, placeholder mounted)
+  await expect(page.getByRole("treegrid")).toBeVisible();
+
+  // The table card wrapping the treegrid
+  const tableCard = page.locator("div[class*='tableCard']");
+  await expect(tableCard).toBeVisible();
+
+  // Capture table card bounding box while placeholder is visible
+  const boxBefore = await tableCard.boundingBox();
+  expect(boxBefore).not.toBeNull();
+
+  // Let the chart arrive
+  await expect(page.locator(".recharts-surface")).toBeVisible();
+
+  // Capture table card bounding box again
+  const boxAfter = await tableCard.boundingBox();
+  expect(boxAfter).not.toBeNull();
+
+  if (boxBefore && boxAfter) {
+    expect(Math.round(boxAfter.y)).toBe(Math.round(boxBefore.y));
+    expect(Math.round(boxAfter.x)).toBe(Math.round(boxBefore.x));
+    expect(Math.round(boxAfter.width)).toBe(Math.round(boxBefore.width));
+    expect(Math.round(boxAfter.height)).toBe(Math.round(boxBefore.height));
+  }
+});
+
+test("the page header h1 node is preserved across the loading to loaded transition", async ({
+  page,
+}) => {
+  await page.route("**/api/dashboard/**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    await route.continue();
+  });
+
+  await page.goto("/dashboard/2024");
+
+  await expect(page.getByRole("status", { name: "Loading" })).toBeVisible();
+  const heading = page.getByRole("heading", { name: "Clients", level: 1 });
+  await expect(heading).toBeVisible();
+
+  const captured = await page.evaluate(() => {
+    const h1 = document.querySelector("h1");
+    (window as unknown as { __loadingH1?: HTMLHeadingElement | null }).__loadingH1 = h1;
+    return h1 !== null;
+  });
+  expect(captured).toBe(true);
+
+  await expect(page.getByRole("treegrid")).toBeVisible();
+
+  const isSameNode = await page.evaluate(() => {
+    const win = window as unknown as { __loadingH1?: HTMLHeadingElement | null };
+    return win.__loadingH1 !== null && document.querySelector("h1") === win.__loadingH1;
+  });
+  expect(isSameNode).toBe(true);
 });

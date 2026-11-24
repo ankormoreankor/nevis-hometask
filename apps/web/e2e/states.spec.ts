@@ -81,6 +81,8 @@ test("the loading state", async ({ page }) => {
 
   const loading = page.getByRole("status", { name: "Loading" });
   await expect(loading).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Clients" })).toBeVisible();
+  await expect(page.getByText("Feb 2024 to Jan 2025")).toBeVisible();
   await expect(page.getByRole("row", { name: "Company" })).toHaveCount(0);
 
   await expect(page.getByRole("row", { name: "Company" })).toBeVisible({ timeout: 15000 });

@@ -1,7 +1,7 @@
 import { type Company, isFiscalYear, type TreeNode } from "@nevis/shared";
-import { useId } from "react";
+import { lazy, Suspense, useId } from "react";
 import { useParams, useSearchParams } from "react-router";
-import MonthlyChart from "@/components/MonthlyChart";
+import { MonthlyChartPlaceholder } from "@/components/MonthlyChartPlaceholder";
 import ScopeTrail from "@/components/ScopeTrail";
 import TreeGrid from "@/components/TreeGrid";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,8 @@ import { useDelayedFlag } from "@/lib/useDelayedFlag";
 import styles from "./Dashboard.module.css";
 import NoData from "./NoData";
 import NotFound from "./NotFound";
+
+const MonthlyChart = lazy(() => import("@/components/MonthlyChart"));
 
 /**
  * The dashboard page.
@@ -40,7 +42,7 @@ function errorMessage(error: unknown): string {
 
 function ErrorState({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   return (
-    <main className={styles.shell}>
+    <>
       <div role="alert" className={styles.notice}>
         <p>The dashboard could not be loaded.</p>
         <p>{errorMessage(error)}</p>
@@ -52,7 +54,16 @@ function ErrorState({ error, onRetry }: { error: unknown; onRetry: () => void })
       >
         Retry
       </button>
-    </main>
+    </>
+  );
+}
+
+function PageHeader({ fiscalYear }: { fiscalYear: number }) {
+  return (
+    <header className={styles.header}>
+      <h1 className={styles.heading}>Clients</h1>
+      <p className={styles.period}>{formatPeriod(fiscalYear)}</p>
+    </header>
   );
 }
 
@@ -60,21 +71,18 @@ function LoadingState() {
   const showSkeletons = useDelayedFlag(true, 200);
 
   return (
-    <main className={styles.shell}>
-      <div role="status" aria-label="Loading">
-        {showSkeletons ? (
-          <div aria-hidden="true" className="flex flex-col gap-6">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-[500px] sm:h-[430px] w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-14 w-full" />
-          </div>
-        ) : null}
-      </div>
-    </main>
+    <div role="status" aria-label="Loading">
+      {showSkeletons ? (
+        <div aria-hidden="true" className="flex flex-col gap-6">
+          <Skeleton className="h-[500px] sm:h-[430px] w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -145,10 +153,7 @@ function useNodeSelection(company: Company | undefined) {
   return { selected, trailPath, onSelect };
 }
 
-function formatAnnouncement(selectedNode?: TreeNode) {
-  if (!selectedNode) {
-    return "";
-  }
+function formatAnnouncement(selectedNode: TreeNode) {
   const [scopeName, breakdown] = scopeTitle(selectedNode).split(", by ");
   return breakdown ? `Showing ${scopeName}, broken down by ${breakdown}.` : `Showing ${scopeName}.`;
 }
@@ -177,6 +182,10 @@ function resolveRouteView(isValid: boolean, error: unknown, fiscalYear: number) 
   return null;
 }
 
+function resolveDashboardData(company: Company | undefined, selected: TreeNode | undefined) {
+  return company && selected ? { company, selected } : null;
+}
+
 export default function Dashboard() {
   const { year } = useParams();
   const scopeLabelId = `chart-scope-${useId().replace(/:/g, "")}`;
@@ -190,43 +199,52 @@ export default function Dashboard() {
     return routeView;
   }
 
-  if (!company || !selected) {
-    return <DashboardWaiting error={error} onRetry={() => void mutate()} />;
-  }
-
-  const announcement = formatAnnouncement(selected);
+  const ready = resolveDashboardData(company, selected);
 
   return (
     <main className={styles.shell}>
-      <header className={styles.header}>
-        <h1 className={styles.heading}>Clients</h1>
-        <p className={styles.period}>{formatPeriod(fiscalYear)}</p>
-      </header>
+      <PageHeader fiscalYear={fiscalYear} />
 
-      <RefreshNoticeArea error={error} onRetry={() => void mutate()} />
-      <p aria-live="polite" className="sr-only">
-        {announcement}
-      </p>
+      {ready ? (
+        <>
+          <RefreshNoticeArea error={error} onRetry={() => void mutate()} />
+          <p aria-live="polite" className="sr-only">
+            {formatAnnouncement(ready.selected)}
+          </p>
 
-      <div className={styles.chartGroup}>
-        <ScopeTrail path={trailPath} labelId={scopeLabelId} onSelect={onSelect} />
-        <div className={`${styles.card} ${styles.chartCard}`}>
-          <MonthlyChart node={selected} fiscalYear={fiscalYear} labelledById={scopeLabelId} />
-        </div>
-      </div>
+          <div className={styles.chartGroup}>
+            <ScopeTrail path={trailPath} labelId={scopeLabelId} onSelect={onSelect} />
+            <div className={`${styles.card} ${styles.chartCard}`}>
+              <Suspense
+                fallback={
+                  <MonthlyChartPlaceholder node={ready.selected} labelledById={scopeLabelId} />
+                }
+              >
+                <MonthlyChart
+                  node={ready.selected}
+                  fiscalYear={fiscalYear}
+                  labelledById={scopeLabelId}
+                />
+              </Suspense>
+            </div>
+          </div>
 
-      <div className={`${styles.card} ${styles.tableCard}`}>
-        {/* The treegrid keeps its own expansion and its own focus so a new fiscal
-            year starts from a clean grid. The selection is not the key because the
-            URL changes on every selection, and a remount would drop the focus. */}
-        <TreeGrid
-          key={fiscalYear}
-          company={company}
-          selectedId={selected.id}
-          fiscalYear={fiscalYear}
-          onSelect={onSelect}
-        />
-      </div>
+          <div className={`${styles.card} ${styles.tableCard}`}>
+            {/* The treegrid keeps its own expansion and its own focus so a new fiscal
+                year starts from a clean grid. The selection is not the key because the
+                URL changes on every selection, and a remount would drop the focus. */}
+            <TreeGrid
+              key={fiscalYear}
+              company={ready.company}
+              selectedId={ready.selected.id}
+              fiscalYear={fiscalYear}
+              onSelect={onSelect}
+            />
+          </div>
+        </>
+      ) : (
+        <DashboardWaiting error={error} onRetry={() => void mutate()} />
+      )}
     </main>
   );
 }
