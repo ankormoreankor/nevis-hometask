@@ -116,6 +116,27 @@
 }
 
 /**
+ * Reduced motion, for everything CSS animates.
+ *
+ * The reader asked for less movement, so the animations stop and the
+ * transitions become instant. The skeleton under the loading state pulses
+ * forever, the tooltip slides between months, and the table rows fade on
+ * hover; none of them is worth moving for. The video and the chart bars are
+ * not CSS animations and are handled in the components, where the preference
+ * is read as a boolean.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/**
  * The adviser circle in the treegrid.
  *
  * The row sets --avatar-color to the token that adviser's series uses in the

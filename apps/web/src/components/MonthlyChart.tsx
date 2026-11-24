@@ -2,6 +2,7 @@ import type { TreeNode } from "@nevis/shared";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
 import { ChartPlot } from "@/components/ChartPlot";
+import { MonthlyChartLegend } from "@/components/MonthlyChartLegend";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { axisTicks, chartDescription, toDomain, toRows, toSeries, toTopSeries } from "@/lib/chart";
 import { useMediaQuery } from "@/lib/useMediaQuery";
@@ -68,7 +69,7 @@ export default function MonthlyChart({
       </p>
       <ChartContainer
         config={config}
-        className="h-[440px] sm:h-[390px] w-full focus:outline-hidden [&_g:focus]:outline-none"
+        className="h-[440px] sm:h-[390px] w-full focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring focus-visible:outline-offset-2 [&_g:focus]:outline-none"
         tabIndex={0}
         role="application"
         aria-labelledby={labelledById}
@@ -92,18 +93,7 @@ export default function MonthlyChart({
           onAnnounce={setAnnouncement}
         />
       </ChartContainer>
-      <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        {series.map((item) => (
-          <li key={item.key} className="flex items-center gap-1.5 whitespace-nowrap">
-            <span
-              aria-hidden="true"
-              className="h-2 w-2 shrink-0 rounded-[2px]"
-              style={{ backgroundColor: item.color }}
-            />
-            <span>{item.label}</span>
-          </li>
-        ))}
-      </ul>
+      <MonthlyChartLegend series={series} />
     </figure>
   );
 }

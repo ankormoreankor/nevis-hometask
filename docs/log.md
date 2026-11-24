@@ -626,3 +626,30 @@ Open
 Next
 - Run the focus-visible assertion on Firefox and WebKit.
 - Add the data-quality note in the UI on the months where the child sums disagree with the parent total.
+
+## the chart is deferred and the header stays mounted
+
+Decided
+- The chart sits behind a component-level lazy boundary with a space-exact placeholder. Routes stay eager, so the shell paints without a chunk download.
+- The page shell and the header render in one return in `Dashboard.tsx`, with only the content below the header conditional, so the `h1` node survives the data swap and stays the LCP element.
+- No robots.txt is shipped. This is an application page, and the SEO audit is worth less than a policy file that says nothing true.
+- The vendor group's package list ends in a path separator, so `react` matches `react-dom` but not `react-redux`, which follows recharts into the chart chunk.
+
+Done
+- `MonthlyChart` loads through `React.lazy` behind a `Suspense` boundary, with `MonthlyChartPlaceholder` and the shared `MonthlyChartLegend`.
+- `PageHeader` is shared by the loading and loaded states, and `ErrorState` and `LoadingState` no longer nest a `main` element.
+- `favicon.svg` and a meta description in `index.html`; the README decisions and the chunk sizes are updated.
+- Two browser specs: the table card does not move when the chart replaces its placeholder, and the header `h1` node survives the data swap.
+- A reduced-motion block in `index.css` stops the CSS animations and transitions, and the state page links carry padding so the target reaches 24 pixels.
+
+Verified
+- `check`, `typecheck`, `test` (66 cases), `test:e2e` (42 specs), `analyze` and `build` pass.
+- Lighthouse mobile 100/100/100/91 and desktop the same, with FCP and LCP at 0.75 s and 0.2 s and CLS 0.
+- The 404 and the no-data page download neither chart chunk, and the dashboard downloads both.
+
+Open
+- The focus-visible suppression is proven on Chromium only.
+- The licence for the footage in a public repository is still open.
+
+Next
+- Run the focus-visible assertion on Firefox and WebKit.

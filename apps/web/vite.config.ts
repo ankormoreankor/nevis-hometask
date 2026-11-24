@@ -20,13 +20,26 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("node_modules/recharts")) {
-            return "recharts";
-          }
-          if (id.includes("node_modules")) {
-            return "vendor";
-          }
+        codeSplitting: {
+          groups: [
+            {
+              name: "vendor",
+              // The trailing separator keeps "react" from matching react-redux and the
+              // other react-* packages, which belong to recharts and follow it.
+              test: /node_modules[\\/](react|react-dom|react-router|zod|swr|cn|clsx|use-sync-external-store|scheduler)[\\/]/,
+              priority: 2,
+            },
+            {
+              name: "recharts",
+              test: /node_modules[\\/]recharts/,
+              priority: 1,
+            },
+            {
+              name: "vendor",
+              test: /node_modules/,
+              priority: 0,
+            },
+          ],
         },
       },
     },
