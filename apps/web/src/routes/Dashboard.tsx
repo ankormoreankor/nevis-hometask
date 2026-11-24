@@ -1,4 +1,4 @@
-import { isFiscalYear } from "@nevis/shared";
+import { type Company, isFiscalYear, type TreeNode } from "@nevis/shared";
 import { useId } from "react";
 import { useParams, useSearchParams } from "react-router";
 import MonthlyChart from "@/components/MonthlyChart";
@@ -18,13 +18,12 @@ import NotFound from "./NotFound";
 /**
  * The dashboard page.
  *
- * The screen for one fiscal year: the chart above, the treegrid below, and the
- * selection that connects them. The page owns the route param, the URL, the
- * first-paint states and the announcement of a scope change.
+ * The page owns the route param, the URL, the first-paint states and the
+ * announcement of a scope change.
  *
- * The order of the branches is part of the contract. SWR can hold an error
- * and no data at the same time, and a background retry sets the loading flag
- * back to true while nothing is cached, so a skeleton checked first would
+ * The order of the branches is part of the contract because SWR can hold an
+ * error and no data at the same time, and a background retry sets the loading
+ * flag back to true while nothing is cached, so a skeleton checked first would
  * replace the error message on every retry.
  */
 
@@ -63,8 +62,6 @@ function LoadingState() {
   return (
     <main className={styles.shell}>
       <div role="status" aria-label="Loading">
-        {/* The skeletons hold the space the chart and the table will take, so
-            nothing jumps when the data lands. They carry no information. */}
         {showSkeletons ? (
           <div aria-hidden="true" className="flex flex-col gap-6">
             <Skeleton className="h-8 w-64" />
@@ -81,63 +78,123 @@ function LoadingState() {
   );
 }
 
-export default function Dashboard() {
-  const { year } = useParams();
+function RefreshNotice({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  const status = statusOf(error);
+
+  return (
+    <div className={styles.notice}>
+      <p role="status">
+        The data could not be refreshed
+        {status === undefined ? "." : `, the server answered with status ${status}.`}
+      </p>
+      <button
+        type="button"
+        className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+        onClick={onRetry}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function RefreshNoticeArea({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  if (!error) {
+    return null;
+  }
+  return <RefreshNotice error={error} onRetry={onRetry} />;
+}
+
+function resolveSelected(company: Company, nodeId: string | null): TreeNode {
+  if (!nodeId) {
+    return company;
+  }
+  return findNode(company, nodeId) ?? company;
+}
+
+function resolveTrail(company: Company, selected: TreeNode): TreeNode[] {
+  const path = pathTo(company, selected.id);
+  return path.length > 0 ? path : [company];
+}
+
+function nextParams(previous: URLSearchParams, id: string, companyId: string): URLSearchParams {
+  const next = new URLSearchParams(previous);
+  if (id === companyId) {
+    next.delete("node");
+  } else {
+    next.set("node", id);
+  }
+  return next;
+}
+
+function useNodeSelection(company: Company | undefined) {
   const [params, setParams] = useSearchParams();
-  const scopeLabelId = `chart-scope-${useId().replace(/:/g, "")}`;
 
-  const isValidYear = year !== undefined && isFiscalYear(year);
-  const fiscalYear = Number(year);
+  const selected = company ? resolveSelected(company, params.get("node")) : undefined;
+  const trailPath = company && selected ? resolveTrail(company, selected) : [];
 
-  // A year the route already rejected never reaches the server. The request
-  // would only earn a 400.
-  const { company, error, mutate } = useDashboard(isValidYear ? (year ?? "") : "");
+  const onSelect = (id: string) => {
+    if (!company) {
+      return;
+    }
+    // A replace, not a push, so Back leaves the dashboard instead of
+    // walking through the selections.
+    setParams((prev) => nextParams(prev, id, company.id), { replace: true });
+  };
 
-  if (!isValidYear) {
+  return { selected, trailPath, onSelect };
+}
+
+function formatAnnouncement(selectedNode?: TreeNode) {
+  if (!selectedNode) {
+    return "";
+  }
+  const [scopeName, breakdown] = scopeTitle(selectedNode).split(", by ");
+  return breakdown ? `Showing ${scopeName}, broken down by ${breakdown}.` : `Showing ${scopeName}.`;
+}
+
+function resolveRouteYear(year: string | undefined) {
+  if (!year || !isFiscalYear(year)) {
+    return { isValid: false, yearParam: "", fiscalYear: 0 };
+  }
+  return { isValid: true, yearParam: year, fiscalYear: Number(year) };
+}
+
+function DashboardWaiting({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  if (error) {
+    return <ErrorState error={error} onRetry={onRetry} />;
+  }
+  return <LoadingState />;
+}
+
+function resolveRouteView(isValid: boolean, error: unknown, fiscalYear: number) {
+  if (!isValid) {
     return <NotFound />;
   }
-
-  // A 404 is an empty state, not a failure.
   if (isNotFound(error)) {
     return <NoData fiscalYear={fiscalYear} />;
   }
+  return null;
+}
 
-  if (!company) {
-    if (error) {
-      return <ErrorState error={error} onRetry={() => void mutate()} />;
-    }
-    return <LoadingState />;
+export default function Dashboard() {
+  const { year } = useParams();
+  const scopeLabelId = `chart-scope-${useId().replace(/:/g, "")}`;
+  const { isValid, yearParam, fiscalYear } = resolveRouteYear(year);
+
+  const { company, error, mutate } = useDashboard(yearParam);
+  const { selected, trailPath, onSelect } = useNodeSelection(company);
+
+  const routeView = resolveRouteView(isValid, error, fiscalYear);
+  if (routeView) {
+    return routeView;
   }
 
-  const selected = findNode(company, params.get("node") ?? "") ?? company;
-  const path = pathTo(company, selected.id);
-  const trailPath = path.length > 0 ? path : [company];
+  if (!company || !selected) {
+    return <DashboardWaiting error={error} onRetry={() => void mutate()} />;
+  }
 
-  const onSelect = (id: string) => {
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        if (id === company.id) {
-          next.delete("node");
-        } else {
-          next.set("node", id);
-        }
-        return next;
-      },
-      // A replace, not a push, so Back leaves the dashboard instead of
-      // walking through the selections.
-      { replace: true },
-    );
-  };
-
-  // The scope title is "Name, by adviser". The live region says it in a
-  // sentence, so a screen reader announces the change and not the fragment.
-  const [scopeName, breakdown] = scopeTitle(selected).split(", by ");
-  const announcement = breakdown
-    ? `Showing ${scopeName}, broken down by ${breakdown}.`
-    : `Showing ${scopeName}.`;
-
-  const status = statusOf(error);
+  const announcement = formatAnnouncement(selected);
 
   return (
     <main className={styles.shell}>
@@ -146,21 +203,7 @@ export default function Dashboard() {
         <p className={styles.period}>{formatPeriod(fiscalYear)}</p>
       </header>
 
-      {error ? (
-        <div className={styles.notice}>
-          <p role="status">
-            The data could not be refreshed
-            {status === undefined ? "." : `, the server answered with status ${status}.`}
-          </p>
-          <button
-            type="button"
-            className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
-            onClick={() => void mutate()}
-          >
-            Retry
-          </button>
-        </div>
-      ) : null}
+      <RefreshNoticeArea error={error} onRetry={() => void mutate()} />
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
@@ -173,10 +216,10 @@ export default function Dashboard() {
       </div>
 
       <div className={`${styles.card} ${styles.tableCard}`}>
+        {/* The treegrid keeps its own expansion and its own focus so a new fiscal
+            year starts from a clean grid. The selection is not the key because the
+            URL changes on every selection, and a remount would drop the focus. */}
         <TreeGrid
-          // The grid keeps its own expansion and its own focus, so a new fiscal
-          // year starts from a clean grid. The selection is not the key: the URL
-          // changes on every selection, and a remount would drop the focus.
           key={fiscalYear}
           company={company}
           selectedId={selected.id}

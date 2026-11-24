@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { at, company2024 } from "@/test/fixtures";
-import { scopeTitle, toDomain, toRows, toSeries, toTopSeries } from "./chart";
+import {
+  axisTicks,
+  chartDescription,
+  scopeTitle,
+  toDomain,
+  toRows,
+  toSeries,
+  toTopSeries,
+} from "./chart";
 
 const company = company2024;
 const branch1 = at(company.branches, 0);
@@ -170,5 +178,37 @@ describe("toTopSeries", () => {
     const tops = toTopSeries(zeroMonth);
     expect(tops[0]).toBeNull();
     expect(tops[1]).toBe("s1");
+  });
+});
+
+describe("axisTicks", () => {
+  it("returns [0] for domain <= 0", () => {
+    expect(axisTicks(0)).toEqual([0]);
+    expect(axisTicks(-10)).toEqual([0]);
+  });
+
+  it("steps by 10 for domain < 100", () => {
+    expect(axisTicks(40)).toEqual([0, 10, 20, 30, 40]);
+  });
+
+  it("steps by 100 for domain >= 100", () => {
+    expect(axisTicks(300)).toEqual([0, 100, 200, 300]);
+    expect(axisTicks(400)).toEqual([0, 100, 200, 300, 400]);
+  });
+});
+
+describe("chartDescription", () => {
+  it("describes single series leaf", () => {
+    const series = toSeries(branch2);
+    expect(chartDescription(series, 2024, branch2.name)).toBe(
+      "Bar per month for Feb 2024 to Jan 2025, showing Branch 2.",
+    );
+  });
+
+  it("describes multiple series split", () => {
+    const series = toSeries(company);
+    expect(chartDescription(series, 2024, company.name)).toBe(
+      "Stacked bar per month for Feb 2024 to Jan 2025, split by Branch 1, Branch 2, Branch 3.",
+    );
   });
 });

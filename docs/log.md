@@ -551,3 +551,78 @@ Open
 
 Next
 - Walk the ARIA tree in the browser suite and split the bundle.
+
+## code analysis, treegrid navigation and chunk split
+
+Decided
+- Fallow runs in CI with default thresholds, health ignores for UI primitives, e2e specs and test files, and default ignores for dead-code and duplication checks.
+- Tree traversals collapse to `pathTo`, deriving `findNode` and `ancestorIds`.
+- The treegrid keyboard model lives in a pure module (`treegrid-nav.ts`) tested with vitest.
+- Pointer clicks suppress the focus-visible ring via `{ focusVisible: false }`, tested on Chromium.
+- The bundle splits recharts and vendor chunks manually in Vite, avoiding route lazy loading.
+
+Done
+- Fallow config `.fallowrc.jsonc` and CI step in `.github/workflows/ci.yml`.
+- Pure `treegrid-nav.ts` with unit tests covering arrow navigation, expand, collapse, parent, Home, End, Enter and Space.
+- Chart decomposed into `MonthlyChart`, `ChartPlot` and `useMonthHover`.
+- Treegrid decomposed into small row components; rows carry `aria-label={row.name}`.
+- State page video playback extracted to `useVideoPlayback`.
+- Unused shadcn exports deleted; vendor chunk split added to Vite config.
+- Playwright specs for ARIA tree walk across four levels and chevron click without focus ring.
+
+Verified
+- `npm run analyze` exits 0.
+- `npm run check`, `npm run typecheck`, `npm run test` (66 cases) and `npm run test:e2e` (40 specs) pass.
+- Production build has no chunk size warning.
+
+Open
+- The chart still has no data table of its own.
+- The focus-visible suppression is proven on Chromium only.
+
+Next
+- The chart gets a data table of its own.
+- The treegrid keyboard model could be extended with Home and End on a collapsed tree if the APG needs it.
+
+## the state page videos carry the name of their state
+
+Decided
+- The two clips are named for the state they play on, `not-found.mp4` and `no-data.mp4`, so each sits next to its poster and the folder reads as one set.
+- The name says what the file is for and not where the footage came from, so the filenames do not name the show or the actor.
+
+Done
+- `git mv` on both clips, so the history follows them, and the imports and the local names in `NotFound.tsx` and `NoData.tsx` follow.
+- Biome sorted the imports, so the video comes before the poster in both files.
+
+Verified
+- `check`, `typecheck`, `test` (66 cases), `test:e2e` (41 specs) and `build` pass.
+- The build emits `not-found-*.mp4` and `no-data-*.mp4`.
+
+Open
+- The licence for the footage in a public repository is still open. The names hide the source, the pixels do not.
+
+Next
+- Replace the two clips with footage the project owns, or drop the video and keep the poster.
+
+## the chart data table was considered and dropped
+
+Decided
+- A companion data table under the chart is not built. It was not in the design or the brief, the tooltip and the treegrid expose the same values, and a table that sits hidden in the DOM adds markup no user sees.
+- Recharts does not ship the pattern, so the page would own it end to end.
+- The chart keeps its own path: focus enters on the first month, the arrow keys step through the months, and a polite live region announces the month with one line per series.
+
+Done
+- The table and its spec were removed, so the chart is the committed shape again: 40 browser specs over two files, 66 unit cases over five files.
+- README records the decision in `## Decisions` and in `## Accessibility`, and `## What I would do next` no longer proposes it.
+- `docs/context.md` item 1 says the companion table was considered and dropped.
+
+Verified
+- `npm run analyze` exits 0.
+- `check`, `typecheck`, `test` (66 cases), `test:e2e` (40 specs) and `build` pass, and the build has no chunk size warning.
+
+Open
+- The focus-visible suppression is proven on Chromium only.
+- The licence for the footage in a public repository is still open.
+
+Next
+- Run the focus-visible assertion on Firefox and WebKit.
+- Add the data-quality note in the UI on the months where the child sums disagree with the parent total.
