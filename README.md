@@ -1,182 +1,62 @@
-# Nevis frontend take-home - advisor book of business
+# Nevis frontend take-home
 
-Dashboard for the Nevis Senior Frontend Engineer take-home: advisors and their managers track a book of business over Feb 2024 - Jan 2025, drilling from the whole company down to a branch, an advisor or an acquisition channel. Two parts, a stacked bar chart over time and a per-month detail table with expandable rows.
+A Book of business dashboard over Feb 2024 to Jan 2025 with a stacked bar chart over time and a per-month detail table with expandable rows, drilling from company to branch, adviser, and acquisition channel.
 
-Review copy. The design and the client figures belong to Nevis; this repository is for their evaluation only.
+Review copy. The design and client figures belong to Nevis; this repository is for their evaluation only.
 
-Task, payload and design links: `docs/brief.md`. Exported design trees and frames: `design/` (gitignored). Decisions made before any code, design facts and the idea backlog: `docs/context.md`.
+![Side-by-side desktop and mobile dashboard walkthrough showing Branch 1 and Anna Blackwood expanding, the stacked bar chart remapping to Anna Blackwood, arrow-key tooltip navigation across months, and selection returning to Company](docs/media/dashboard-demo.webp)
 
-## Layout
+Desktop and mobile, 15 seconds. [MP4](docs/media/dashboard-demo.mp4) · [Still frame](docs/media/dashboard-demo-poster.png)
 
-- `apps/web` - Vite + React 19 client.
-- `apps/api` - Express API.
-- `packages/shared` - Zod contract used by both, and the mock payload.
+## Stack
+
+- **Client:** React 19, TypeScript 7 (strict), Vite 8, `react-router` (`createBrowserRouter`).
+- **API:** Express in the same repo (`apps/api`), serving `GET /api/dashboard/:year` and `GET /api/health`.
+- **Contract:** One Zod contract in `packages/shared`, imported by server and client; mock payload at `@nevis/shared/payload`.
+- **Chart and styling:** Recharts 3 through shadcn/ui Chart, Tailwind v4 for component tokens and layout, CSS modules for the page shell.
+- **Client data:** SWR, keyed by fiscal year.
+- **Tooling:** Biome for lint and formatting, vitest for unit tests, Playwright for the browser suite, Fallow for code analysis.
 
 ## Run it
 
-Install once from the root:
+Install dependencies once from the root, then start both servers:
 
 ```bash
 npm install
+npm run dev
 ```
 
-Then:
+The web client runs on `http://localhost:5173` and the API on `http://localhost:3000`. The browser suite needs Chromium installed once via `npm exec playwright install chromium` and starts both servers itself.
 
 ```bash
-npm run dev        # web and api together
-npm run dev:web
-npm run dev:api
-
-npm run build
-npm run test        # vitest, the unit suite under apps/web/src
-npm run test:e2e    # playwright, the browser suite under apps/web/e2e
-npm run lint
-npm run format      # biome format --write: two spaces, 100 columns, sorted imports
-npm run check       # biome check: lint, formatting and import order in one pass
-npm run typecheck
-npm run api:check
-npm run analyze    # fallow: dead code, duplication, complexity
+npm run test       # vitest unit suite
+npm run test:e2e   # Playwright browser suite
+npm run check      # Biome lint, format, and import order
+npm run typecheck  # TypeScript across workspaces
+npm run build      # production build for web and api
+npm run analyze    # Fallow dead code, duplication, and complexity
 ```
 
-The web client runs on http://localhost:5173 and the API on http://localhost:3000. `npm run dev` starts both. `npm run api:check` runs the API contract checks against the running server.
+CI runs `check`, `typecheck`, `test`, `analyze`, `build`, and the Chromium browser suite on pull requests and pushes to `main`.
 
-The browser suite needs a Chromium build once, `npm exec playwright install chromium`. It starts the API and the dev server itself, so nothing has to be running before it.
+## What to look at
 
-CI runs check, typecheck, test and build on every push and pull request, and the browser suite on every push once it has specs. Nothing is deployed: the project runs locally.
+- **Treegrid keyboard model:** `ArrowRight` and `ArrowLeft` expand and collapse rows, `Enter` selects, and row hierarchy is exposed through `aria-level`, `aria-posinset`, `aria-setsize`, `aria-expanded`, and `aria-selected`.
+- **Chart keyboard path:** One focus stop on the plot where arrow keys step across months and a polite live region announces each month and its series values.
+- **375px layout:** Below `640px` the chart turns horizontal with month rows along the vertical axis, while the treegrid pins and caps the sticky name column with short month headers.
+- **Two test suites:** 74 unit cases across six files covering the pure modules, plus 42 Playwright browser specs across two files covering interactions, states, ARIA snapshots, and layout.
 
-## Decisions
+## Docs
 
-The brief asks for the calls made where it left things open, and for anything that looks wrong on their side. One line per decision, with the alternative and the reason.
+- **[docs/brief.md](docs/brief.md):** The task brief, requirements, Figma links, and verbatim payload.
+- **[docs/context.md](docs/context.md):** Architecture decisions, design facts, payload arithmetic notes, and open questions.
+- **[docs/log.md](docs/log.md):** Append-only session log recording how the repository was built.
 
-- Workspaces: npm workspaces with `apps/web`, `apps/api`, `packages/shared`. One install and one lockfile. pnpm is faster at scale but adds a second toolchain for three packages; Bun would replace the Node runtime the brief asks for.
-- Styling: Tailwind v4 with shadcn/ui for the two data components and the loading skeleton, CSS modules for the page shell. The shadcn Table, Chart and Skeleton primitives give the markup, so the diff shows the ARIA and the chart wiring rather than a rebuilt table. Tokens live in one file, `apps/web/src/index.css`.
-- Type: Inter Variable, vendored as the Latin subset and preloaded from `<head>` instead of pulled from `@fontsource-variable/inter` at runtime or from Google Fonts. Swap with an unpainted font moves the text and the select, and Google Fonts would add a third-party request to a repo that has to run offline.
-- TypeScript: one `tsconfig.base.json` extended by each workspace, `strict` plus `noUncheckedIndexedAccess`. Indexing the payload arrays is the likeliest source of silent bugs in this app.
-- Lint: Biome, not ESLint. `typescript-eslint` declares a peer range of `typescript >=4.8.4 <6.1.0`, and this repo is on TypeScript 7, so the usual pairing does not install. Biome parses TypeScript on its own, so it does not depend on the compiler version, and it lints the workspace in milliseconds. The shadcn components under `src/components/ui` are excluded: they are copied from the shadcn CLI and are not ours to restyle.
-- Formatting: Biome's formatter, not Prettier. One tool for lint and format, one config that the editor and CI read, and Biome parses TypeScript without the compiler. Prettier would be a second formatter with a second config to keep in step, and the repo has no Prettier dependency today. The config lives at the repo root because that is the file the editor's language server looks for; a nested one under `apps/web` is invisible to it, and a root config beside a nested one is an error for Biome. The style is pinned to the shape the code was already written in: two spaces, 100 columns, double quotes, semicolons. Import order is Biome's `organizeImports` assist, applied on save through `editor.codeActionsOnSave`, so the specifiers in a file are sorted the same way on every machine.
-- Tests: vitest for the pure modules under `src/lib`, Playwright for the browser suite in `e2e`. The brief grades how the data maps into the chart, and the chart mapping is a pure function, so that test is a unit test rather than a browser test. The treegrid keyboard model and the hierarchy announcement belong in a browser, where the focus ring and the accessibility tree are real.
-- API build: esbuild bundles `apps/api/src/index.ts` into one ESM file, `express` and `zod` external, `@nevis/shared` inlined. `tsc --noEmit` owns the types. Plain `tsc` emit would need a composite project for `shared`, a build order, and a runtime that resolves TypeScript source through the workspace symlink.
-- No deploy: the project runs locally with `npm run dev`, and there is no hosted demo. The brief asks for a repository and a README, not a URL. A public copy would need one service serving both the API and the client build, plus a domain and a deploy pipeline, which is setup that shows none of the work being graded.
-- Table: native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model, not Accordion or Collapsible over divs. A div grid means rebuilding row, gridcell, header association and hierarchy by hand, then writing the same keyboard layer, and a reviewer reads it as a red flag. No TanStack Table either: flattening twelve rows is fifteen lines and the library does nothing for the part that is graded.
-- Chart: shadcn Chart over Recharts 3. Recharts 3.8 keeps its keyboard index on blur, so a second Tab into the chart reopened no tooltip and continued from the old month, and v3 has no controlled active index, so MonthlyChart owns the focus model: focus enters on the first month, resets when it leaves, arrow keys move between months, and the tooltip is driven by a mouse move at the tick position so the library's cursor, tooltip, flipping and animation stay the library's. A pointer click on a bar focuses one of Recharts' internal layers with tabindex -1, which the browser outlines, so the chart suppresses focus outlines inside the plot and on the container, and the keyboard path still shows the tooltip and the live region. The treegrid below is the accessible alternative.
-- Chart library: Recharts, not ECharts. Nevis' own app draws its charts with ECharts, so matching the house library was the default answer. Recharts was picked because its primitives let us wire arrow-key navigation and a live region for screen readers while keeping the library's cursor, tooltip and animations. That is the part of the brief that is graded, and the part a chart library decides for you. Inside the Nevis codebase this chart would be rebuilt on ECharts with the same series and the same domain rule.
-- Chart stacking: the selected node's immediate children, bottom to top in array order. The company stacks its three branches, a branch stacks its advisers, an adviser stacks her channels, and a leaf shows one series named after itself. Channels exist under one adviser, so a channel breakdown higher up the tree has four advisers and two branches with no channel data; stacking the immediate children is the only model the payload supports. A series takes the colour of its position in the stack, so `--chart-1` is Branch 1 in the company view and Anna Blackwood in the Branch 1 view. The scope title names the scope, so the colour follows the series rather than the entity.
-- Chart scope: follows the selection, with an axis derived from the current stack. The design's Existing clients / New organic / New paid legend appears only under Anna Blackwood, where the bars top out at 38 rather than 350.
-- Page title: "Clients" is constant and never changes with the selection. The design's frames carry no header, so the label names the section from the surrounding artboard while the trail names the view. The fiscal period ("Feb 2024 to Jan 2025") sits beside it and appears exactly once on the page.
-- Scope trail: a `<nav aria-label="Chart scope">` breadcrumb directly above the chart replaces the chart's visible heading. It shows the path from the root to the selected node using names only: ancestors are buttons that select that node, and the current item carries `aria-current="location"` with no breakdown suffix. The breakdown lives in the chart legend and the live region. Activating an ancestor from the keyboard moves focus to the replacement current item, while pointer clicks and table selections leave focus alone. The chart has no visible title; its accessible name is the current crumb.
-- Chart caption: the caption sentence "The same numbers are in the table below." was removed because the table's accessible name already states what it holds, and the chart and table showing the same figures is required by the brief rather than an anomaly to explain.
-- Chart palette: `--chart-1` to `--chart-3` are the design colours #B29DF8, #F4BEB4 and #A75E6E, and `--chart-4` and `--chart-5` are a sky and a sage next to them. Branch 1 stacks five advisers, so five tokens are needed, and the legend puts all five on screen at once at 16px, where they have to stay apart. The design fixes three, and the other two are ours.
-- Chart axis: the maximum is the largest stacked month, rounded up to the next hundred above a hundred and to the next ten below it, so the company gives 400, Branch 1 gives 300 and Anna Blackwood gives 40. It comes from the stack and not from the row of the node itself: at May 2024 the company row says 301 and its branches stack to 279, and the axis has to fit the bars.
-- Chart stack radius: rounded tops are drawn by the Bar shape with the radius on the rectangle itself, so the corners animate with the growing columns. The segment that tops a month is chosen from the values by toTopSeries because Recharts draws nothing for a zero, which is what left Feb, Mar and Aug under Anna Blackwood square-topped when the radius sat on the last series. BarStack was tried and dropped because its clip path is computed from the settled layout and the rounding appears progressively during the grow animation.
-- Selection: a row click selects, `?node=<id>` records it with `replace`, and the chart remaps. A chevron click expands without selecting, a double-click does both. Closing a row lifts a selection that sits inside it to that row. Selecting the company clears the parameter. An unknown id falls back to the company view, which is why the id is a query parameter and not a path segment.
-- Announcement: the live region says the scope in a sentence, "Showing Branch 1, broken down by adviser", built from the node name and `scopeBreakdown`. The live region uses that pure helper while the trail uses the node name, so the announcement states the breakdown that the trail omits.
-- API: one route, keyed by fiscal year. `GET /api/dashboard/:year` returns the company object for that year, which is the payload as given. A malformed year (not four digits starting with 1 or 2) is 400 `{"error":"Invalid year format"}` and a year with no data is 404 `{"error":"Data not found for the given year"}`: a bad parameter and a missing resource are different things, and 400 is the status that says so without needing a defence in front of the Nevis team. The client checks the year in the route before it fetches, so it never sees the 400; the client and the API share one predicate, so neither sends nor accepts a value the other would reject. The chart can be remapped to any node the user picks, so the whole year has to be client-side; a per-node endpoint would add a second contract and a loading state per row for no gain at twelve nodes.
-- Year in the path: the fiscal year selects a different payload and can be absent from the URL, so it is a path segment. The selected node is a view of the same payload, so it stays a query parameter. The test: delete the parameter and the URL still names a resource. `/dashboard` names nothing, so it redirects to `/dashboard/2024`; `/dashboard/2024` without `?node=` is still a dashboard.
-- Mock data: the payload lives in `packages/shared/src/payload.ts` and is exposed on its own entry point, `@nevis/shared/payload`, so the API serves it and the web tests read the same tree instead of keeping a second copy of the numbers the brief names. The API parses it once at boot into `parsedDataMap`, a `Map` with one entry, FY2024, and that map is the seam a real data source replaces. `getData(2025)` returns undefined and the route answers 404.
-- Contract shape: `Company.branches` is optional, like `employees` and `channels`. A company can exist before its first branch, and the dashboard draws that as a leaf instead of failing to parse. The trade-off is real: a response that drops the branches array now passes the schema, so the boot check no longer catches that one kind of drift.
-- Client data: SWR, one key per year (`/api/dashboard/${year}`), in-memory cache, no context for data. The revalidation switches are left at SWR's defaults, so the page refetches on focus, on reconnect and on every mount of the key, because the payload can change server-side and a client that only ever reads a cached snapshot shows stale numbers. Two options are passed. `shouldRetryOnError` is a function: a 5xx gets two more tries and a 4xx never gets another, because a response the server meant is final, and a 404 for a fiscal year with no data would otherwise be fetched again and again with a growing backoff for as long as the page was open. A request that never got an answer is retried as well, since nothing came back to be final. A body the client cannot read is not retried: the server did answer, and a body that is not JSON or does not match the contract comes back the same way. `errorRetryCount: 2` bounds it. The status is read off the error by shape rather than by `instanceof ApiError`, because Vite gives the class a new identity under HMR while SWR still holds the old error. A 404 is an empty state, not an error, so the fetcher keeps the status and the page branches on it. `SWRConfig` appears only in tests, for a fresh cache per test.
-- Routing: `/` and `/dashboard` redirect in loaders with `replace` to `/dashboard/2024`; `/dashboard/:year` renders the page; `*` renders not found. The redirect is on an incomplete URL only. A four-digit year starting with 1 or 2 always renders, including one with no data; `/dashboard/abc`, `/dashboard/0024` and `/dashboard/3000` are not found rather than redirected, so a typo stays visible, and none of them makes a request.
-- Fiscal calendar: one file, `apps/web/src/lib/period.ts`, holds the twelve-month table, `formatMonthLabel`, `formatPeriod` and `currentFiscalYear`. February is first because the fiscal year says so, not because the dataset happens to start there, and the year in the labels comes from the route. Nothing else formats a date.
-- Empty year: `/dashboard/2025` renders "No data for fiscal year 2025", a form with a labelled select over fiscal years (2000 to the current one) and a Go button, and a link to `/`. The select always shows a disabled "Select a fiscal year" placeholder and resets on every submit: it is an action, not a display of the current year, which the heading already states. The range is the years the picker offers, not the ones the API holds, so the picker never needs to know what the API holds. A year change uses `push`, so Back returns to the previous year.
-- Empty year select: a visually hidden label (`<label htmlFor="year" className="sr-only">Fiscal year</label>`) with the persistent placeholder option as the visible instruction. A visible label on the left broke the centred layout of the state page, while an aria-label would discard real HTML label semantics.
-- Year picker popup: opts into `appearance: base-select` inside `@supports` so the list is anchored by the browser under the control, with the native popup as the fallback in Firefox. An open native picker anchors outside DOM control and shifts horizontally over centered content. The closed control centres its selected content with `align-items`, because the customizable control is a flex box whose content would otherwise stretch to the top of the box.
-- Delayed skeleton: the `role="status"` region mounts immediately, while decorative skeleton shapes wait 200ms before mounting. The alternative was rendering skeletons on the first paint; because the client cannot know whether the year exists before the server responds, waiting 200ms prevents a 404 from flashing a dashboard skeleton before switching to the empty state.
-- Avatars: a 20px circle with the adviser's initials on adviser rows, coloured with the same `--chart-N` token that adviser's series uses in the chart, so a legend swatch and a row circle match. The payload has no image field and the design's photograph would mean a placeholder route for decoration, and initials avoid the layout shift a late image causes. The circle is the token mixed 25% into the card. The mix is what carries the contrast, not the token: at full strength white on `--chart-1` (#B29DF8) is 2.32:1 and `--foreground` on `--chart-3` (#A75E6E) is 4.21:1, while the mixed swatches read between 13:1 and 16:1 against `--foreground`. One ink for all five tokens in both themes.
-- States: the loading and error states are reached by intercepting the route in the browser suite, not by a switch on the API. A query parameter that made the server answer 500 would put fault injection in the product path, and the slow case is one click away in the Network panel's throttling dropdown. The client handles a slow response and a 500 the same way it would in production, which is the point of not faking them in the client.
-- Opus delegation: `/opus` and an `Opus:` prefix route a task to Claude Opus 4.6 through the local Antigravity CLI. The plugin lives outside this repo at `~/work/opus-plugin` and is registered in the global OpenCode config, so it loads in every project rather than one. Opus plans in Plan mode and acts in Build mode, read from the session's agent rather than stated in the prompt. A skill cannot register a slash command, and a rule cannot execute anything, so neither covers the trigger. The plugin adds no dependency: opencode supplies the SDK at runtime. Build mode runs Opus with Antigravity's own tools, which do not read `opencode.jsonc`, so `design/**` is protected by instruction there rather than by permission, and one delegation runs at a time per project so two of them cannot write the same tree.
-- State page media: H.264 MP4 video instead of GIF. A GIF is 256 colours and dithered, so a re-encode looks worse, while H.264 MP4 is smaller at the same quality.
-- Video assets: local and imported, not hotlinked. The repository is offline and reproducible, the same reasoning as the self-hosted font.
-- Video playback: muted, looping, decorative with a pause control. WCAG 2.2.2 Pause, Stop, Hide requires a mechanism to pause moving content that lasts more than five seconds, so the video carries a toggle button rather than native controls.
-- Reduced motion: honoured with the poster frame. When `prefers-reduced-motion: reduce` is active, the video does not autoplay, the poster JPEG is shown, and the toggle button is ready to play on demand.
-- Page and cards: the page is #F9F9F9, that both blocks keep a white 8px-radius card wrapper with no border or shadow so they can be reused over any surface, that the chart card keeps the Figma frame's 24/16/16 padding and 390px plot so the card is 430 tall, that the table card pads 8px inside its radius so the selected-row rail and the row focus ring are not clipped at the corners, that the scope trail sits outside the chart card because it is ours, and that the design's cream #F7F5ED artboard was rejected in favour of a neutral near-white page that keeps the white components distinct from the page while staying reusable.
-- Table type and row states: month headers 14px/400 in the muted ink #727271, 56px header row, chevron hover as a foreground overlay so it stays visible on the selected row, the header row without a hover fill. The design has no selected state, so the treatment is ours, and the selection is a 3px ink rail at the row's left edge with no row fill and no weight change on the name, because a full-row tint read as a stray gray band on a single-row table and a weight change shifts the text. Every row, selected or not, gets the muted hover band (#F7F7F7) so the pointer can scan a row from left to right. The selected row keeps a transparent resting state with the rail carrying the selection, so its hover needs the compound data-[state=selected]:hover rule to beat that resting rule.
-- Row focus ring: an inset 2px ring because the table sits in an overflow container that clipped the horizontal sides, with --ring set to the neutral gray oklch(0.556 0 0) (#737373, 4.74:1 on white) because the design ink was too heavy, and that it still clears the 3:1 focus floor.
-- Mobile chart layout: horizontal stacked bar chart below 640px, with the numeric axis along X and the 12 month categories along Y. 12 month columns across a 272px plot area cannot meet the 24px target size floor without clipping or dropping labels, and flipping the layout gives each month row sufficient vertical space and keeps all 12 month labels visible.
-- Legend outside plot: custom HTML list rendered beneath the chart container instead of Recharts ChartLegend inside the SVG. A Recharts legend inside the SVG plot took plot height, rendered without flex-wrapping, and broke adviser names across words on small viewports.
-- Mobile table density and sticky name: pinned name column with position sticky at left 0 and z-10 over a bg-card background, tighter cell padding px-1.5, text-[13px] and h-12 rows below sm. Pinned names prevent the loss of row context when scrolling month columns horizontally and show about 4 month columns on a 380px screen instead of 2.5 without dropping avatars or truncating names.
-- Capped sticky name column and truncation: sticky name header and cells use w-[clamp(160px,48vw,296px)] rather than content-based sizing, and names use truncate with a title attribute. Without a cap, expanding deeper levels widened the column from 160px to 207px at 380px viewport width, reducing visible month columns from 4.6 to 3.3. Clamping provides 182px at 380px viewport width regardless of nesting, keeping 4 month columns visible while full names remain in the DOM and the accessibility tree.
-- Short month headers: formatMonthShort renders three-letter month abbreviations below sm ("Feb", "Jan") while preserving the full year label at desktop. Shorter text prevents month header strings from artificially expanding column widths on narrow screens, and using separate spans keeps the unused variant out of the accessibility tree.
-- Expanded-row tint removed: removed has-aria-expanded:bg-muted/50 from TableRow so expandable rows remain white in resting state. The design specifies white rows with a 1px separator, and removing the tint avoids conflicting background sources for the sticky name cell.
-- Chart arrow keys: ArrowUp and ArrowDown navigate previous and next months alongside ArrowLeft and ArrowRight. Vertical layout orders months top to bottom, so vertical arrow keys match user expectation while horizontal keys continue to work.
-- Network host binding: Vite server and preview configurations set host to true and share the /api proxy to localhost:3000. Binding to the local network allows testing the responsive layout on physical mobile devices over Wi-Fi without requiring a separate reverse proxy.
-- Vendor chunk split: codeSplitting in apps/web/vite.config.ts isolates recharts (~348 kB) from remaining vendor dependencies (~438 kB) and application code (index ~24 kB, MonthlyChart ~9 kB), clearing the 500 kB chunk warning while keeping recharts completely off the initial route entry graph. The vendor group's test ends in a path separator, so "react" matches react and react-dom but not react-redux, which belongs to recharts and follows it into the chart chunk.
-- Component-level chart lazy loading: MonthlyChart is loaded through React.lazy with a dynamic import and wrapped in a Suspense boundary with a space-exact placeholder (MonthlyChartPlaceholder). Both render through ChartFrame, which owns the figure, aria-labelledby wiring, plot-area height (h-[440px] sm:h-[390px] w-full), and MonthlyChartLegend, guaranteeing zero Cumulative Layout Shift structurally rather than by convention.
-- Routes stay eager: route components are statically imported rather than code-split at the route level. Eager routes allow the shell and loading state to mount on first paint without waiting for route chunk downloads, whereas lazy loading is reserved for the heavy chart library.
-- Header in loading state: the page shell and PageHeader render in a single return in Dashboard, with only the content below the header conditional. Keeping both in the same tree position lets the header DOM node survive the data swap instead of re-creating the Largest Contentful Paint element.
-- Favicon and meta description: apps/web/public/favicon.svg uses the design palette's literal hex values (#141413, #B29DF8, #F4BEB4, #7EC8E3) to remain legible at 16x16 px and removes the 404 console error, and a plain meta description in index.html satisfies Lighthouse SEO and best-practices audits.
-- Code analysis: Fallow runs in CI (npm run analyze) with default thresholds (cyclomatic 20, cognitive 15, unit size 60, CRAP 30.0). .fallowrc.jsonc excludes apps/web/src/components/ui/**, apps/web/e2e/**, and unit test files from health findings only, keeping dead-code and duplication checks active with fallow's default ignores.
-- Treegrid row accessible name: TableRow carries aria-label={row.name} so the row's accessible name in the accessibility tree is strictly the node name ("Company", "Branch 1"). Without it, child elements including the chevron expand button leak into the row name, causing screen readers to announce "Collapse Company Company".
-- Treegrid pointer focus: the row keeps DOM focus after a pointer click, the focus-visible ring is reserved for keyboard interaction, and the chevron button never takes focus. Focusing the button would make it a tab stop and paint a ring on mouse click; passing { focusVisible: false } keeps the row focused while suppressing the ring until keyboard navigation resumes. The focus-visible option is honoured by Chromium, while browsers without the option ignore it and keep their own heuristic; the browser suite runs on Chromium only.
-- Chart data table not built: a companion table under the chart was considered and dropped. It was not in the design or the brief, the tooltip and the treegrid already expose the plotted values, a hidden table adds markup that no user sees, and Recharts does not ship the pattern. The chart keeps its own path: focus enters on the first month, the arrow keys step through the months, and a polite live region announces the month with one line per series.
-- ChartFrame shared shell: extracted ChartFrame instead of keeping duplicated figure, aria-labelledby, plot-height, and legend markup across MonthlyChart and MonthlyChartPlaceholder, so the chart and its placeholder agree by construction.
-- Component-owned CSS: moved ScopeTrail styles out of Dashboard.module.css into ScopeTrail.module.css and replaced the global .adviser-avatar rule in index.css with Tailwind utilities and inline color-mix in TreeGrid, instead of sharing route or global CSS across component boundaries, so index.css holds tokens and base rules only.
-- Container vs presentational props: container components (TreeGrid, ScopeTrail) take (company, selectedId) and resolve from src/lib while presentational components (ChartFrame, ChartPlot, MonthlyChartLegend) take resolved data, instead of resolving some containers in Dashboard and others internally.
-- Consistent label-id prop and named exports: standardized on labelledById across ScopeTrail, ChartFrame, MonthlyChart, and MonthlyChartPlaceholder instead of mixing labelId and labelledById, and switched components and routes to named exports with MonthlyChart kept as the sole default export for React.lazy.
-- Explicit ChartPlot boundary: grouped ChartPlot's six derived chart fields into one data prop and replaced nodeId and fiscalYear with scopeKey instead of passing thirteen flat props, preserving the Bar remount key while documenting its ChartContainer dependency.
-- Pure URL and breakdown helpers: moved resolveSelected and nextParams from Dashboard into src/lib/url.ts with vitest coverage, and added scopeBreakdown in src/lib/chart.ts so the live announcement reads the breakdown directly instead of parsing scopeTitle on ", by ".
+## Open questions
 
-### Tooling: Biome over ESLint and Oxlint
+The brief calls the monthly numbers figures and the design prints them as plain integers. Whether they are client counts or money is unresolved, and the payload is served unchanged.
 
-ESLint needs `typescript-eslint` to lint TypeScript, and `typescript-eslint` 8.74.0 declares a peer range of `typescript >=4.8.4 <6.1.0`. The repository is on TypeScript 7.0.2, so `npm install` refuses the pair without `--legacy-peer-deps`. Biome parses TypeScript itself, so the compiler version does not change how linting works.
+## Next
 
-Oxlint installs cleanly and runs fast. It lints only, so a formatter and an import sorter would still be needed, and its shared presets ship a single accessibility rule. Biome's recommended set covers the accessibility checks this dashboard relies on, including `noSvgWithoutTitle`, `useMediaCaption`, `useKeyWithClickEvents`, `noStaticElementInteractions`, `useSemanticElements`, `useButtonType`, `noPositiveTabindex`, `useFocusableInteractive`, and `useAnchorContent`, among others. Running two full linters would also report overlapping problems twice and double the config surface.
-
-A vendored type-aware ruleset was also tried as a second pass and then dropped. Almost every finding came from a type that a library owns, so the rules asked for suppression comments at the call site rather than changes to the code.
-
-One formatter, one primary linter, one config at the root, one check command.
-
-## Data quirks found so far
-
-Arithmetic in the payload does not always close, before any UI is involved:
-
-- Branch 1, Jul 2024 reads 291 in the design's tree frame `0:1498` and 201 in the design's table frame `1:2901`, against 201 in the payload. The payload value is the one that keeps 201 + 92 + 41 = 334, the company total for July.
-- May 2024: branches sum to 279 (156 + 87 + 36) against a company value of 301.
-- Aug 2024: advisors sum to 216 (38 + 16 + 51 + 58 + 53) against a branch value of 214.
-- Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month.
-
-The payload is served as given and nothing is reconciled. The source figures may come from an aggregated query with filters that are not visible here, so correcting a cell would mean inventing a rule for which one is wrong. The chart and the table show the numbers as received, and this section is the only place the disagreement is surfaced.
-
-The design disagrees with itself in one more place. Its chart bars drift from its own table: Sep, Oct, Nov and Dec draw about 12.5 units high where the table says 250, and Jan draws about 14 above 350. The code copies the treatment, the gridlines, the bar shapes and the axis range, and never a value.
-
-## States covered
-
-Loading and error for the first paint, an empty fiscal year, an invalid year, empty depth (branches without employees, advisers without channels), selection and deep links, keyboard-only, 375px. The first paint does not shift when the font arrives: the Latin variable subset is preloaded and the year select carries a fixed width.
-
-The empty-year and not-found states are centered and illustrated with looping muted clips (The Office) under `apps/web/src/assets/`, an intrinsic poster JPEG, and a pause control. Because the state pages carry a decorative video with a poster frame, they have no separate placeholder.
-
-The first paint is the `role="status"` region named "Loading", and the decorative skeleton shapes appear after a 200ms delay, so a year with no data does not flash a chart skeleton. A failure is a `role="alert"` with the message, the status and a Retry button. A failure after the data landed does not replace the page: the message goes above the stale content, and the Retry button goes with it.
-
-The loading and error states are covered by the browser suite, which intercepts the route. To reach them by hand: the Network panel's throttling dropdown for the slow one, and either the same panel's block request URL pattern (`*/api/dashboard/*`) or stopping the API for the error one.
-
-## Accessibility
-
-The hierarchy is a real treegrid: rows carry `aria-level`, `aria-posinset`, `aria-setsize`, `aria-expanded` on parents and `aria-selected` on every row. Right and Left expand and collapse, Enter selects, and focus stays on the row that was toggled. A deep link opens the path to the selected node.
-
-Cells are not focusable, only rows. APG says a treegrid whose cells cannot be focused should be a tree view, and a treeview with columns is only advised when the columns fit without horizontal scrolling. Ours scroll at 375px, so this is a deliberate simplification and the one place the implementation departs from the pattern.
-
-The chart is not the only route to its numbers. The table below holds every level, so any scope the chart can show is readable in text form, and the page announces each scope change in a live region. The chart also carries its own path: it is focusable once, focus always starts at the first month and resets when focus leaves, the arrow keys step through the months, and a polite live region announces the month with one line per series. The scope trail provides breadcrumb navigation above the chart with an accessible landmark (`<nav aria-label="Chart scope">`), `<ol>` semantics, `aria-current="location"` on the current node, minimum 24x24 px targets with visible focus rings on ancestor buttons, and programmatic focus restoration to the current item when an ancestor button is activated from the keyboard. A separate data table for the chart was considered and dropped: the treegrid below already holds the same figures, the chart's own keyboard path and live region cover the chart itself, and the design has no table. A table that sits hidden in the DOM would add markup that no user sees.
-
-The adviser circle is decoration and carries `aria-hidden`, because the name sits next to it. The colour is never the only signal: the same adviser is named in the row, in the legend and in the chart tooltip.
-
-Decorative looping videos on the empty-year and not-found state pages carry `aria-hidden` and `tabindex="-1"`. A visible pause/play toggle button with an accessible name satisfies WCAG 2.2.2 for motion lasting longer than five seconds, and `prefers-reduced-motion: reduce` keeps the video paused on initial paint while displaying the poster frame.
-
-Every control that takes focus shows a ring: the treegrid rows, the scope trail buttons, the chart and the state page controls. The chart's ring is a 2px solid outline with a 2px offset, drawn on the container rather than on the plot, so the whole plot is marked as the focused thing. Targets are at least 24 by 24 pixels, which is why the link back to the dashboard carries vertical padding: at 14px it was 20 pixels tall.
-
-`prefers-reduced-motion: reduce` is honoured in three places. The state page video stays on its poster frame. The chart bars do not animate. And a media query in `index.css` ends every CSS animation and transition, which is what stops the loading skeleton from pulsing forever and the tooltip from sliding between months.
-
-## Tests
-
-The split is decided: vitest for the pure modules under `apps/web/src/lib`, Playwright for the browser suite in `apps/web/e2e`. The chart mapping and the tree flattening were pulled out of the components for that reason.
-
-The unit suite is 74 test cases over six files. `chart.test.ts` is the one the brief names: it asserts that the company stacks its three branches, that an adviser stacks her three channels, that a leaf is one series of its own, that the twelve rows carry the months of the year in the route, that the axis maximum is 400 for the company, 300 for Branch 1 and 40 for Anna Blackwood, and covers `axisTicks`, `chartDescription`, `scopeBreakdown`, and `scopeTitle`. `url.test.ts` covers `resolveSelected` and `nextParams`. `treegrid-nav.test.ts` covers the treegrid keyboard model as a pure function (arrow navigation, expand, collapse, move to parent, Home, End, Enter and Space). `tree.test.ts` asserts the levels, the sibling counts, `pathTo` from root to target, and that a branch without employees stays a branch. `period.test.ts` asserts the fiscal calendar, including the year in January and the short month labels. `http.test.ts` asserts status extraction, error transience and `ResponseError` recognition across module re-evaluations.
-
-The browser suite is 42 specs over two files. `treegrid.spec.ts` covers the tree as it renders, the keyboard model, the chevron, the selection remapping the chart, the scope trail navigation and focus restoration, the chart announcing the active month, the rounded tops on the topmost segment of each month column across zero-height segments, the deep link, an unknown node, the 375px layout, the horizontal mobile chart with 12 month labels, minimum 24px row spacing, the pinned sticky name column, short month headers, wrapped legend inside the chart card, the accessibility tree walked with Playwright ARIA snapshots across the four levels, the chevron pointer click leaving the row focused without a focus-visible ring, and table card position stability when the deferred chart replaces its placeholder. `states.spec.ts` covers the error, loading, empty-year and invalid-year states, delayed skeleton mounting without flashing on 404, empty year accessible select labelling, select width stability, the selected value centred in the closed select, heading stability across font load, looping muted videos with pause controls, reduced motion, 375px responsiveness on state pages, a leading zero not being a year and a year past 2999 not being one either. Two specs (the chevron focus spec and the figure accessible-name spec) were run against the old behaviour on purpose before they were kept; the rest were written with the feature and pass.
-
-## AI use
-
-The three pure modules, the chart component, the treegrid and the page were written with an AI agent in the loop, against task descriptions written by another agent and reviewed against the payload. Three things came out of that review and are in the code: the axis maximum was read off the wrong month in the task, `initials` gave a one-word name two letters, which the unit test caught, and the chevron took the focus when it was clicked, so Enter on it selected the row instead of expanding it. The agent was told the arithmetic in the brief and did not correct a single payload figure.
-
-## What I would do next
-
-- Run the focus-visible assertion on Firefox and WebKit, where the browser heuristic differs from Chromium.
-- Add a data-quality note in the UI (a footnote, a tooltip or a badge) on inconsistent months where child sums disagree with the parent total.
+- Add a data-quality note in the UI on months where child sums disagree with the parent row.
+- Run the focus-visible assertion in Firefox and WebKit, where the heuristic differs from Chromium.
