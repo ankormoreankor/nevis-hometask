@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "!apps/web/src/components/ui", "!**/dist"]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css", "!apps/web/src/components/ui", "!**/dist"]
   },
   "formatter": {
     "enabled": true,
@@ -14,8 +14,15 @@
       "enabled": true
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true,
+      "cssModules": true
+    }
+  },
   "linter": {
     "enabled": true,
+    "includes": ["**/*.ts", "**/*.tsx"],
     "rules": {
       "preset": "recommended"
     }
