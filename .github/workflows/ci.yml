@@ -32,9 +32,8 @@ jobs:
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # The browser suite starts both dev servers itself. It runs once there are
-    # specs to run, so the job is skipped rather than red on an empty suite.
-    if: ${{ hashFiles('apps/web/e2e/**/*.spec.ts') != '' }}
+    # The browser suite starts both dev servers itself, through the webServer
+    # entries in apps/web/playwright.config.ts.
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
