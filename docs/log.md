@@ -679,3 +679,26 @@ Open
 
 Next
 - Run the focus-visible assertion on Firefox and WebKit.
+
+## one linter, one formatter
+
+Decided
+- Biome is the linter and the formatter. ESLint does not install on TypeScript 7, and the Oxlint shared presets ship one accessibility rule, so the accessibility checks this dashboard relies on stay with Biome.
+- A vendored type-aware ruleset was tried as a second lint pass and then dropped. Almost every finding was a type a library owns, so the rules asked for suppression comments at the call site rather than changes to the code.
+- The comments that state an invariant on a type assertion stay, because they read well on their own.
+- Biome formats CSS as well, with the Tailwind directives and CSS modules parsed, and the linter stays on TypeScript.
+
+Done
+- Six assertions carry the invariant they rest on: the two http guards, the two Recharts tooltip payload casts, and the two SVG element casts in the browser spec.
+- The browser spec declares the Window property it writes to instead of casting the window twice, and the tooltip text is built in one pass over the series.
+- `index.css` is formatted by Biome, and the README carries the reasoning under "Tooling: Biome over ESLint and Oxlint".
+
+Verified
+- `check`, `typecheck`, `test` (74 cases), `test:e2e` (42 specs), `analyze` and `build` pass, and `format` writes nothing.
+
+Open
+- The focus-visible suppression is proven on Chromium only.
+- The licence for the footage in a public repository is still open.
+
+Next
+- Run the focus-visible assertion on Firefox and WebKit.

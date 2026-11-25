@@ -115,6 +115,16 @@ The brief asks for the calls made where it left things open, and for anything th
 - Explicit ChartPlot boundary: grouped ChartPlot's six derived chart fields into one data prop and replaced nodeId and fiscalYear with scopeKey instead of passing thirteen flat props, preserving the Bar remount key while documenting its ChartContainer dependency.
 - Pure URL and breakdown helpers: moved resolveSelected and nextParams from Dashboard into src/lib/url.ts with vitest coverage, and added scopeBreakdown in src/lib/chart.ts so the live announcement reads the breakdown directly instead of parsing scopeTitle on ", by ".
 
+### Tooling: Biome over ESLint and Oxlint
+
+ESLint needs `typescript-eslint` to lint TypeScript, and `typescript-eslint` 8.74.0 declares a peer range of `typescript >=4.8.4 <6.1.0`. The repository is on TypeScript 7.0.2, so `npm install` refuses the pair without `--legacy-peer-deps`. Biome parses TypeScript itself, so the compiler version does not change how linting works.
+
+Oxlint installs cleanly and runs fast. It lints only, so a formatter and an import sorter would still be needed, and its shared presets ship a single accessibility rule. Biome's recommended set covers the accessibility checks this dashboard relies on, including `noSvgWithoutTitle`, `useMediaCaption`, `useKeyWithClickEvents`, `noStaticElementInteractions`, `useSemanticElements`, `useButtonType`, `noPositiveTabindex`, `useFocusableInteractive`, and `useAnchorContent`, among others. Running two full linters would also report overlapping problems twice and double the config surface.
+
+A vendored type-aware ruleset was also tried as a second pass and then dropped. Almost every finding came from a type that a library owns, so the rules asked for suppression comments at the call site rather than changes to the code.
+
+One formatter, one primary linter, one config at the root, one check command.
+
 ## Data quirks found so far
 
 Arithmetic in the payload does not always close, before any UI is involved:

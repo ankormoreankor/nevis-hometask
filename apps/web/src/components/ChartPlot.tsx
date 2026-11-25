@@ -63,7 +63,10 @@ function resolveTooltipRow(payload: readonly unknown[]): ChartRow | undefined {
   if (payload.length === 0) {
     return undefined;
   }
+  // SAFETY: Recharts hands the custom tooltip the row object it was given, and ChartPlot is the
+  // only producer of those rows.
   const item = payload[0] as { payload?: unknown } | undefined;
+  // SAFETY: ChartPlot is the only producer of the row objects passed into Recharts.
   return item ? (item.payload as ChartRow | undefined) : undefined;
 }
 
@@ -77,7 +80,13 @@ function formatTooltipText(
     return "";
   }
   const month = resolveTooltipMonth(label, row.month);
-  const parts = series.map((item) => seriesPart(row, item)).filter(Boolean);
+  const parts: string[] = [];
+  for (const item of series) {
+    const part = seriesPart(row, item);
+    if (part !== null) {
+      parts.push(part);
+    }
+  }
   return `${[month, ...parts].join(". ")}.`;
 }
 
