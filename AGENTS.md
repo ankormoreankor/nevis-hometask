@@ -15,7 +15,7 @@ Nevis frontend take-home: dashboard over a company > branch > adviser > channel 
 - Vite + React 19 + TypeScript strict. `createBrowserRouter`, CSS modules, tokens in one file.
 - API: Express in the same repo, thin. Shared Zod schema in `shared/`, imported by server and client.
 - Biome owns the formatting: two spaces, 100 columns, double quotes, semicolons, imports sorted. One `biome.json` at the repo root. `npm run format` writes it, `npm run check` is what CI runs.
-- Decisions land in the README's `## Decisions` section as they are made, not at the end. The brief grades them.
+- Decisions land in `docs/context.md` as they are made, not at the end; a reviewer-facing decisions document comes later. The brief grades them.
 - Numbers rendered in the UI come from the payload unchanged. Where a level is missing (branches without employees, advisers without channels), the row is a leaf and says so.
 - UI copy is plain and factual: no em dashes, no marketing adjectives, no exclamation.
 

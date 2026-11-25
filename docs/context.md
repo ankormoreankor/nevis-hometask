@@ -31,6 +31,7 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 - **State pages:** `/dashboard/:emptyYear` and `*` (not found) use a centered shared shell (`StatePage`) with a decorative looping muted MP4 video (The Office clips), an intrinsic poster frame, and an accessible pause/play toggle button overlay. WCAG 2.2.2 requires a mechanism to pause moving content longer than five seconds, and `prefers-reduced-motion` suppresses autoplay, showing the poster frame until explicit user play. Because the state pages carry a decorative video with a poster frame, they have no separate placeholder.
 - **Deploy:** none. The project runs locally with `npm run dev`; there is no hosted demo, so no CORS question, no base URL and no deploy pipeline. In dev, Vite proxies `/api` to the API port. Vite binds to the local network with `host: true` in dev and preview configurations, proxying `/api` to port 3000 so the dashboard can be tested directly from mobile devices on the same Wi-Fi.
 - **Data:** the payload is the source of truth, served unchanged. It lives in `packages/shared/src/payload.ts`; `parsedDataMap` in `apps/api/src/data.ts` is a `Map` with one entry, FY2024, parsed once at module scope; `getData(year)` returns that tree or undefined. No projections, no corrections, no derived totals: the source query and filters are unknown, so a correction would be invented. Moving to a real database touches one file.
+- **README:** short landing page (overview, demo media, stack, run commands, highlights, and doc links). The long material (decisions, accessibility, tests, data quirks, and AI use) is parked in `.scratch/README-cut.md` (gitignored) until folded into a reviewer-facing decisions document.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
 
@@ -59,7 +60,7 @@ File `1qKUKrXJEGzIUoryLIOlJ7`, five frames, node trees and 2x renders in `design
 - Cards: both frames white, radius 8, no stroke or shadow, chart frame 1408x430 with padding 24 top / 16 sides / 16 bottom and a 358px plot plus a 16px legend, table frame header row 56px and body rows 56px with a 1px bottom separator at the ink at 8%.
 - Type values: month header 14px/400 with the ink at 60%, body names and values 14px/400 in the ink with tabular figures, chart ticks and legend 12px/400 with the ink at 60%, chevron 16px stroked in the ink, the design artboard is #F7F5ED and the build uses #F9F9F9 by choice.
 
-Three design issues to resolve in code and record in the README:
+Three design issues resolved in code and recorded in the docs:
 
 1. **The chart legend does not match the data.** It names Existing clients / New organic / New paid at company scale, but channels exist only under one adviser, where the bars top out at 38. The legend is illustrative. Resolved: the chart stacks the selected node's children, so those three names appear only when Anna Blackwood is selected.
 2. **The design's bars drift from its own table.** The gridlines put 0.8px on a unit, and the bars read 262.5 for Sep, Oct, Nov and Dec where the table says 250, and 363.75 for Jan where the table says 350. The other months sit within two units of the table. Match the visual treatment rather than pixel positions.
@@ -74,14 +75,14 @@ Arithmetic in the payload, verified:
 - Aug 2024: advisers sum to 216, branch says 214.
 - Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month. Every other channel month matches, and every other adviser matches their branch.
 
-Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded in the README and nowhere else.
+Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded here and in `.scratch/README-cut.md`, pending the reviewer-facing decisions document.
 
 ## Ideas worth building, in order of value
 
 1. **Keyboard and screen-reader parity for the chart.** Not just the table: expose the same numbers through a companion data table or a focusable bar series with an accessible description. Almost no take-home does this and their interview bank asks about keyboard access to charted data. The focusable bar series is done: the chart is focusable once, focus always starts at the first month and resets when focus leaves, the arrow keys step through the months, and a polite live region announces the month with one line per series. The companion data table was considered and dropped: it was not in the design or the brief, the tooltip and the treegrid expose the same values, and a table that sits hidden in the DOM adds markup that no user sees.
 2. **The loading and error states**, reached by intercepting the route in the browser suite. A query parameter that made the API answer 500 would put fault injection in the product path, and the slow case is one click away in the DevTools throttling dropdown. Done: the browser suite intercepts the route for both.
 3. **Tests the brief names**, plus one for branches without employees and one for the chart mapping (payload values to segment totals and axis scale). Done: 74 unit cases and 42 browser specs.
-4. **A data-quality note** in the README, with a UI decision behind it: a footnote, a tooltip, or a dev-only badge on inconsistent months.
+4. **A data-quality note in the UI:** a footnote, a tooltip, or a dev-only badge on inconsistent months.
 5. **Formatting:** `Intl` for month labels and numbers, tabular figures in the table so columns align, and a horizontal scroll container for the table with a sticky name column rather than squeezed columns at 375px. The chart flips to a vertical layout below 640px instead of scrolling sideways.
 6. **States:** empty depth, reduced motion, a slow response that resolves after the page moved on. The empty-year and not-found state pages honour reduced motion with a poster frame and provide a pause control.
 
@@ -92,9 +93,9 @@ Settled: the payload is served as given. The source query and filters are unknow
 - [x] Expand and collapse from the keyboard only, hierarchy announced to assistive tech
 - [x] Tests: expand/collapse, data-to-chart mapping. The chart mapping is vitest; expand and collapse, the states and the 375px layout are in the browser suite.
 - [x] Nothing overflows or breaks at 375px
-- [x] README: run, test, assumptions, open questions, what next
+- [x] README: run, test, demo, doc links, open questions, and next; assumptions and decisions live in docs/context.md
 - [x] No console errors, no unused dependencies
 
-## Open questions to answer in the README
+## Open questions
 
 - Whether numbers are counts, money or something else. The brief says figures; the design shows plain integers.

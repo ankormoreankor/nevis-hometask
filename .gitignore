@@ -27,3 +27,6 @@ blob-report/
 
 # Confidential design exports (Figma node trees, frame renders)
 design/
+
+# Temporary scratch files
+.scratch/

@@ -702,3 +702,29 @@ Open
 
 Next
 - Run the focus-visible assertion on Firefox and WebKit.
+
+## the README becomes a landing page
+
+Decided
+- The README is a landing page: overview, demo, stack, run, what to look at, doc links. The decisions, the accessibility notes, the test write-ups, the data quirks and the AI use leave it.
+- Decisions land in `docs/context.md`, and a reviewer-facing decisions document comes later. `AGENTS.md` follows this.
+- The demo is one clip, desktop on the left and mobile on the right, an animated WebP that plays once, with the MP4 and a poster frame linked beside it.
+- The capture script stays local, in `.scratch/`, gitignored. The repo keeps the media, not the tool that made it.
+
+Done
+- The README is 62 lines with six sections: Stack, Run it, What to look at, Docs, Open questions, Next.
+- The old text is parked verbatim in `.scratch/README-cut.md`, checked line by line against the previous README.
+- `docs/media/` holds the WebP, the MP4 and the poster frame.
+- The two panels are recorded against one beat, after the first pass drifted four seconds apart.
+- `docs/context.md` no longer claims the README carries the decisions or the open questions.
+
+Verified
+- Frames at 3, 6, 9, 12 and 14 seconds show both panels on the same month, with 0.08s of residual drift.
+- `check`, `analyze` and `test` (74 cases) pass.
+
+Open
+- The decisions and the accessibility notes live in an agent-facing file, so the reviewer-facing document is still to be written.
+- The licence for the footage in a public repository is still open.
+
+Next
+- Write the reviewer-facing decisions document from `.scratch/README-cut.md`.
