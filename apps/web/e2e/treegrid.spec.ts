@@ -1,34 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * The browser suite for the treegrid keyboard model and the selection.
+ * Covers the treegrid keyboard model, accessibility tree and chart selection.
+ * Base URL http://localhost:5173 and both servers come from playwright.config.ts.
  *
- * The brief grades the keyboard model, the hierarchy reaching assistive
- * technology and the selection that remaps the chart. Those belong in a
- * browser, where the focus ring and the accessibility tree are real.
- *
- * The base URL is http://localhost:5173 and is set in playwright.config.ts, so
- * page.goto("/dashboard/2024") is enough. The config starts the API and the
- * dev server, so the spec starts neither.
- *
- * The table is <table role="treegrid" aria-label="Monthly figures by branch,
- * adviser and acquisition channel">. Its rows carry role="row", aria-level
- * from 1 to 4, aria-posinset and aria-setsize, aria-expanded on the rows that
- * have children and aria-selected on every row. Exactly one row has
- * tabindex="0" at a time.
- *
- * The rows are addressed by their text: the company row reads "Company", the
- * branch rows read "Branch 1", "Branch 2" and "Branch 3", the adviser rows
- * read the adviser names, and a channel row reads the channel name.
- *
- * The chevron is a button named "Expand {name}" or "Collapse {name}". It is
- * not a focus target, so the specs click it by name and never tab to it.
- *
- * The rows are reached with the keyboard, so focus the grid first:
- * await page.getByRole("row", { name: "Company" }).focus()
- *
- * The chart is the figure above the table. Its accessible name is the current
- * crumb name, "Company", "Branch 1" or "Anna Blackwood".
+ * The table is role="treegrid" with role="row" rows carrying aria-level (1 to 4),
+ * aria-posinset, aria-setsize, aria-expanded on parents, aria-selected on every
+ * row and one tabindex="0". Rows are addressed by name, the chart by its current
+ * crumb, and the chevron button ("Expand {name}" or "Collapse {name}") is never
+ * a focus target.
  */
 
 const CHANNEL_ID = "716e7c30-b7c3-45c5-aa64-cbcf483917e0";
@@ -132,36 +112,29 @@ test("the keyboard model", async ({ page }) => {
 
   await company.focus();
 
-  // ArrowDown reaches the next visible row.
   await page.keyboard.press("ArrowDown");
   await expect(branch1).toBeFocused();
 
-  // ArrowRight on a collapsed parent expands it and keeps the focus there.
   await expect(branch1).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("ArrowRight");
   await expect(branch1).toHaveAttribute("aria-expanded", "true");
   await expect(branch1).toBeFocused();
 
-  // ArrowRight on an expanded parent moves to its first child.
   await page.keyboard.press("ArrowRight");
   await expect(anna).toBeFocused();
 
-  // ArrowLeft on a leaf moves to the parent row.
   await page.keyboard.press("ArrowLeft");
   await expect(branch1).toBeFocused();
 
-  // ArrowLeft on an expanded parent collapses it and keeps the focus there.
   await page.keyboard.press("ArrowLeft");
   await expect(branch1).toHaveAttribute("aria-expanded", "false");
   await expect(branch1).toBeFocused();
 
-  // Enter selects and leaves the expansion alone.
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\?node=[0-9a-f-]{36}$/);
   await expect(branch1).toHaveAttribute("aria-selected", "true");
   await expect(branch1).toHaveAttribute("aria-expanded", "false");
 
-  // Home and End reach the ends of the visible rows.
   await page.keyboard.press("End");
   await expect(page.getByRole("row", { name: "Branch 3" })).toBeFocused();
   await page.keyboard.press("Home");
@@ -176,7 +149,6 @@ test("the chevron expands without selecting", async ({ page }) => {
 
   const branch1 = page.getByRole("row", { name: "Branch 1" });
 
-  // The focus starts on the chart, outside the grid.
   await expect(page.locator(".recharts-surface")).toBeVisible();
   await page.getByRole("application").focus();
 
@@ -186,9 +158,8 @@ test("the chevron expands without selecting", async ({ page }) => {
   await expect(branch1).toHaveAttribute("aria-selected", "false");
   await expect(page).not.toHaveURL(/\?node=/);
 
-  // The chevron is pointer only, so the focus lands on the row and Enter
-  // selects the row rather than toggling the expansion.
   await expect(branch1).toBeFocused();
+  // The chevron is pointer only, so the row keeps focus and no ring is drawn.
   expect(await branch1.evaluate((el) => el.matches(":focus-visible"))).toBe(false);
   await page.keyboard.press("Enter");
   await expect(branch1).toHaveAttribute("aria-selected", "true");
@@ -207,11 +178,9 @@ test("the selection remaps the chart", async ({ page }) => {
   await expect(page).toHaveURL(/\?node=[0-9a-f-]{36}$/);
   await expect(figure).toHaveAccessibleName("Branch 1");
 
-  // The legend names the advisers of the scope, not the branches.
   await expect(page.locator(".recharts-surface desc")).toContainText("Anna Blackwood");
   await expect(page.locator(".recharts-surface desc")).toContainText("Sarah Smith");
 
-  // Clicking the company row clears the parameter.
   await page.getByRole("row", { name: "Company" }).click();
   await expect(page).not.toHaveURL(/\?node=/);
   await expect(figure).toHaveAccessibleName("Company");
@@ -225,8 +194,6 @@ test("the deep link opens the path", async ({ page }) => {
   await expect(channel).toHaveAttribute("aria-selected", "true");
   await expect(channel).toHaveAttribute("aria-level", "4");
 
-  // The path to the selected node opens, and the selected node itself does
-  // not expand.
   await expect(page.getByRole("row", { name: "Company" })).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByRole("row", { name: "Branch 1" })).toHaveAttribute(
     "aria-expanded",
@@ -273,7 +240,7 @@ test("the chart resets its active month on blur", async ({ page }) => {
   await expect(chart).toBeVisible();
   await expect(page.locator(".recharts-surface")).toBeVisible();
 
-  // Tab into the chart (the chart is the first tab stop on the page).
+  // The chart is the first tab stop on the page.
   await page.keyboard.press("Tab");
   await expect(chart).toBeFocused();
   await expect(reader).toContainText("Feb 2024");
@@ -281,19 +248,16 @@ test("the chart resets its active month on blur", async ({ page }) => {
   await expect(tooltip).toContainText("Feb 2024");
   await expect(cursor).toBeVisible();
 
-  // ArrowRight shows Mar 2024.
   await page.keyboard.press("ArrowRight");
   await expect(reader).toContainText("Mar 2024");
   await expect(tooltip).toContainText("Mar 2024");
   await expect(cursor).toBeVisible();
 
-  // Tab away hides the tooltip and cursor.
   await page.keyboard.press("Tab");
   await expect(chart).not.toBeFocused();
   await expect(tooltip).toBeHidden();
   await expect(cursor).toBeHidden();
 
-  // Shift+Tab back re-focuses the chart and the tooltip and the live region show Feb 2024 again.
   await page.keyboard.press("Shift+Tab");
   await expect(chart).toBeFocused();
   await expect(tooltip).toBeVisible();
@@ -307,13 +271,11 @@ test("nothing overflows at 375px", async ({ page }) => {
   await page.goto("/dashboard/2024");
   await expect(page.getByRole("row", { name: "Company" })).toBeVisible();
 
-  // The page does not scroll sideways.
   const pageOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(pageOverflow).toBe(0);
 
-  // The table does, inside its own container.
   const tableScrolls = await page.evaluate(() => {
     const container = document.querySelector("table")?.parentElement;
     return container ? container.scrollWidth > container.clientWidth : false;
@@ -448,7 +410,6 @@ test("focus moves to the current item after an ancestor click in the trail", asy
 
   const current = nav.locator('[aria-current="location"]');
 
-  // Pointer click selects the node without moving focus to the current item.
   await nav.getByRole("button", { name: "Branch 1" }).click();
   await expect(current).toHaveText("Branch 1");
   await expect(current).not.toBeFocused();
@@ -461,7 +422,6 @@ test("focus moves to the current item after an ancestor click in the trail", asy
   );
   expect(outlineStyle).toBe("none");
 
-  // Keyboard activation focuses the replacement current item.
   await page.getByRole("row", { name: "Anna Blackwood" }).click();
   await expect(nav).toHaveText("Company / Branch 1 / Anna Blackwood");
 
@@ -472,7 +432,6 @@ test("focus moves to the current item after an ancestor click in the trail", asy
   await expect(current).toBeFocused();
   await expect(current).toHaveText("Branch 1");
 
-  // Selection made from the table must not steal focus.
   await page.getByRole("row", { name: "Anna Blackwood" }).click();
   await expect(page.getByRole("row", { name: "Anna Blackwood" })).toBeFocused();
   await expect(current).not.toBeFocused();
@@ -502,11 +461,9 @@ test("small screen layout at 375px", async ({ page }) => {
   await page.goto("/dashboard/2024");
   await expect(page.locator(".recharts-surface")).toBeVisible();
 
-  // The chart renders 12 month labels (count the text nodes in the chart).
   const yAxisTicks = page.locator("figure .recharts-yAxis-tick-labels text");
   await expect(yAxisTicks).toHaveCount(12);
 
-  // The spacing between consecutive month rows is at least 24px.
   const tickBoxes = await yAxisTicks.evaluateAll((elements) =>
     elements.map((el) => {
       // SAFETY: The locator queries SVG text nodes inside the chart, so each element is an
@@ -520,18 +477,17 @@ test("small screen layout at 375px", async ({ page }) => {
     const prev = tickBoxes[i - 1];
     const curr = tickBoxes[i];
     if (prev && curr) {
+      // 24px is the target size floor for a month row.
       expect(Math.abs(curr.y - prev.y)).toBeGreaterThanOrEqual(24);
     }
   }
 
-  // The month header reads "Feb".
   const firstMonthHeader = page.locator("thead th").nth(1);
   await expect(firstMonthHeader).toBeVisible();
   const shortSpan = firstMonthHeader.locator("span.sm\\:hidden");
   await expect(shortSpan).toBeVisible();
   await expect(shortSpan).toHaveText("Feb");
 
-  // The name cell keeps the same x after the table's scroll container is scrolled to the end.
   const tableContainer = page.locator("[data-slot='table-container']");
   const nameCell = page.getByRole("row", { name: "Company" }).locator("td").first();
   const initialBox = await nameCell.boundingBox();
@@ -545,12 +501,11 @@ test("small screen layout at 375px", async ({ page }) => {
   expect(scrolledBox).not.toBeNull();
   expect(Math.round(scrolledBox?.x ?? 0)).toBe(Math.round(initialBox?.x ?? 0));
 
-  // With Branch 1 selected the legend has 5 items, each on a single line (item height no more than 24px),
-  // and the legend stays inside the chart card.
   await page.getByRole("row", { name: "Branch 1" }).click();
 
   const legend = page.locator("figure ul");
   const legendItems = legend.locator("li");
+  // Branch 1 stacks five advisers, so the legend lists five.
   await expect(legendItems).toHaveCount(5);
 
   const card = page.locator("figure").locator("..");
@@ -577,21 +532,18 @@ test("sticky name column capped and truncated at 375px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/dashboard/2024");
 
-  // Measure the name cell width with only the company open.
   const companyNameCell = page.getByRole("row", { name: "Company" }).locator("td").first();
   await expect(companyNameCell).toBeVisible();
   const collapsedBox = await companyNameCell.boundingBox();
   expect(collapsedBox).not.toBeNull();
   const collapsedWidth = collapsedBox?.width ?? 0;
 
-  // Expand Branch 1 and Anna Blackwood.
   await page.getByRole("button", { name: "Expand Branch 1" }).click();
   await page.getByRole("button", { name: "Expand Anna Blackwood" }).click();
 
   const annaRow = page.getByRole("row", { name: "Anna Blackwood" });
   await expect(annaRow).toBeVisible();
 
-  // Assert the name cell width is the same (within 1px) in both states.
   const expandedBox = await companyNameCell.boundingBox();
   expect(expandedBox).not.toBeNull();
   const expandedWidth = expandedBox?.width ?? 0;
@@ -601,21 +553,17 @@ test("sticky name column capped and truncated at 375px", async ({ page }) => {
   expect(annaCellBox).not.toBeNull();
   expect(Math.abs((annaCellBox?.width ?? 0) - collapsedWidth)).toBeLessThanOrEqual(1);
 
-  // Assert the long adviser name is truncated, meaning scrollWidth > clientWidth,
-  // and that its title attribute holds the full name.
   const annaNameSpan = annaRow.locator("td").first().locator("span.truncate");
   await expect(annaNameSpan).toBeVisible();
   await expect(annaNameSpan).toHaveAttribute("title", "Anna Blackwood");
   const isTruncated = await annaNameSpan.evaluate((el) => el.scrollWidth > el.clientWidth);
   expect(isTruncated).toBe(true);
 
-  // Assert the page still does not scroll sideways.
   const pageOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(pageOverflow).toBe(0);
 
-  // Assert that the sticky name cell keeps its x position after the table container is scrolled to the end.
   const tableContainer = page.locator("[data-slot='table-container']");
   const annaNameCell = annaRow.locator("td").first();
   const initialBox = await annaNameCell.boundingBox();
@@ -721,21 +669,16 @@ test("the table card does not move when the chart replaces its placeholder", asy
 
   await page.goto("/dashboard/2024");
 
-  // Wait for the treegrid to be visible (data resolved, placeholder mounted)
   await expect(page.getByRole("treegrid")).toBeVisible();
 
-  // The table card wrapping the treegrid
   const tableCard = page.locator("div[class*='tableCard']");
   await expect(tableCard).toBeVisible();
 
-  // Capture table card bounding box while placeholder is visible
   const boxBefore = await tableCard.boundingBox();
   expect(boxBefore).not.toBeNull();
 
-  // Let the chart arrive
   await expect(page.locator(".recharts-surface")).toBeVisible();
 
-  // Capture table card bounding box again
   const boxAfter = await tableCard.boundingBox();
   expect(boxAfter).not.toBeNull();
 

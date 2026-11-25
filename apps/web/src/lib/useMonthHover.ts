@@ -38,6 +38,7 @@ function cancelPendingRetry(retryRef: React.MutableRefObject<number | null>) {
   }
 }
 
+// Ticks are not measured on the first frame, so a miss retries on the next frame.
 function retryHover(
   surface: React.RefObject<SVGSVGElement | null>,
   ticks: React.RefObject<ReadonlyArray<TickItem>>,
@@ -91,6 +92,7 @@ export function useMonthHover({ rowCount, narrow }: UseMonthHoverOptions) {
     );
   }
 
+  // Cancels the frame that would retry a missing tick after unmount.
   useEffect(() => {
     return () => {
       if (retryRef.current !== null) {

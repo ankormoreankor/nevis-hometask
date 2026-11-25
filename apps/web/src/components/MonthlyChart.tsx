@@ -9,17 +9,6 @@ import { useMediaQuery } from "@/lib/useMediaQuery";
 import { useMonthHover } from "@/lib/useMonthHover";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
-/**
- * The stacked monthly chart, built on the shadcn Chart component.
- *
- * It stacks the selected node's immediate children with a single series for
- * a leaf. The keyboard and screen-reader path does not depend on seeing colour;
- * the treegrid below holds the same figures and is the accessible alternative.
- *
- * The mapping from a node to chart data lives in "@/lib/chart", not in this
- * file. This component renders what that module returns.
- */
-
 export type MonthlyChartProps = {
   node: TreeNode;
   fiscalYear: number;

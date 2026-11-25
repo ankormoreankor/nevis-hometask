@@ -2,11 +2,7 @@ import { cn } from "cn";
 import { MonthlyChartLegend } from "@/components/MonthlyChartLegend";
 import type { ChartSeries } from "@/lib/chart";
 
-/**
- * Shared structural frame for both the interactive chart and its lazy-load
- * placeholder. Owns the figure markup, aria-labelledby wiring, plot-area height
- * and legend so the placeholder reserves the exact same box as the chart.
- */
+// Chart and placeholder share this box, so the swap causes no layout shift.
 
 const PLOT_AREA_CLASS = "h-[440px] sm:h-[390px] w-full";
 

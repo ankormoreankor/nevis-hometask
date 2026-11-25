@@ -50,9 +50,6 @@ const KEY_ACTIONS: Record<string, KeyHandler> = {
   },
 };
 
-/**
- * Maps a key press on a treegrid row to a navigation or selection action.
- */
 export function keyAction(rows: readonly FlatRow[], row: FlatRow, key: string): KeyAction | null {
   const index = rows.findIndex((candidate) => candidate.id === row.id);
   if (index === -1) {

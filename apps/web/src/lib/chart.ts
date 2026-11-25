@@ -2,18 +2,6 @@ import type { TreeNode } from "@nevis/shared";
 import { formatMonthLabel, formatPeriod } from "@/lib/period";
 import { childrenOf } from "@/lib/tree";
 
-/**
- * The chart mapping, from a node to the data the chart draws.
- *
- * Four pure functions that turn a node into a stacked chart: the series, the
- * rows per month, the axis domain and the scope title. No React, no
- * formatting, no state.
- *
- * The brief grades how the data maps into the chart, so the mapping is the
- * part that has to be right, and it is the part that is easiest to test once
- * it is a function instead of a component.
- */
-
 export type ChartSeries = {
   key: string;
   label: string;
@@ -28,17 +16,7 @@ export type ChartRow = {
 
 const MONTH_COUNT = 12;
 
-/**
- * The series of a node, in the order they stack, bottom to top.
- *
- * A node with children stacks them, and a leaf is one series of its own. The
- * values are the payload's own twelve numbers: no sums, no corrections, no
- * rounding. A company with no branches takes the leaf path, so the chart
- * never assumes three series.
- *
- * The colour follows the position in the stack, not the entity, so a rename
- * does not reshuffle the palette. The scope title carries the meaning.
- */
+// The colour follows the position in the stack, not the entity.
 export function toSeries(node: TreeNode): ChartSeries[] {
   const children = childrenOf(node);
 
@@ -54,13 +32,6 @@ export function toSeries(node: TreeNode): ChartSeries[] {
   }));
 }
 
-/**
- * One row per month, keyed by the position of the series.
- *
- * Two children can share a name and the chart still stacks them separately.
- * A series with fewer than twelve months contributes nothing for the missing
- * ones; the payload always has twelve, so that is defensive.
- */
 export function toRows(series: ChartSeries[], fiscalYear: number): ChartRow[] {
   const rows: ChartRow[] = [];
 
@@ -80,17 +51,8 @@ export function toRows(series: ChartSeries[], fiscalYear: number): ChartRow[] {
   return rows;
 }
 
-/**
- * The axis maximum: the largest stacked month, rounded up.
- *
- * The domain comes from the stack, not from the node's own values. At May
- * 2024 the company row says 301 and its branches stack to 279, and the axis
- * has to fit the bars.
- *
- * The company stacks to 350 at Aug 2024 and at Jan 2025, which rounds to 400.
- * Branch 1 stacks its advisers to 216 at Aug 2024, which rounds to 300. Anna
- * Blackwood stacks her channels to 38 at Jan 2025, which rounds to 40.
- */
+// The axis comes from the stack, and at May 2024 the company row says 301
+// while its branches stack to 279.
 export function toDomain(series: ChartSeries[]): number {
   let maximum = 0;
 
@@ -115,9 +77,6 @@ export function toDomain(series: ChartSeries[]): number {
 
 export type ScopeBreakdown = "branch" | "adviser" | "channel";
 
-/**
- * What the node's children break down into, or null when the node is a leaf.
- */
 export function scopeBreakdown(node: TreeNode): ScopeBreakdown | null {
   if (childrenOf(node).length === 0) {
     return null;
@@ -136,27 +95,13 @@ export function scopeBreakdown(node: TreeNode): ScopeBreakdown | null {
   return null;
 }
 
-/**
- * The title above the plot, naming the node and what it is broken down by.
- *
- * The word follows the kind of the node, not its level, so a branch reads "by
- * adviser" and an adviser reads "by channel". A leaf has nothing below it and
- * is named on its own.
- */
 export function scopeTitle(node: TreeNode): string {
   const breakdown = scopeBreakdown(node);
   return breakdown ? `${node.name}, by ${breakdown}` : node.name;
 }
 
-/**
- * The key of the series that tops each month in the stack.
- *
- * Recharts draws nothing for a zero, so the last series in stack order is not
- * always the visible top, and the chart asks this helper which segment tops
- * each month so only the topmost visible segment gets rounded top corners.
- * Negative values never take the top, and a month where every series is zero
- * returns null.
- */
+// Recharts draws nothing for a zero, so the last series is not always the
+// visible top.
 export function toTopSeries(series: ChartSeries[]): (string | null)[] {
   const tops: (string | null)[] = [];
 
@@ -174,11 +119,6 @@ export function toTopSeries(series: ChartSeries[]): (string | null)[] {
   return tops;
 }
 
-/**
- * The ticks for the chart axis.
- *
- * Every hundred above a hundred, every ten below it. Domain <= 0 returns [0].
- */
 export function axisTicks(domain: number): number[] {
   if (domain <= 0) {
     return [0];
@@ -191,9 +131,6 @@ export function axisTicks(domain: number): number[] {
   return values;
 }
 
-/**
- * An accessible description for the chart figure naming the scope and series split.
- */
 export function chartDescription(
   series: ChartSeries[],
   fiscalYear: number,

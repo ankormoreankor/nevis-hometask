@@ -1,14 +1,5 @@
 import type { Company, TreeNode } from "@nevis/shared";
 
-/**
- * Tree helpers.
- *
- * The pure functions both components need: which children a node has, where a
- * node sits, which ancestors must be open for it to be visible, the rows the
- * table actually draws, and the initials on an adviser row. No React, no
- * fetching, no state.
- */
-
 export type FlatRow = {
   id: string;
   name: string;
@@ -22,13 +13,8 @@ export type FlatRow = {
   parentId: string | null;
 };
 
-/**
- * The children of a node, in the order they are stacked and drawn.
- *
- * The union does not share a child key, so the level is read from the keys the
- * node carries. Every child key is optional, and an absent key and an
- * undefined value both mean no children.
- */
+// The union shares no child key, so the level is read from the keys the node
+// carries.
 export function childrenOf(node: TreeNode): TreeNode[] {
   if ("branches" in node) {
     return node.branches ?? [];
@@ -42,42 +28,22 @@ export function childrenOf(node: TreeNode): TreeNode[] {
   return [];
 }
 
-/**
- * Whether a node has anything below it. Absent and empty are the same thing
- * here: the UI draws a leaf.
- */
 export function hasChildren(node: TreeNode): boolean {
   return childrenOf(node).length > 0;
 }
 
-/**
- * The node with this id, or null. Derived from pathTo.
- */
 export function findNode(root: Company, id: string): TreeNode | null {
   return pathTo(root, id).at(-1) ?? null;
 }
 
-/**
- * The ids on the path from the company down to the parent of the target, root
- * first, excluding the target itself.
- *
- * This is what makes a deep link work: when the selection points at an
- * adviser, the company and the branch have to be open or the row is invisible.
- * The target is never included, so selecting a collapsed branch does not
- * expand it as a side effect.
- */
+// A deep link opens the ancestors, never the target itself.
 export function ancestorIds(root: Company, id: string): string[] {
   return pathTo(root, id)
     .slice(0, -1)
     .map((node) => node.id);
 }
 
-/**
- * The nodes on the path from the company down to and including the target,
- * root first.
- *
- * An unknown id returns an empty array.
- */
+// Cycle-safe, and an unknown id gives an empty path.
 export function pathTo(root: Company, id: string): TreeNode[] {
   const visited = new Set<string>();
   const path: TreeNode[] = [];
@@ -106,13 +72,6 @@ export function pathTo(root: Company, id: string): TreeNode[] {
   return walk(root) ? path : [];
 }
 
-/**
- * The first letter of the first and last word of a name, uppercased.
- *
- * "Anna Blackwood" is "AB", "Sarah Smith" is "SS", "Cher" is "C". One word
- * gives one letter, an empty name gives none. The adviser circle in the
- * treegrid is decorative and this is the only thing that produces its letters.
- */
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const first = parts[0];
@@ -129,15 +88,8 @@ export function initials(name: string): string {
   return `${first[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
 }
 
-/**
- * The rows the table draws, in document order.
- *
- * A node's children are in the list only when the node is expanded, so the
- * set decides it and the component owns the starting state. The kind of a row
- * comes from the parent, not from the keys on the node: a branch without an
- * employees key is still a branch, and a test on the keys would call it a
- * channel.
- */
+// The kind comes from the parent, so a branch without employees is still a
+// branch.
 export function flattenVisible(root: Company, expanded: ReadonlySet<string>): FlatRow[] {
   const rows: FlatRow[] = [];
 

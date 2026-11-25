@@ -14,13 +14,7 @@ import {
 import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartRow, ChartSeries } from "@/lib/chart";
 
-/**
- * Private plot-rendering half of MonthlyChart.
- *
- * Must only be rendered inside a <ChartContainer /> from "@/components/ui/chart",
- * which supplies the shadcn chart context consumed by ChartTooltipContent and the
- * --color-* CSS custom properties referenced by each Bar fill.
- */
+// Must render inside ChartContainer for tooltip context and --color-* variables.
 
 const STACK_ID = "book";
 
@@ -34,6 +28,7 @@ function TicksBridge({
   const xAxisTicks = useXAxisTicks();
   const yAxisTicks = useYAxisTicks();
 
+  // Hands tick coordinates up so the hook can drive the tooltip by position.
   useEffect(() => {
     const candidates = narrow ? [yAxisTicks, xAxisTicks] : [xAxisTicks, yAxisTicks];
     const match = candidates.find((ticks) => ticks && ticks.length > 0);
@@ -116,12 +111,14 @@ function MonthlyChartTooltip({
   series,
   onAnnounce,
 }: MonthlyChartTooltipProps) {
+  // Clears the live region when the tooltip unmounts.
   useEffect(() => {
     return () => {
       onAnnounce("");
     };
   }, [onAnnounce]);
 
+  // Live region reads whatever the tooltip shows.
   useEffect(() => {
     announceTooltip(active, payload, label, series, onAnnounce);
   }, [active, payload, label, series, onAnnounce]);
@@ -156,8 +153,7 @@ function ChartAxes({
         <YAxis
           type="category"
           dataKey="month"
-          // The tick label wraps to "Feb" over "2024", so the axis only
-          // has to fit the wider of the two.
+          // Tick wraps "Feb" over "2024", so width fits the wider line.
           width={40}
           interval={0}
           tickLine={false}
@@ -208,14 +204,8 @@ function ChartBars({
   narrow: boolean;
   reducedMotion: boolean;
 }) {
-  // Scope identity is in the key to force Bar remounting across node and year changes.
-  // A custom shape means Recharts no longer filters zero-height rectangles, so the
-  // interpolated arrays keep the same length, but remounting is still what makes a new
-  // scope grow from the baseline instead of sliding sideways.
-  //
-  // The radius is chosen per rectangle and per month via toTopSeries: the segment that
-  // tops a column changes from month to month and Recharts draws no rectangle for a zero,
-  // so a radius fixed on the last series would leave those columns square.
+  // Scope and year are in the key so a new scope grows from the baseline.
+  // Radius uses toTopSeries per month because Recharts draws nothing for zero.
   return series.map((item) => (
     <Bar
       key={`${scopeKey}-${item.key}`}

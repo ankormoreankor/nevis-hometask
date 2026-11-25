@@ -17,18 +17,6 @@ import { NotFound } from "./NotFound";
 
 const MonthlyChart = lazy(() => import("@/components/MonthlyChart"));
 
-/**
- * The dashboard page.
- *
- * The page owns the route param, the URL, the first-paint states and the
- * announcement of a scope change.
- *
- * The order of the branches is part of the contract because SWR can hold an
- * error and no data at the same time, and a background retry sets the loading
- * flag back to true while nothing is cached, so a skeleton checked first would
- * replace the error message on every retry.
- */
-
 function errorMessage(error: unknown): string {
   if (isResponseError(error)) {
     return "The server answered with a body the dashboard could not read.";
@@ -122,8 +110,7 @@ function useNodeSelection(company: Company | undefined) {
     if (!company) {
       return;
     }
-    // A replace, not a push, so Back leaves the dashboard instead of
-    // walking through the selections.
+    // Replace instead of push so Back leaves the dashboard.
     setParams((prev) => nextParams(prev, id, company.id), { replace: true });
   };
 
@@ -144,6 +131,8 @@ function resolveRouteYear(year: string | undefined) {
   return { isValid: true, yearParam: year, fiscalYear: Number(year) };
 }
 
+// Error is checked before loading because SWR can hold an error with no data,
+// and a background retry sets loading back to true.
 function DashboardWaiting({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   if (error) {
     return <ErrorState error={error} onRetry={onRetry} />;
@@ -214,9 +203,7 @@ export function Dashboard() {
           </div>
 
           <div className={`${styles.card} ${styles.tableCard}`}>
-            {/* The treegrid keeps its own expansion and its own focus so a new fiscal
-                year starts from a clean grid. The selection is not the key because the
-                URL changes on every selection, and a remount would drop the focus. */}
+            {/* Keyed by fiscalYear to reset on year change without remounting on selection. */}
             <TreeGrid
               key={fiscalYear}
               company={ready.company}

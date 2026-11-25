@@ -1,10 +1,6 @@
 import type { Company, TreeNode } from "@nevis/shared";
 import { findNode } from "@/lib/tree";
 
-/**
- * URL query-parameter helpers for the selected node.
- */
-
 export function resolveSelected(company: Company, nodeId: string | null): TreeNode {
   if (!nodeId) {
     return company;

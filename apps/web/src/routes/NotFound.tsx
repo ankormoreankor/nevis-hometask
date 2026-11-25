@@ -3,13 +3,6 @@ import notFoundVideo from "@/assets/not-found.mp4";
 import notFoundPoster from "@/assets/not-found-poster.jpg";
 import { StatePage } from "@/components/StatePage";
 
-/**
- * The not-found route.
- *
- * One small page for any URL the app does not serve, so a typo gets an answer
- * instead of a blank screen. /dashboard/abc lands here; /dashboard/2025 does
- * not, because that is a valid year with an empty state.
- */
 export function NotFound() {
   const { pathname } = useLocation();
 
