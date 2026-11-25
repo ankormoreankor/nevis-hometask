@@ -3,15 +3,15 @@ import { useReducedMotion } from "@/lib/useReducedMotion";
 
 function safePlay(video: HTMLVideoElement, onPlayingChange: (playing: boolean) => void) {
   const playPromise = video.play();
-  if (playPromise !== undefined) {
-    playPromise
-      .then(() => {
-        onPlayingChange(true);
-      })
-      .catch(() => {
-        onPlayingChange(false);
-      });
-  }
+  if (playPromise === undefined) return;
+
+  playPromise
+    .then(() => {
+      onPlayingChange(true);
+    })
+    .catch(() => {
+      onPlayingChange(false);
+    });
 }
 
 export function useVideoPlayback() {
@@ -23,9 +23,7 @@ export function useVideoPlayback() {
   // Autoplay unless reduced motion; a user pause survives preference changes.
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) {
-      return;
-    }
+    if (!video) return;
     video.muted = true;
 
     if (prefersReducedMotion) {
@@ -38,9 +36,7 @@ export function useVideoPlayback() {
 
   const togglePlay = () => {
     const video = videoRef.current;
-    if (!video) {
-      return;
-    }
+    if (!video) return;
 
     if (isPlaying) {
       userPausedRef.current = true;

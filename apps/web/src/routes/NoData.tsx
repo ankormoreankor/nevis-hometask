@@ -20,9 +20,7 @@ function YearPickerForm({ fiscalYear }: { fiscalYear: number }) {
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (draft === "") {
-      return;
-    }
+    if (draft === "") return;
 
     const next = Number(draft);
     // Select is an action, so it resets on submit and ignores the open year.

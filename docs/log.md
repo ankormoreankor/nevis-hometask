@@ -747,3 +747,20 @@ Verified
 
 Open
 - `Dashboard.module.css` keeps the last file header, and `vite.config.ts` keeps two lines that restate their own config.
+
+## one shape for every conditional
+
+Decided
+- A one-line `if` body is only `return`, `continue` or `break`. The return may carry a literal, a variable, an object or array literal, or a JSX element.
+- `throw`, assignments, function-call statements and returns whose expression is a call keep braces, because they are easy to miss at the end of a line.
+- A loop body or a guard around the rest of a scope flattens to `continue` or an early `return`.
+- A compound condition whose parts read different things gets named consts, with a blank line before the `if`.
+
+Done
+- 14 files under `apps/web/src` follow the shape: the treegrid, the chart and tree helpers, the navigation helper, the hooks and the routes.
+- `TreeGrid.toggle` reads its ancestor selection from `isSelectedAncestor` and `isToSelect`; `handleKeyDown` from `isChevronKey` and `isNotRowKey`.
+- `useMonthHover` names `isChartTarget`, `hasActiveMonth` and `isChartKey`.
+- `IF-STYLE.md` at the root records the rules and stays local through `.git/info/exclude`.
+
+Verified
+- `check`, `typecheck` and `test` (74 cases) pass.

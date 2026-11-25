@@ -22,9 +22,7 @@ function errorMessage(error: unknown): string {
     return "The server answered with a body the dashboard could not read.";
   }
   const status = statusOf(error);
-  if (status === undefined) {
-    return "The request did not reach the server.";
-  }
+  if (status === undefined) return "The request did not reach the server.";
   return `The server answered with status ${status}.`;
 }
 
@@ -95,9 +93,7 @@ function RefreshNotice({ error, onRetry }: { error: unknown; onRetry: () => void
 }
 
 function RefreshNoticeArea({ error, onRetry }: { error: unknown; onRetry: () => void }) {
-  if (!error) {
-    return null;
-  }
+  if (!error) return null;
   return <RefreshNotice error={error} onRetry={onRetry} />;
 }
 
@@ -107,9 +103,7 @@ function useNodeSelection(company: Company | undefined) {
   const selected = company ? resolveSelected(company, params.get("node")) : undefined;
 
   const onSelect = (id: string) => {
-    if (!company) {
-      return;
-    }
+    if (!company) return;
     // Replace instead of push so Back leaves the dashboard.
     setParams((prev) => nextParams(prev, id, company.id), { replace: true });
   };
@@ -125,28 +119,20 @@ function formatAnnouncement(selectedNode: TreeNode) {
 }
 
 function resolveRouteYear(year: string | undefined) {
-  if (!year || !isFiscalYear(year)) {
-    return { isValid: false, yearParam: "", fiscalYear: 0 };
-  }
+  if (!year || !isFiscalYear(year)) return { isValid: false, yearParam: "", fiscalYear: 0 };
   return { isValid: true, yearParam: year, fiscalYear: Number(year) };
 }
 
 // Error is checked before loading because SWR can hold an error with no data,
 // and a background retry sets loading back to true.
 function DashboardWaiting({ error, onRetry }: { error: unknown; onRetry: () => void }) {
-  if (error) {
-    return <ErrorState error={error} onRetry={onRetry} />;
-  }
+  if (error) return <ErrorState error={error} onRetry={onRetry} />;
   return <LoadingState />;
 }
 
 function resolveRouteView(isValid: boolean, error: unknown, fiscalYear: number) {
-  if (!isValid) {
-    return <NotFound />;
-  }
-  if (isNotFound(error)) {
-    return <NoData fiscalYear={fiscalYear} />;
-  }
+  if (!isValid) return <NotFound />;
+  if (isNotFound(error)) return <NoData fiscalYear={fiscalYear} />;
   return null;
 }
 
@@ -163,9 +149,7 @@ export function Dashboard() {
   const { selected, onSelect } = useNodeSelection(company);
 
   const routeView = resolveRouteView(isValid, error, fiscalYear);
-  if (routeView) {
-    return routeView;
-  }
+  if (routeView) return routeView;
 
   const ready = resolveDashboardData(company, selected);
 

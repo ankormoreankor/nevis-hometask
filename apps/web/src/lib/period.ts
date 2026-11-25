@@ -31,9 +31,7 @@ export function currentFiscalYear(): number {
 
 function fiscalMonthDate(fiscalYear: number, index: number): Date | null {
   const entry = FISCAL_MONTHS[index];
-  if (!entry) {
-    return null;
-  }
+  if (!entry) return null;
 
   return new Date(Date.UTC(fiscalYear + entry.yearOffset, entry.month - 1, 1));
 }
@@ -42,9 +40,7 @@ function fiscalMonthDate(fiscalYear: number, index: number): Date | null {
 // would otherwise render the previous month.
 export function formatMonthLabel(fiscalYear: number, index: number): string {
   const date = fiscalMonthDate(fiscalYear, index);
-  if (!date) {
-    return "";
-  }
+  if (!date) return "";
 
   return new Intl.DateTimeFormat("en", {
     month: "short",
@@ -55,9 +51,7 @@ export function formatMonthLabel(fiscalYear: number, index: number): string {
 
 export function formatMonthShort(fiscalYear: number, index: number): string {
   const date = fiscalMonthDate(fiscalYear, index);
-  if (!date) {
-    return "";
-  }
+  if (!date) return "";
 
   return new Intl.DateTimeFormat("en", {
     month: "short",

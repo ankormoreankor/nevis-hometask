@@ -6,25 +6,15 @@ export type KeyAction =
   | { kind: "select"; id: string };
 
 function arrowRightAction(row: FlatRow, next?: FlatRow): KeyAction | null {
-  if (!row.hasChildren) {
-    return null;
-  }
-  if (!row.isExpanded) {
-    return { kind: "toggle", id: row.id };
-  }
-  if (next && next.level === row.level + 1) {
-    return { kind: "focus", id: next.id };
-  }
+  if (!row.hasChildren) return null;
+  if (!row.isExpanded) return { kind: "toggle", id: row.id };
+  if (next && next.level === row.level + 1) return { kind: "focus", id: next.id };
   return null;
 }
 
 function arrowLeftAction(row: FlatRow): KeyAction | null {
-  if (row.hasChildren && row.isExpanded) {
-    return { kind: "toggle", id: row.id };
-  }
-  if (row.parentId) {
-    return { kind: "focus", id: row.parentId };
-  }
+  if (row.hasChildren && row.isExpanded) return { kind: "toggle", id: row.id };
+  if (row.parentId) return { kind: "focus", id: row.parentId };
   return null;
 }
 
@@ -52,9 +42,7 @@ const KEY_ACTIONS: Record<string, KeyHandler> = {
 
 export function keyAction(rows: readonly FlatRow[], row: FlatRow, key: string): KeyAction | null {
   const index = rows.findIndex((candidate) => candidate.id === row.id);
-  if (index === -1) {
-    return null;
-  }
+  if (index === -1) return null;
   const handler = KEY_ACTIONS[key];
   return handler ? handler(rows, row, index) : null;
 }

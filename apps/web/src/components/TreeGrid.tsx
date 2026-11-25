@@ -73,18 +73,16 @@ export function TreeGrid({
   // Opens the ancestors of the selection, never the selection itself.
   useEffect(() => {
     const path = ancestorIds(company, selectedId);
-    if (path.length === 0) {
-      return;
-    }
+    if (path.length === 0) return;
 
     setExpanded((previous) => {
       const next = new Set(previous);
       let changed = false;
       for (const id of path) {
-        if (!next.has(id)) {
-          next.add(id);
-          changed = true;
-        }
+        if (next.has(id)) continue;
+
+        next.add(id);
+        changed = true;
       }
       return changed ? next : previous;
     });
@@ -93,7 +91,10 @@ export function TreeGrid({
   const toggle = useCallback(
     (id: string) => {
       const isOpen = expanded.has(id);
-      if (isOpen && selectedId !== id && ancestorIds(company, selectedId).includes(id)) {
+      const isSelectedAncestor = selectedId !== id && ancestorIds(company, selectedId).includes(id);
+      const isToSelect = isOpen && isSelectedAncestor;
+
+      if (isToSelect) {
         onSelect(id);
       }
 
@@ -118,9 +119,10 @@ export function TreeGrid({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>, row: FlatRow) => {
     const action = keyAction(rows, row, event.key);
     // A keypress aimed at the nested chevron must not select the row.
-    if (!action || (action.kind === "select" && event.target !== event.currentTarget)) {
-      return;
-    }
+    const isChevronKey = action?.kind === "select" && event.target !== event.currentTarget;
+    const isNotRowKey = !action || isChevronKey;
+
+    if (isNotRowKey) return;
 
     event.preventDefault();
     const dispatch = { focus: focusRow, toggle, select: onSelect };

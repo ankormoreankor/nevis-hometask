@@ -8,9 +8,7 @@ export function useDelayedFlag(value: boolean, delayMs: number): boolean {
   }
 
   useEffect(() => {
-    if (!value) {
-      return;
-    }
+    if (!value) return;
 
     const timer = setTimeout(() => {
       setFlag(true);
