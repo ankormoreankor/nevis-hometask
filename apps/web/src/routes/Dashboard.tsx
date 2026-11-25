@@ -2,18 +2,18 @@ import { type Company, isFiscalYear, type TreeNode } from "@nevis/shared";
 import { lazy, Suspense, useId } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { MonthlyChartPlaceholder } from "@/components/MonthlyChartPlaceholder";
-import ScopeTrail from "@/components/ScopeTrail";
-import TreeGrid from "@/components/TreeGrid";
+import { ScopeTrail } from "@/components/ScopeTrail";
+import { TreeGrid } from "@/components/TreeGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/lib/api";
-import { scopeTitle } from "@/lib/chart";
+import { scopeBreakdown } from "@/lib/chart";
 import { isNotFound, isResponseError, statusOf } from "@/lib/http";
 import { formatPeriod } from "@/lib/period";
-import { findNode, pathTo } from "@/lib/tree";
+import { nextParams, resolveSelected } from "@/lib/url";
 import { useDelayedFlag } from "@/lib/useDelayedFlag";
 import styles from "./Dashboard.module.css";
-import NoData from "./NoData";
-import NotFound from "./NotFound";
+import { NoData } from "./NoData";
+import { NotFound } from "./NotFound";
 
 const MonthlyChart = lazy(() => import("@/components/MonthlyChart"));
 
@@ -113,33 +113,10 @@ function RefreshNoticeArea({ error, onRetry }: { error: unknown; onRetry: () => 
   return <RefreshNotice error={error} onRetry={onRetry} />;
 }
 
-function resolveSelected(company: Company, nodeId: string | null): TreeNode {
-  if (!nodeId) {
-    return company;
-  }
-  return findNode(company, nodeId) ?? company;
-}
-
-function resolveTrail(company: Company, selected: TreeNode): TreeNode[] {
-  const path = pathTo(company, selected.id);
-  return path.length > 0 ? path : [company];
-}
-
-function nextParams(previous: URLSearchParams, id: string, companyId: string): URLSearchParams {
-  const next = new URLSearchParams(previous);
-  if (id === companyId) {
-    next.delete("node");
-  } else {
-    next.set("node", id);
-  }
-  return next;
-}
-
 function useNodeSelection(company: Company | undefined) {
   const [params, setParams] = useSearchParams();
 
   const selected = company ? resolveSelected(company, params.get("node")) : undefined;
-  const trailPath = company && selected ? resolveTrail(company, selected) : [];
 
   const onSelect = (id: string) => {
     if (!company) {
@@ -150,12 +127,14 @@ function useNodeSelection(company: Company | undefined) {
     setParams((prev) => nextParams(prev, id, company.id), { replace: true });
   };
 
-  return { selected, trailPath, onSelect };
+  return { selected, onSelect };
 }
 
 function formatAnnouncement(selectedNode: TreeNode) {
-  const [scopeName, breakdown] = scopeTitle(selectedNode).split(", by ");
-  return breakdown ? `Showing ${scopeName}, broken down by ${breakdown}.` : `Showing ${scopeName}.`;
+  const breakdown = scopeBreakdown(selectedNode);
+  return breakdown
+    ? `Showing ${selectedNode.name}, broken down by ${breakdown}.`
+    : `Showing ${selectedNode.name}.`;
 }
 
 function resolveRouteYear(year: string | undefined) {
@@ -186,13 +165,13 @@ function resolveDashboardData(company: Company | undefined, selected: TreeNode |
   return company && selected ? { company, selected } : null;
 }
 
-export default function Dashboard() {
+export function Dashboard() {
   const { year } = useParams();
   const scopeLabelId = `chart-scope-${useId().replace(/:/g, "")}`;
   const { isValid, yearParam, fiscalYear } = resolveRouteYear(year);
 
   const { company, error, mutate } = useDashboard(yearParam);
-  const { selected, trailPath, onSelect } = useNodeSelection(company);
+  const { selected, onSelect } = useNodeSelection(company);
 
   const routeView = resolveRouteView(isValid, error, fiscalYear);
   if (routeView) {
@@ -213,7 +192,12 @@ export default function Dashboard() {
           </p>
 
           <div className={styles.chartGroup}>
-            <ScopeTrail path={trailPath} labelId={scopeLabelId} onSelect={onSelect} />
+            <ScopeTrail
+              company={ready.company}
+              selectedId={ready.selected.id}
+              labelledById={scopeLabelId}
+              onSelect={onSelect}
+            />
             <div className={`${styles.card} ${styles.chartCard}`}>
               <Suspense
                 fallback={

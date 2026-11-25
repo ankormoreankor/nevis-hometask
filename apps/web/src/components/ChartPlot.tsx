@@ -14,6 +14,14 @@ import {
 import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartRow, ChartSeries } from "@/lib/chart";
 
+/**
+ * Private plot-rendering half of MonthlyChart.
+ *
+ * Must only be rendered inside a <ChartContainer /> from "@/components/ui/chart",
+ * which supplies the shadcn chart context consumed by ChartTooltipContent and the
+ * --color-* CSS custom properties referenced by each Bar fill.
+ */
+
 const STACK_ID = "book";
 
 function TicksBridge({
@@ -181,15 +189,13 @@ function computeRadius(isTop: boolean, narrow: boolean): [number, number, number
 function ChartBars({
   series,
   tops,
-  nodeId,
-  fiscalYear,
+  scopeKey,
   narrow,
   reducedMotion,
 }: {
   series: ChartSeries[];
   tops: (string | null)[];
-  nodeId: string;
-  fiscalYear: number;
+  scopeKey: string;
   narrow: boolean;
   reducedMotion: boolean;
 }) {
@@ -203,7 +209,7 @@ function ChartBars({
   // so a radius fixed on the last series would leave those columns square.
   return series.map((item) => (
     <Bar
-      key={`${nodeId}-${fiscalYear}-${item.key}`}
+      key={`${scopeKey}-${item.key}`}
       dataKey={item.key}
       name={item.label}
       stackId={STACK_ID}
@@ -224,34 +230,31 @@ function ChartBars({
   ));
 }
 
+export type ChartPlotData = {
+  rows: ChartRow[];
+  series: ChartSeries[];
+  tops: (string | null)[];
+  axisMax: number;
+  yTicks: number[];
+  description: string;
+};
+
 export type ChartPlotProps = {
+  data: ChartPlotData;
+  scopeKey: string;
   surface: React.RefObject<SVGSVGElement | null>;
   ticks: React.RefObject<ReadonlyArray<TickItem>>;
   narrow: boolean;
-  rows: ChartRow[];
-  description: string;
-  axisMax: number;
-  yTicks: number[];
-  series: ChartSeries[];
-  tops: (string | null)[];
-  nodeId: string;
-  fiscalYear: number;
   reducedMotion: boolean;
   onAnnounce: (text: string) => void;
 };
 
 export function ChartPlot({
+  data: { rows, series, tops, axisMax, yTicks, description },
+  scopeKey,
   surface,
   ticks,
   narrow,
-  rows,
-  description,
-  axisMax,
-  yTicks,
-  series,
-  tops,
-  nodeId,
-  fiscalYear,
   reducedMotion,
   onAnnounce,
 }: ChartPlotProps) {
@@ -275,8 +278,7 @@ export function ChartPlot({
       <ChartBars
         series={series}
         tops={tops}
-        nodeId={nodeId}
-        fiscalYear={fiscalYear}
+        scopeKey={scopeKey}
         narrow={narrow}
         reducedMotion={reducedMotion}
       />

@@ -1,0 +1,73 @@
+.trail {
+  margin: 0;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ancestorButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  min-width: 24px;
+  margin: 0;
+  padding: 0 2px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.ancestorButton:hover {
+  color: var(--foreground);
+  text-decoration: underline;
+}
+
+.ancestorButton:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.separator {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.current {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.current:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

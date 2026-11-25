@@ -1,6 +1,7 @@
-import type { TreeNode } from "@nevis/shared";
-import { useEffect, useRef } from "react";
-import styles from "@/routes/Dashboard.module.css";
+import type { Company, TreeNode } from "@nevis/shared";
+import { useEffect, useMemo, useRef } from "react";
+import { pathTo } from "@/lib/tree";
+import styles from "./ScopeTrail.module.css";
 
 /**
  * The scope trail above the chart.
@@ -12,15 +13,22 @@ import styles from "@/routes/Dashboard.module.css";
  */
 
 export type ScopeTrailProps = {
-  path: TreeNode[];
-  labelId: string;
+  company: Company;
+  selectedId: string;
+  labelledById: string;
   onSelect: (id: string) => void;
 };
 
-export default function ScopeTrail({ path, labelId, onSelect }: ScopeTrailProps) {
+function resolveTrail(company: Company, selectedId: string): TreeNode[] {
+  const path = pathTo(company, selectedId);
+  return path.length > 0 ? path : [company];
+}
+
+export function ScopeTrail({ company, selectedId, labelledById, onSelect }: ScopeTrailProps) {
   const currentRef = useRef<HTMLSpanElement | null>(null);
   const shouldFocusCurrentRef = useRef(false);
 
+  const path = useMemo(() => resolveTrail(company, selectedId), [company, selectedId]);
   const ancestors = path.slice(0, -1);
   const current = path[path.length - 1];
 
@@ -62,7 +70,7 @@ export default function ScopeTrail({ path, labelId, onSelect }: ScopeTrailProps)
         <li className={styles.crumb}>
           <span
             ref={currentRef}
-            id={labelId}
+            id={labelledById}
             tabIndex={-1}
             aria-current="location"
             className={styles.current}

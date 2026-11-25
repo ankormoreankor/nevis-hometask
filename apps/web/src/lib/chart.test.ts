@@ -3,6 +3,7 @@ import { at, company2024 } from "@/test/fixtures";
 import {
   axisTicks,
   chartDescription,
+  scopeBreakdown,
   scopeTitle,
   toDomain,
   toRows,
@@ -92,6 +93,19 @@ describe("toDomain", () => {
       },
     ];
     expect(toDomain(empty)).toBe(0);
+  });
+});
+
+describe("scopeBreakdown", () => {
+  it("returns the child kind for nodes with children", () => {
+    expect(scopeBreakdown(company)).toBe("branch");
+    expect(scopeBreakdown(branch1)).toBe("adviser");
+    expect(scopeBreakdown(anna)).toBe("channel");
+  });
+
+  it("returns null for leaves", () => {
+    expect(scopeBreakdown(existingClients)).toBeNull();
+    expect(scopeBreakdown(branch2)).toBeNull();
   });
 });
 
