@@ -34,6 +34,12 @@ import { expect, test } from "@playwright/test";
 const CHANNEL_ID = "716e7c30-b7c3-45c5-aa64-cbcf483917e0";
 const ANNA_ID = "e3c4637b-2f21-4b7e-883e-b13ae1a6df6a";
 
+declare global {
+  interface Window {
+    __loadingH1?: HTMLHeadingElement | null;
+  }
+}
+
 test("the accessibility tree reflects the treegrid structure and levels", async ({ page }) => {
   await page.goto("/dashboard/2024");
   await expect(
@@ -503,6 +509,8 @@ test("small screen layout at 375px", async ({ page }) => {
   // The spacing between consecutive month rows is at least 24px.
   const tickBoxes = await yAxisTicks.evaluateAll((elements) =>
     elements.map((el) => {
+      // SAFETY: The locator queries SVG text nodes inside the chart, so each element is an
+      // SVGGraphicsElement.
       const box = (el as SVGGraphicsElement).getBBox();
       return { y: box.y };
     }),
@@ -638,6 +646,8 @@ test("the stacked bar chart rounds the topmost segment of each month column", as
   await expect(async () => {
     paths = await rectangles.evaluateAll((elements) =>
       elements.map((el) => {
+        // SAFETY: The locator queries SVG path nodes inside the chart, so each element is an
+        // SVGGraphicsElement.
         const bbox = (el as SVGGraphicsElement).getBBox();
         return {
           x: Math.round(bbox.x),
@@ -753,7 +763,7 @@ test("the page header h1 node is preserved across the loading to loaded transiti
 
   const captured = await page.evaluate(() => {
     const h1 = document.querySelector("h1");
-    (window as unknown as { __loadingH1?: HTMLHeadingElement | null }).__loadingH1 = h1;
+    window.__loadingH1 = h1;
     return h1 !== null;
   });
   expect(captured).toBe(true);
@@ -761,8 +771,7 @@ test("the page header h1 node is preserved across the loading to loaded transiti
   await expect(page.getByRole("treegrid")).toBeVisible();
 
   const isSameNode = await page.evaluate(() => {
-    const win = window as unknown as { __loadingH1?: HTMLHeadingElement | null };
-    return win.__loadingH1 !== null && document.querySelector("h1") === win.__loadingH1;
+    return window.__loadingH1 !== null && document.querySelector("h1") === window.__loadingH1;
   });
   expect(isSameNode).toBe(true);
 });

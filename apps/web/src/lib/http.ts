@@ -52,11 +52,14 @@ export class ResponseError extends Error {
 
 export function isResponseError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
+  // SAFETY: The guard above established that error is a non-null object.
   return (error as Record<symbol, unknown>)[unreadable] === true;
 }
 
 export function statusOf(error: unknown): number | undefined {
   if (typeof error !== "object" || error === null) return undefined;
+  // SAFETY: The guard above established a non-null object, and the typeof check below narrows
+  // status to a number.
   const status = (error as { status?: unknown }).status;
   return typeof status === "number" ? status : undefined;
 }
