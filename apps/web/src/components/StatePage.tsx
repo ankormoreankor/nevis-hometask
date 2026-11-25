@@ -46,13 +46,7 @@ function PlayIcon() {
   );
 }
 
-export default function StatePage({
-  videoSrc,
-  poster,
-  videoWidth,
-  videoHeight,
-  children,
-}: StatePageProps) {
+export function StatePage({ videoSrc, poster, videoWidth, videoHeight, children }: StatePageProps) {
   const { videoRef, isPlaying, prefersReducedMotion, togglePlay } = useVideoPlayback();
 
   return (

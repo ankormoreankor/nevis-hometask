@@ -1,8 +1,8 @@
 import type { TreeNode } from "@nevis/shared";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
-import { ChartPlot } from "@/components/ChartPlot";
-import { MonthlyChartLegend } from "@/components/MonthlyChartLegend";
+import { ChartFrame } from "@/components/ChartFrame";
+import { ChartPlot, type ChartPlotData } from "@/components/ChartPlot";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { axisTicks, chartDescription, toDomain, toRows, toSeries, toTopSeries } from "@/lib/chart";
 import { useMediaQuery } from "@/lib/useMediaQuery";
@@ -61,39 +61,43 @@ export default function MonthlyChart({
     () => chartDescription(series, fiscalYear, node.name),
     [series, fiscalYear, node.name],
   );
+  const plotData = useMemo<ChartPlotData>(
+    () => ({ rows, series, tops, axisMax, yTicks, description }),
+    [rows, series, tops, axisMax, yTicks, description],
+  );
 
   return (
-    <figure className={cn("m-0 flex flex-col gap-4", className)} aria-labelledby={labelledById}>
-      <p aria-live="polite" aria-atomic="true" className="sr-only">
-        {announcement}
-      </p>
-      <ChartContainer
-        config={config}
-        className="h-[440px] sm:h-[390px] w-full focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring focus-visible:outline-offset-2 [&_g:focus]:outline-none"
-        tabIndex={0}
-        role="application"
-        aria-labelledby={labelledById}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-      >
-        <ChartPlot
-          surface={surface}
-          ticks={ticks}
-          narrow={narrow}
-          rows={rows}
-          description={description}
-          axisMax={axisMax}
-          yTicks={yTicks}
-          series={series}
-          tops={tops}
-          nodeId={node.id}
-          fiscalYear={fiscalYear}
-          reducedMotion={reducedMotion}
-          onAnnounce={setAnnouncement}
-        />
-      </ChartContainer>
-      <MonthlyChartLegend series={series} />
-    </figure>
+    <ChartFrame series={series} labelledById={labelledById} className={className}>
+      {(plotClassName) => (
+        <>
+          <p aria-live="polite" aria-atomic="true" className="sr-only">
+            {announcement}
+          </p>
+          <ChartContainer
+            config={config}
+            className={cn(
+              plotClassName,
+              "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring focus-visible:outline-offset-2 [&_g:focus]:outline-none",
+            )}
+            tabIndex={0}
+            role="application"
+            aria-labelledby={labelledById}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+          >
+            <ChartPlot
+              data={plotData}
+              scopeKey={`${node.id}-${fiscalYear}`}
+              surface={surface}
+              ticks={ticks}
+              narrow={narrow}
+              reducedMotion={reducedMotion}
+              onAnnounce={setAnnouncement}
+            />
+          </ChartContainer>
+        </>
+      )}
+    </ChartFrame>
   );
 }

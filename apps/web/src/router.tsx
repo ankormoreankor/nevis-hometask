@@ -1,7 +1,7 @@
 import { createBrowserRouter, redirect } from "react-router";
 import { DEFAULT_FISCAL_YEAR } from "@/lib/period";
-import Dashboard from "./routes/Dashboard";
-import NotFound from "./routes/NotFound";
+import { Dashboard } from "./routes/Dashboard";
+import { NotFound } from "./routes/NotFound";
 
 export const router = createBrowserRouter([
   {

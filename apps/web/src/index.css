@@ -137,30 +137,6 @@
 }
 
 /**
- * The adviser circle in the treegrid.
- *
- * The row sets --avatar-color to the token that adviser's series uses in the
- * chart, so a legend swatch and a row circle are the same colour. The circle
- * is the token mixed into the card, because the mix is what makes one ink
- * work: at full strength neither white nor --foreground is safe on every one
- * of the tokens.
- */
-.adviser-avatar {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background-color: color-mix(in oklab, var(--avatar-color) 25%, var(--card));
-  color: var(--foreground);
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-/**
  * Customizable select for the year picker.
  *
  * Progressive enhancement for browsers supporting appearance: base-select

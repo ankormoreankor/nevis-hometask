@@ -56,7 +56,7 @@ function Chevron({ expanded }: { expanded: boolean }) {
   );
 }
 
-export default function TreeGrid({
+export function TreeGrid({
   company,
   selectedId,
   fiscalYear,
@@ -208,12 +208,19 @@ type TreeRowProps = {
   onKeyDown: (event: React.KeyboardEvent<HTMLTableRowElement>, row: FlatRow) => void;
 };
 
+// The circle is the chart token mixed 25% into the card, because the mix is
+// what makes --foreground legible across every token in the palette.
 function AdviserAvatar({ name, posInSet }: { name: string; posInSet: number }) {
   return (
     <span
       aria-hidden="true"
-      className="adviser-avatar"
-      style={{ "--avatar-color": `var(--chart-${posInSet})` } as React.CSSProperties}
+      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium leading-none text-foreground"
+      style={
+        {
+          "--avatar-color": `var(--chart-${posInSet})`,
+          backgroundColor: "color-mix(in oklab, var(--avatar-color) 25%, var(--card))",
+        } as React.CSSProperties
+      }
     >
       {initials(name)}
     </span>

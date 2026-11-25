@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router";
 import notFoundVideo from "@/assets/not-found.mp4";
 import notFoundPoster from "@/assets/not-found-poster.jpg";
-import StatePage from "@/components/StatePage";
+import { StatePage } from "@/components/StatePage";
 
 /**
  * The not-found route.
@@ -10,7 +10,7 @@ import StatePage from "@/components/StatePage";
  * instead of a blank screen. /dashboard/abc lands here; /dashboard/2025 does
  * not, because that is a valid year with an empty state.
  */
-export default function NotFound() {
+export function NotFound() {
   const { pathname } = useLocation();
 
   return (

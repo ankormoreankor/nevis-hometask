@@ -113,6 +113,29 @@ export function toDomain(series: ChartSeries[]): number {
   return Math.ceil(maximum / step) * step;
 }
 
+export type ScopeBreakdown = "branch" | "adviser" | "channel";
+
+/**
+ * What the node's children break down into, or null when the node is a leaf.
+ */
+export function scopeBreakdown(node: TreeNode): ScopeBreakdown | null {
+  if (childrenOf(node).length === 0) {
+    return null;
+  }
+
+  if ("branches" in node) {
+    return "branch";
+  }
+  if ("employees" in node) {
+    return "adviser";
+  }
+  if ("channels" in node) {
+    return "channel";
+  }
+
+  return null;
+}
+
 /**
  * The title above the plot, naming the node and what it is broken down by.
  *
@@ -121,21 +144,8 @@ export function toDomain(series: ChartSeries[]): number {
  * is named on its own.
  */
 export function scopeTitle(node: TreeNode): string {
-  if (childrenOf(node).length === 0) {
-    return node.name;
-  }
-
-  if ("branches" in node) {
-    return `${node.name}, by branch`;
-  }
-  if ("employees" in node) {
-    return `${node.name}, by adviser`;
-  }
-  if ("channels" in node) {
-    return `${node.name}, by channel`;
-  }
-
-  return node.name;
+  const breakdown = scopeBreakdown(node);
+  return breakdown ? `${node.name}, by ${breakdown}` : node.name;
 }
 
 /**

@@ -653,3 +653,29 @@ Open
 
 Next
 - Run the focus-visible assertion on Firefox and WebKit.
+
+## one rule per component boundary
+
+Decided
+- A container takes the root and the selection; a presentational component takes resolved data.
+- Every component owns its CSS. `ScopeTrail` gets its own module, the adviser avatar becomes utilities and an inline `color-mix`, and `index.css` keeps tokens and base rules.
+- Named exports everywhere, with `MonthlyChart` keeping the default because `React.lazy` needs one.
+- One name for the label id: `labelledById`.
+- `ChartFrame` owns the figure, the label, the plot height and the legend, so the chart and its placeholder agree by construction.
+- The URL helpers and the breakdown word move into `src/lib`, where a unit test can reach them.
+
+Done
+- `ChartFrame` replaces the figure markup, the plot height and the legend that `MonthlyChart` and `MonthlyChartPlaceholder` had copied.
+- `ScopeTrail` takes `company` and `selectedId` and resolves its own path with `pathTo`, so the page no longer hands out a ready path.
+- `ChartPlot` takes one `data` object and a `scopeKey`; the Bar key is the same string as before.
+- `lib/url.ts` holds `resolveSelected` and `nextParams` with six cases in `lib/url.test.ts`, and `scopeBreakdown` replaces the split on ", by ".
+
+Verified
+- `check`, `typecheck`, `test` (74 cases), `test:e2e` (42 specs) and `analyze` pass.
+
+Open
+- The focus-visible suppression is proven on Chromium only.
+- The licence for the footage in a public repository is still open.
+
+Next
+- Run the focus-visible assertion on Firefox and WebKit.
