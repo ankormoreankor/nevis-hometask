@@ -14,16 +14,13 @@ function safePlay(video: HTMLVideoElement, onPlayingChange: (playing: boolean) =
   }
 }
 
-/**
- * Manages video playback state, honouring reduced motion preferences
- * and handling browser play promise resolution.
- */
 export function useVideoPlayback() {
   const prefersReducedMotion = useReducedMotion();
   const [isPlaying, setIsPlaying] = useState(!prefersReducedMotion);
   const userPausedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Autoplay unless reduced motion; a user pause survives preference changes.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) {

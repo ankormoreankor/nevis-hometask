@@ -13,18 +13,6 @@ import { formatMonthLabel, formatMonthShort } from "@/lib/period";
 import { ancestorIds, type FlatRow, flattenVisible, initials } from "@/lib/tree";
 import { keyAction } from "@/lib/treegrid-nav";
 
-/**
- * The month table as an accessible treegrid.
- *
- * The whole tree is a prop, so expansion is pure local state. A row click
- * selects the node and the chart above remaps to it.
- *
- * The visible row list comes from flattenVisible in "@/lib/tree". This
- * component renders that list and handles the DOM, the focus and the keys. It
- * does not walk the tree itself, so the levels, the sibling counts and the
- * kind of each row are testable without a browser.
- */
-
 export type TreeGridProps = {
   company: Company;
   selectedId: string;
@@ -82,8 +70,7 @@ export function TreeGrid({
     [fiscalYear],
   );
 
-  // A selection from a deep link has to open the path to it. The selected node
-  // itself is never added, so selecting a collapsed branch does not expand it.
+  // Opens the ancestors of the selection, never the selection itself.
   useEffect(() => {
     const path = ancestorIds(company, selectedId);
     if (path.length === 0) {
@@ -130,8 +117,7 @@ export function TreeGrid({
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>, row: FlatRow) => {
     const action = keyAction(rows, row, event.key);
-    // The chevron is a button inside the row. A keypress aimed at it is
-    // the button's, and the row must not select.
+    // A keypress aimed at the nested chevron must not select the row.
     if (!action || (action.kind === "select" && event.target !== event.currentTarget)) {
       return;
     }
@@ -208,8 +194,7 @@ type TreeRowProps = {
   onKeyDown: (event: React.KeyboardEvent<HTMLTableRowElement>, row: FlatRow) => void;
 };
 
-// The circle is the chart token mixed 25% into the card, because the mix is
-// what makes --foreground legible across every token in the palette.
+// Mixing the token 25% into --card keeps one ink legible across the palette.
 function AdviserAvatar({ name, posInSet }: { name: string; posInSet: number }) {
   return (
     <span
@@ -244,8 +229,7 @@ function ExpandButton({
       tabIndex={-1}
       aria-label={label}
       className="inline-flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-foreground/10"
-      // The chevron is pointer only. Keeping the focus off the button leaves
-      // it on the row, which is the only focus target in the grid.
+      // Pointer only, so the row stays the only focus target.
       onMouseDown={(event) => event.preventDefault()}
       onClick={(event) => {
         event.stopPropagation();
@@ -275,9 +259,7 @@ function RowNameCell({
       role="gridcell"
       className={cn(
         "sticky left-0 z-10 w-[clamp(160px,48vw,296px)] min-w-[clamp(160px,48vw,296px)] max-w-[clamp(160px,48vw,296px)] bg-card px-1.5 sm:px-2 group-hover:bg-muted border-b border-border group-last:border-b-0 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border sm:after:hidden group-focus-visible:shadow-[inset_2px_2px_0_0_var(--color-ring),inset_0_-2px_0_0_var(--color-ring)]",
-        // The design has no selected state: a full-row tint read as a stray
-        // gray band on a single-row table, and a weight change would reflow
-        // the text, so the selection is a rail.
+        // Design has no selected state: a tint read as a band and weight reflows the name.
         selected &&
           "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-foreground before:content-['']",
       )}
@@ -323,11 +305,7 @@ function RowValueCells({
   ));
 }
 
-// The selected row keeps its resting state transparent so the rail carries
-// the selection. The hover band is the full muted token so a row can be
-// scanned across, and the compound data-[state=selected]:hover variant is
-// needed because the plain hover rule would lose to the transparent resting
-// rule on specificity.
+// data-[state=selected]:hover is needed because hover loses to the transparent resting rule.
 const ROW_CLASSES =
   "group h-12 sm:h-14 hover:bg-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[state=selected]:bg-transparent data-[state=selected]:hover:bg-muted";
 

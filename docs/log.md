@@ -728,3 +728,22 @@ Open
 
 Next
 - Write the reviewer-facing decisions document from `.scratch/README-cut.md`.
+
+## comments keep the decisions
+
+Decided
+- A comment earns its place when it records a decision, a trap or the reason for a side effect. A clean function is documented by its tests.
+- Every effect carries one line, unless it is a plain subscription or a timer.
+- The rationale sits in `docs/context.md`; the code keeps the fact needed at the edit site.
+
+Done
+- 550 comment lines become 111 across 27 files, 79 of 85 blocks one line. The longer blocks are the two spec headers and `playwright.config.ts`.
+- The browser specs keep four reasons that explain a number: the 404 is not retried, a rejected year makes no request, the chevron never takes focus, and the 24px floor with the five-item legend.
+- The SWR error-before-loading note sits above `DashboardWaiting`, and the shared fiscal-year note says what the route and the API do.
+- `ponytail-review` is installed as a global OpenCode skill from `DietrichGebert/ponytail`.
+
+Verified
+- `check`, `typecheck`, `test` (74) and `test:e2e` (42) pass. The diff is comments only.
+
+Open
+- `Dashboard.module.css` keeps the last file header, and `vite.config.ts` keeps two lines that restate their own config.

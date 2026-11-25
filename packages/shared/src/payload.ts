@@ -1,15 +1,5 @@
-/**
- * The mock payload, exactly as the brief gave it.
- *
- * It lives here rather than in the API so the server and the web tests read
- * the same tree. The API parses it once at boot and serves it; the unit tests
- * need the same numbers the brief names, and a second copy of the payload in
- * the test folder could drift from the one the server answers with.
- *
- * The figures are the client's, unchanged. The arithmetic does not always
- * close, and the README says where. Nothing here is corrected, because the
- * source query and its filters are not visible.
- */
+// Served unchanged from here so the API and the tests read one tree.
+// The arithmetic does not always close, and the README says where.
 export const payload2024 = {
   id: "d6e00056-dce4-4ef4-b034-d6467db6187d",
   name: "Company",

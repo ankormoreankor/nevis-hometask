@@ -3,15 +3,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { pathTo } from "@/lib/tree";
 import styles from "./ScopeTrail.module.css";
 
-/**
- * The scope trail above the chart.
- *
- * Shows the path from the root down to the selected node as a breadcrumb.
- * Ancestors are clickable buttons that select that node, and the current item
- * is plain text showing the node name. Activating an ancestor from the keyboard
- * moves focus to the new current item.
- */
-
 export type ScopeTrailProps = {
   company: Company;
   selectedId: string;
@@ -39,6 +30,7 @@ export function ScopeTrail({ company, selectedId, labelledById, onSelect }: Scop
     onSelect(id);
   };
 
+  // Keyboard activation moves focus to the new current item; pointer clicks do not.
   useEffect(() => {
     if (shouldFocusCurrentRef.current) {
       shouldFocusCurrentRef.current = false;

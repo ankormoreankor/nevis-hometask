@@ -116,16 +116,7 @@
   }
 }
 
-/**
- * Reduced motion, for everything CSS animates.
- *
- * The reader asked for less movement, so the animations stop and the
- * transitions become instant. The skeleton under the loading state pulses
- * forever, the tooltip slides between months, and the table rows fade on
- * hover; none of them is worth moving for. The video and the chart bars are
- * not CSS animations and are handled in the components, where the preference
- * is read as a boolean.
- */
+/* Stops CSS animations; the video and chart bars read the preference in components. */
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
@@ -137,13 +128,7 @@
   }
 }
 
-/**
- * Customizable select for the year picker.
- *
- * Progressive enhancement for browsers supporting appearance: base-select
- * (Chrome 135+, Safari 27). The picker popover is anchored directly under
- * the control rather than shifted by browser chrome positioning.
- */
+/* Opts into appearance: base-select so the browser anchors the picker under the control. */
 @supports (appearance: base-select) {
   select,
   select::picker(select) {
@@ -154,9 +139,8 @@
     display: none;
   }
 
-  /* The closed control is a flex box and its selected content stretches to
-     the full height, which leaves the line of text sitting at the top. The
-     content is centred instead, so the value lines up with the chevron. */
+  /* The closed control is flex and stretches its content to full height, so it
+     is centred to line up with the chevron. */
   select {
     align-items: center;
     align-content: center;

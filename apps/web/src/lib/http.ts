@@ -1,10 +1,4 @@
-/**
- * The status the API answers with for a fiscal year it holds no data for.
- *
- * The other two the API uses are a 400 for a malformed year, which the client
- * never sends because it checks the route first, and a 5xx for a failure on
- * the server, which isTransient covers.
- */
+// 404 is the only status the client branches on.
 const NotFoundStatus = 404;
 
 interface HttpFailure {
@@ -24,23 +18,11 @@ export class ApiError extends Error implements HttpFailure {
   }
 }
 
-/**
- * The marker a ResponseError carries.
- *
- * A symbol, so it cannot collide with a field of the response body and does
- * not show up in the object's own keys.
- */
+// Read by shape and not by instanceof, because Vite gives the class a new
+// identity under HMR.
 const unreadable = Symbol.for("nevis.http.unreadable");
 
-/**
- * A failure in the client's own reading of the response: a body that is not
- * JSON, or a body that does not match the contract. The server did answer,
- * so the answer is final and the request is not worth another try.
- *
- * The marker is read by shape and not by instanceof, for the same reason the
- * guards below are: Vite gives the class a new identity under HMR while SWR
- * still holds the old error.
- */
+// The server answered, so the body is final and not worth another try.
 export class ResponseError extends Error {
   readonly [unreadable] = true;
 
@@ -68,16 +50,8 @@ export function isNotFound(error: unknown): error is HttpFailure & { status: 404
   return statusOf(error) === NotFoundStatus;
 }
 
-/**
- * Whether the failure is worth another try.
- *
- * A response the server meant is final. A 400 for a malformed year and a 404
- * for a fiscal year with no data come back the same way every time, so
- * retrying them only spends requests. A 5xx may be transient, and so may be
- * a request that never got an answer, so both get another try. A body the
- * client could not read is final as well: the server answered, and the same
- * body will come back.
- */
+// A 4xx and an unreadable body are final, a 5xx and a request with no answer
+// are retried.
 export function isTransient(error: unknown): boolean {
   if (isResponseError(error)) return false;
   const status = statusOf(error);

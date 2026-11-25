@@ -5,13 +5,6 @@ import noDataPoster from "@/assets/no-data-poster.jpg";
 import { StatePage } from "@/components/StatePage";
 import { currentFiscalYear, FISCAL_YEAR_PICKER_MIN } from "@/lib/period";
 
-/**
- * The empty year state.
- *
- * A fiscal year with no data is a state and not an error. The page says which
- * year is empty and gives the user a way to another year and a way back to the
- * dashboard.
- */
 export type NoDataProps = {
   fiscalYear: number;
 };
@@ -32,8 +25,7 @@ function YearPickerForm({ fiscalYear }: { fiscalYear: number }) {
     }
 
     const next = Number(draft);
-    // The select is an action and not a display of the current year, so it resets
-    // on every submit and a pick of the year already open pushes nothing.
+    // Select is an action, so it resets on submit and ignores the open year.
     setDraft("");
     if (next !== fiscalYear) {
       navigate(`/dashboard/${next}`);

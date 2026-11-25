@@ -32,6 +32,7 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 - **Deploy:** none. The project runs locally with `npm run dev`; there is no hosted demo, so no CORS question, no base URL and no deploy pipeline. In dev, Vite proxies `/api` to the API port. Vite binds to the local network with `host: true` in dev and preview configurations, proxying `/api` to port 3000 so the dashboard can be tested directly from mobile devices on the same Wi-Fi.
 - **Data:** the payload is the source of truth, served unchanged. It lives in `packages/shared/src/payload.ts`; `parsedDataMap` in `apps/api/src/data.ts` is a `Map` with one entry, FY2024, parsed once at module scope; `getData(year)` returns that tree or undefined. No projections, no corrections, no derived totals: the source query and filters are unknown, so a correction would be invented. Moving to a real database touches one file.
 - **README:** short landing page (overview, demo media, stack, run commands, highlights, and doc links). The long material (decisions, accessibility, tests, data quirks, and AI use) is parked in `.scratch/README-cut.md` (gitignored) until folded into a reviewer-facing decisions document.
+- **Comments:** a comment records a decision, a trap or the reason for a side effect, in one line at the site where someone would break it. File headers and docstrings that restate a signature are gone; a clean function is documented by its tests, and the rationale sits here.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
 
