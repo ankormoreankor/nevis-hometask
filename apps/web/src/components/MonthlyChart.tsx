@@ -66,7 +66,8 @@ export default function MonthlyChart({
             config={config}
             className={cn(
               plotClassName,
-              "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring focus-visible:outline-offset-2 [&_g:focus]:outline-none",
+              // The cursor band over the active month and its tooltip are the focus indicator.
+              "focus:outline-none [&_g:focus]:outline-none",
             )}
             tabIndex={0}
             role="application"

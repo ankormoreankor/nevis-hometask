@@ -128,6 +128,13 @@
   }
 }
 
+/* Restores the left focus edge because forced-colors maps the selection rail to Canvas. */
+@media (forced-colors: active) {
+  tbody tr[data-state="selected"]:focus-visible::after {
+    border-left-width: 2px;
+  }
+}
+
 /* Opts into appearance: base-select so the browser anchors the picker under the control. */
 @supports (appearance: base-select) {
   select,

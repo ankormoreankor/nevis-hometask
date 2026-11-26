@@ -262,7 +262,9 @@ function RowNameCell({
     <TableCell
       role="gridcell"
       className={cn(
-        "sticky left-0 z-10 w-[clamp(160px,48vw,296px)] min-w-[clamp(160px,48vw,296px)] max-w-[clamp(160px,48vw,296px)] bg-card px-1.5 sm:px-2 group-hover:bg-muted border-b border-border group-last:border-b-0 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border sm:after:hidden group-focus-visible:shadow-[inset_2px_2px_0_0_var(--color-ring),inset_0_-2px_0_0_var(--color-ring)]",
+        "sticky left-0 z-10 w-[clamp(160px,48vw,296px)] min-w-[clamp(160px,48vw,296px)] max-w-[clamp(160px,48vw,296px)] bg-card px-1.5 sm:px-2 group-hover:bg-muted border-b border-border group-last:border-b-0 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border sm:after:hidden",
+        // Keeps a left ring edge when the row scrolls horizontally behind the sticky column.
+        "group-focus-visible:shadow-[inset_2px_0_0_0_var(--color-ring)]",
         // Design has no selected state: a tint read as a band and weight reflows the name.
         selected &&
           "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-foreground before:content-['']",
@@ -311,7 +313,7 @@ function RowValueCells({
 
 // data-[state=selected]:hover is needed because hover loses to the transparent resting rule.
 const ROW_CLASSES =
-  "group h-12 sm:h-14 hover:bg-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[state=selected]:bg-transparent data-[state=selected]:hover:bg-muted";
+  "group relative h-12 sm:h-14 transition-none hover:bg-muted focus-visible:outline-none focus-visible:after:pointer-events-none focus-visible:after:absolute focus-visible:after:inset-0 focus-visible:after:z-20 focus-visible:after:border-2 focus-visible:after:border-ring focus-visible:after:content-[''] data-[state=selected]:bg-transparent data-[state=selected]:hover:bg-muted data-[state=selected]:focus-visible:after:border-l-0";
 
 function TreeRow({
   row,
