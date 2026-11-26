@@ -44,7 +44,7 @@ CI runs `check`, `typecheck`, `test`, `analyze`, `build`, and the Chromium brows
 - **Treegrid keyboard model:** `ArrowRight` and `ArrowLeft` expand and collapse rows, `Enter` selects, and row hierarchy is exposed through `aria-level`, `aria-posinset`, `aria-setsize`, `aria-expanded`, and `aria-selected`.
 - **Chart keyboard path:** One focus stop on the plot where arrow keys step across months and a polite live region announces each month and its series values.
 - **375px layout:** Below `640px` the chart turns horizontal with month rows along the vertical axis, while the treegrid pins and caps the sticky name column with short month headers.
-- **Two test suites:** 74 unit cases across six files covering the pure modules, plus 42 Playwright browser specs across two files covering interactions, states, ARIA snapshots, and layout.
+- **Two test suites:** 74 unit cases across six files covering the pure modules, plus 43 Playwright browser specs across two files covering interactions, states, ARIA snapshots, and layout.
 
 ## Docs
 
