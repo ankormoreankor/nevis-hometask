@@ -118,11 +118,13 @@ export function TreeGrid({
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>, row: FlatRow) => {
     const action = keyAction(rows, row, event.key);
-    // A keypress aimed at the nested chevron must not select the row.
-    const isChevronKey = action?.kind === "select" && event.target !== event.currentTarget;
-    const isNotRowKey = !action || isChevronKey;
 
-    if (isNotRowKey) return;
+    if (!action) return;
+
+    // A keypress aimed at the nested chevron must not select the row.
+    const isChevronKey = action.kind === "select" && event.target !== event.currentTarget;
+
+    if (isChevronKey) return;
 
     event.preventDefault();
     const dispatch = { focus: focusRow, toggle, select: onSelect };

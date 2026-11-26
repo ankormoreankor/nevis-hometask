@@ -764,3 +764,15 @@ Done
 
 Verified
 - `check`, `typecheck` and `test` (74 cases) pass.
+
+## the second guard keeps the gate
+
+Decided
+- A nullable part of a compound condition gets its own early return, so the extracted condition needs no optional chaining.
+
+Done
+- `TreeGrid.handleKeyDown` guards the missing action first and the chevron key second; cyclomatic falls from 5 to 4 and CRAP from 30 to 20.
+- `IF-STYLE.md` now prefers a guard over optional chaining when a value can be null.
+
+Verified
+- `check`, `typecheck`, `test` (74 cases) and `analyze` pass. The previous entry had not run `analyze`; CI caught the CRAP regression.
