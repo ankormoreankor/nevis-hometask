@@ -1,6 +1,6 @@
 # Working context
 
-Everything a fresh session needs to be as oriented as the session that set this repo up. Read alongside `brief.md` (the task and payload) and `jd.md` (the role).
+Everything a fresh session needs to be as oriented as the session that set this repo up. Read alongside `brief.md` (the task and payload) and `decisions.md` (the calls and assumptions).
 
 ## The task in one paragraph
 
@@ -31,7 +31,7 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 - **State pages:** `/dashboard/:emptyYear` and `*` (not found) use a centered shared shell (`StatePage`) with a decorative looping muted MP4 video (The Office clips), an intrinsic poster frame, and an accessible pause/play toggle button overlay. WCAG 2.2.2 requires a mechanism to pause moving content longer than five seconds, and `prefers-reduced-motion` suppresses autoplay, showing the poster frame until explicit user play. Because the state pages carry a decorative video with a poster frame, they have no separate placeholder.
 - **Deploy:** none. The project runs locally with `npm run dev`; there is no hosted demo, so no CORS question, no base URL and no deploy pipeline. In dev, Vite proxies `/api` to the API port. Vite binds to the local network with `host: true` in dev and preview configurations, proxying `/api` to port 3000 so the dashboard can be tested directly from mobile devices on the same Wi-Fi.
 - **Data:** the payload is the source of truth, served unchanged. It lives in `packages/shared/src/payload.ts`; `parsedDataMap` in `apps/api/src/data.ts` is a `Map` with one entry, FY2024, parsed once at module scope; `getData(year)` returns that tree or undefined. No projections, no corrections, no derived totals: the source query and filters are unknown, so a correction would be invented. Moving to a real database touches one file.
-- **README:** short landing page (overview, demo media, stack, run commands, highlights, and doc links). The long material (decisions, accessibility, tests, data quirks, and AI use) is parked in `.scratch/README-cut.md` (gitignored) until folded into a reviewer-facing decisions document.
+- **README:** short landing page (overview, demo media, stack, run commands, highlights, and doc links). The calls and the assumptions behind them live in `docs/decisions.md`.
 - **Comments:** a comment records a decision, a trap or the reason for a side effect, in one line at the site where someone would break it. File headers and docstrings that restate a signature are gone; a clean function is documented by its tests, and the rationale sits here.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
@@ -76,7 +76,7 @@ Arithmetic in the payload, verified:
 - Aug 2024: advisers sum to 216, branch says 214.
 - Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month. Every other channel month matches, and every other adviser matches their branch.
 
-Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded here and in `.scratch/README-cut.md`, pending the reviewer-facing decisions document.
+Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded here and in `docs/decisions.md`.
 
 ## Ideas worth building, in order of value
 
@@ -94,7 +94,7 @@ Settled: the payload is served as given. The source query and filters are unknow
 - [x] Expand and collapse from the keyboard only, hierarchy announced to assistive tech
 - [x] Tests: expand/collapse, data-to-chart mapping. The chart mapping is vitest; expand and collapse, the states and the 375px layout are in the browser suite.
 - [x] Nothing overflows or breaks at 375px
-- [x] README: run, test, demo, doc links, open questions, and next; assumptions and decisions live in docs/context.md
+- [x] README: run, test, demo, doc links, open questions, and next; the calls and assumptions live in `docs/decisions.md`
 - [x] No console errors, no unused dependencies
 
 ## Open questions

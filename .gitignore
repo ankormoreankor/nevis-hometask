@@ -30,3 +30,6 @@ design/
 
 # Temporary scratch files
 .scratch/
+
+# Local session log
+docs/log.md

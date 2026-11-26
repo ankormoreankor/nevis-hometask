@@ -49,12 +49,13 @@ CI runs `check`, `typecheck`, `test`, `analyze`, `build`, and the Chromium brows
 ## Docs
 
 - **[docs/brief.md](docs/brief.md):** The task brief, requirements, Figma links, and verbatim payload.
+- **[docs/decisions.md](docs/decisions.md):** The calls, the assumptions behind them, and what I think Nevis got wrong.
 - **[docs/context.md](docs/context.md):** Architecture decisions, design facts, payload arithmetic notes, and open questions.
-- **[docs/log.md](docs/log.md):** Append-only session log recording how the repository was built.
 
 ## Open questions
 
 The brief calls the monthly numbers figures and the design prints them as plain integers. Whether they are client counts or money is unresolved, and the payload is served unchanged.
+The full list is in [docs/decisions.md](docs/decisions.md).
 
 ## Next
 

@@ -6,9 +6,8 @@ Nevis frontend take-home: dashboard over a company > branch > adviser > channel 
 
 1. `docs/brief.md` - the brief, the payload, and the five Figma links with node IDs.
 2. `docs/context.md` - decisions already made, design facts, data inconsistencies, the idea backlog, constraints.
-3. `docs/log.md` - the last two entries: what the previous sessions decided and what to pick up next.
-4. `docs/jd.md` - the role this is for.
-5. `design/` - node trees (`nodes.json`, query with `jq`, never read whole) and 2x frame renders (`*.png`). Gitignored: employer material, never committed.
+3. `docs/log.md` - the last two entries, if the file exists: what the previous sessions decided and what to pick up next.
+4. `design/` - node trees (`nodes.json`, query with `jq`, never read whole) and 2x frame renders (`*.png`). Gitignored: employer material, never committed.
 
 ## Conventions
 
@@ -30,14 +29,14 @@ Configuration belongs to the agent. Implementation belongs to the user.
 The agent writes without asking:
 
 - config: `opencode.jsonc`, root and workspace `package.json`, `package-lock.json`, tsconfig files, Vite, ESLint, Vitest, Playwright, CI workflows, `.gitignore`, `.editorconfig`
-- docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/task-template.md`
+- docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/decisions.md`
 - scaffolding: folders, empty files, `.gitkeep`, placeholder exports
 
-The agent stops before implementation under `apps/**` and `packages/**`: components, routes, API handlers, schemas, styles, tests. It writes the task into the file that needs the code, as a comment block at the top, and leaves the smallest placeholder that compiles. Frontend tasks assume a senior frontend developer and state the contract only. Backend tasks assume a junior and spell out the Express and Zod mechanics. Format and calibration: `docs/task-template.md`.
+The agent stops before implementation under `apps/**` and `packages/**`: components, routes, API handlers, schemas, styles, tests. It writes the task into the file that needs the code, as a comment block at the top, and leaves the smallest placeholder that compiles. Frontend tasks assume a senior frontend developer and state the contract only. Backend tasks assume a junior and spell out the Express and Zod mechanics.
 
 Direct request overrides this. If the user says "build X", the agent builds X and writes no task.
 
-Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent follows, checked against the diff. `design/`, `docs/brief.md` and `docs/jd.md` stay denied at the config level because they are employer material.
+Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent follows, checked against the diff. `design/` and `docs/brief.md` stay denied at the config level because they are employer material.
 
 ## Opus delegation
 
@@ -45,7 +44,7 @@ Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent fol
 
 ## Project log
 
-`docs/log.md` is the session log: what happened, what was decided, what is next. It is the only channel that survives a session change. It is committed with the repo. If it is missing, create it.
+`docs/log.md` is the session log: what happened, what was decided, what is next. It is the only channel that survives a session change. It is local and gitignored, so a fresh clone does not have it. If it is missing, create it.
 
 - Read the last two entries at the start of a session, after `docs/context.md`.
 - Write on an explicit trigger: `/log`, or the user saying "log it". Nothing else. The agent cannot detect the end of a session, and guessing produces entries nobody asked for.

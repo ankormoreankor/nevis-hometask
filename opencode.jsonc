@@ -11,7 +11,6 @@
     // Employer material stays untouched. These are a hard stop, not a prompt.
     { "action": "edit", "resource": "design/**", "effect": "deny" },
     { "action": "edit", "resource": "docs/brief.md", "effect": "deny" },
-    { "action": "edit", "resource": "docs/jd.md", "effect": "deny" },
 
     // Shell runs freely except where it can destroy work or leave the machine.
     { "action": "shell", "resource": "*", "effect": "allow" },
