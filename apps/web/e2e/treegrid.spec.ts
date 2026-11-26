@@ -243,6 +243,9 @@ test("the chart resets its active month on blur", async ({ page }) => {
   // The chart is the first tab stop on the page.
   await page.keyboard.press("Tab");
   await expect(chart).toBeFocused();
+  // The cursor band and the tooltip are the indicator, so the chart draws no ring.
+  const outline = await chart.evaluate((element) => window.getComputedStyle(element).outlineStyle);
+  expect(outline).toBe("none");
   await expect(reader).toContainText("Feb 2024");
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText("Feb 2024");
@@ -717,4 +720,87 @@ test("the page header h1 node is preserved across the loading to loaded transiti
     return window.__loadingH1 !== null && document.querySelector("h1") === window.__loadingH1;
   });
   expect(isSameNode).toBe(true);
+});
+
+test("row focus ring spans the row, preserves the selected rail, and hover is instant", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/2024");
+  const company = page.getByRole("row", { name: "Company" });
+  const branch1 = page.getByRole("row", { name: "Branch 1" });
+  await expect(branch1).toBeVisible();
+
+  await page.getByRole("application").focus();
+  await page.keyboard.press("Tab");
+  await expect(company).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(branch1).toBeFocused();
+
+  const focusMetrics = await branch1.evaluate((el) => {
+    const rowRect = el.getBoundingClientRect();
+    const after = getComputedStyle(el, "::after");
+    const firstCell = el.firstElementChild;
+    const cellStyle = firstCell ? getComputedStyle(firstCell) : null;
+    return {
+      outlineStyle: getComputedStyle(el).outlineStyle,
+      zIndex: after.zIndex,
+      cellZIndex: cellStyle?.zIndex,
+      top: after.top,
+      width: Number.parseFloat(after.width),
+      rowWidth: rowRect.width,
+      borders: [
+        after.borderTopWidth,
+        after.borderRightWidth,
+        after.borderBottomWidth,
+        after.borderLeftWidth,
+      ],
+    };
+  });
+  expect(focusMetrics.outlineStyle).toBe("none");
+  expect(focusMetrics.zIndex).toBe("20");
+  expect(focusMetrics.cellZIndex).toBe("10");
+  expect(focusMetrics.top).toBe("0px");
+  expect(focusMetrics.width).toBeGreaterThanOrEqual(focusMetrics.rowWidth - 1);
+  expect(focusMetrics.borders).toEqual(["2px", "2px", "2px", "2px"]);
+
+  await page.keyboard.press("ArrowUp");
+  await expect(company).toBeFocused();
+  expect(await company.evaluate((el) => getComputedStyle(el, "::after").borderLeftWidth)).toBe(
+    "0px",
+  );
+  await page.emulateMedia({ forcedColors: "active" });
+  expect(await company.evaluate((el) => getComputedStyle(el, "::after").borderLeftWidth)).toBe(
+    "2px",
+  );
+  await page.emulateMedia({ forcedColors: "none" });
+
+  expect(await branch1.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0s");
+  await branch1.locator("td").nth(1).hover();
+  const hoverBg = await branch1.evaluate((el) => {
+    const firstCell = el.firstElementChild;
+    return {
+      row: getComputedStyle(el).backgroundColor,
+      sticky: firstCell ? getComputedStyle(firstCell).backgroundColor : null,
+    };
+  });
+  expect(hoverBg.sticky).toBe(hoverBg.row);
+
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.locator("[data-slot='table-container']").evaluate((el) => {
+    el.scrollLeft = 200;
+  });
+  await page.keyboard.press("ArrowDown");
+  await expect(branch1).toBeFocused();
+
+  const mobileSticky = await branch1
+    .locator("td")
+    .first()
+    .evaluate((el) => ({
+      boxShadow: getComputedStyle(el).boxShadow,
+      dividerWidth: getComputedStyle(el, "::after").width,
+      dividerDisplay: getComputedStyle(el, "::after").display,
+    }));
+  expect(mobileSticky.boxShadow).not.toBe("none");
+  expect(mobileSticky.dividerWidth).toBe("1px");
+  expect(mobileSticky.dividerDisplay).not.toBe("none");
 });
