@@ -1,6 +1,6 @@
 # Project rules
 
-Nevis frontend take-home: dashboard over a company > branch > adviser > channel tree. Standalone repo, no shared config or history with the resume repository.
+Nevis frontend take-home: dashboard over a company > branch > adviser > channel tree.
 
 ## Read first, in this order
 
@@ -14,33 +14,13 @@ Nevis frontend take-home: dashboard over a company > branch > adviser > channel 
 - Vite + React 19 + TypeScript strict. `createBrowserRouter`, CSS modules, tokens in one file.
 - API: Express in the same repo, thin. Shared Zod schema in `shared/`, imported by server and client.
 - Biome owns the formatting: two spaces, 100 columns, double quotes, semicolons, imports sorted. One `biome.json` at the repo root. `npm run format` writes it, `npm run check` is what CI runs.
-- Decisions land in `docs/context.md` as they are made, not at the end; a reviewer-facing decisions document comes later. The brief grades them.
+- Decisions land in `docs/context.md` as they are made, not at the end; the calls and the assumptions behind them live in `docs/decisions.md`. The brief grades them.
 - Numbers rendered in the UI come from the payload unchanged. Where a level is missing (branches without employees, advisers without channels), the row is a leaf and says so.
 - UI copy is plain and factual: no em dashes, no marketing adjectives, no exclamation.
 
 ## Accessibility
 
 Accessibility is a constraint, not a pass at the end. WCAG 2.2 AA is the floor. Every interactive control is reachable by keyboard, has a visible focus ring and an accessible name; icon-only buttons carry the name, not the icon. Any motion that starts on its own honours prefers-reduced-motion and can be paused, stopped or hidden, and a loop longer than five seconds gets a control. Meaning never lives in colour, motion or position alone. Targets are at least 24 by 24 pixels. Structure is announced: landmarks, one h1, and hierarchy in the treegrid. A missing keyboard path is a bug, not a polish item.
-
-## Who writes what
-
-Configuration belongs to the agent. Implementation belongs to the user.
-
-The agent writes without asking:
-
-- config: `opencode.jsonc`, root and workspace `package.json`, `package-lock.json`, tsconfig files, Vite, ESLint, Vitest, Playwright, CI workflows, `.gitignore`, `.editorconfig`
-- docs: `README.md`, `AGENTS.md`, `docs/context.md`, `docs/decisions.md`
-- scaffolding: folders, empty files, `.gitkeep`, placeholder exports
-
-The agent stops before implementation under `apps/**` and `packages/**`: components, routes, API handlers, schemas, styles, tests. It writes the task into the file that needs the code, as a comment block at the top, and leaves the smallest placeholder that compiles. Frontend tasks assume a senior frontend developer and state the contract only. Backend tasks assume a junior and spell out the Express and Zod mechanics.
-
-Direct request overrides this. If the user says "build X", the agent builds X and writes no task.
-
-Nothing in `opencode.jsonc` gates these edits. The split is a rule the agent follows, checked against the diff. `design/` and `docs/brief.md` stay denied at the config level because they are employer material.
-
-## Opus delegation
-
-`/opus <task>` and a message starting with `Opus:` hand the task to Claude Opus 4.6 through the local Antigravity CLI. The plugin is installed globally at `~/work/opus-plugin` and registered in `~/.config/opencode/opencode.jsonc`, so it is available in every project; the prompt hook there rewrites the prefix into an `ask_opus` call, and `opus.sh` beside it owns the `agy` flags. The mode comes from the session's agent: plan in Plan mode, build in Build mode. One delegation runs at a time per project, and a nested delegation is refused. Opus cannot see this conversation: pass the whole task.
 
 ## Project log
 
