@@ -32,10 +32,10 @@ function dispatchHover(svg: SVGSVGElement, coordinate: number, narrow: boolean) 
 }
 
 function cancelPendingRetry(retryRef: React.MutableRefObject<number | null>) {
-  if (retryRef.current !== null) {
-    cancelAnimationFrame(retryRef.current);
-    retryRef.current = null;
-  }
+  if (retryRef.current === null) return;
+
+  cancelAnimationFrame(retryRef.current);
+  retryRef.current = null;
 }
 
 // Ticks are not measured on the first frame, so a miss retries on the next frame.
@@ -50,9 +50,9 @@ function retryHover(
     retryRef.current = null;
     const retryPoint = ticks.current[index];
     const currentSvg = surface.current;
-    if (retryPoint && currentSvg) {
-      dispatchHover(currentSvg, retryPoint.coordinate, narrow);
-    }
+    if (!retryPoint || !currentSvg) return;
+
+    dispatchHover(currentSvg, retryPoint.coordinate, narrow);
   });
 }
 
@@ -78,9 +78,7 @@ export function useMonthHover({ rowCount, narrow }: UseMonthHoverOptions) {
   function showMonth(index: number | null) {
     cancelPendingRetry(retryRef);
     const svg = surface.current;
-    if (!svg) {
-      return;
-    }
+    if (!svg) return;
     if (index === null) {
       svg.dispatchEvent(
         new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }),
@@ -102,29 +100,32 @@ export function useMonthHover({ rowCount, narrow }: UseMonthHoverOptions) {
   }, []);
 
   const handleFocus = (event: React.FocusEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      setActiveIndex(0);
-      showMonth(0);
-    }
+    if (event.target !== event.currentTarget) return;
+
+    setActiveIndex(0);
+    showMonth(0);
   };
 
   const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      setActiveIndex(null);
-      showMonth(null);
-    }
+    if (event.target !== event.currentTarget) return;
+
+    setActiveIndex(null);
+    showMonth(null);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget || activeIndex === null) {
-      return;
-    }
+    const isChartTarget = event.target === event.currentTarget;
+    const hasActiveMonth = activeIndex !== null;
+    const isChartKey = isChartTarget && hasActiveMonth;
+
+    if (!isChartKey) return;
+
     const nextIndex = nextMonthIndex(event.key, activeIndex, rowCount);
-    if (nextIndex !== null) {
-      event.preventDefault();
-      setActiveIndex(nextIndex);
-      showMonth(nextIndex);
-    }
+    if (nextIndex === null) return;
+
+    event.preventDefault();
+    setActiveIndex(nextIndex);
+    showMonth(nextIndex);
   };
 
   return {

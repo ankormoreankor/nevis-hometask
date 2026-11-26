@@ -55,9 +55,7 @@ function resolveTooltipMonth(label: React.ReactNode, fallback: string): string {
 }
 
 function resolveTooltipRow(payload: readonly unknown[]): ChartRow | undefined {
-  if (payload.length === 0) {
-    return undefined;
-  }
+  if (payload.length === 0) return undefined;
   // SAFETY: Recharts hands the custom tooltip the row object it was given, and ChartPlot is the
   // only producer of those rows.
   const item = payload[0] as { payload?: unknown } | undefined;
@@ -71,16 +69,14 @@ function formatTooltipText(
   series: ChartSeries[],
 ): string {
   const row = resolveTooltipRow(payload);
-  if (!row) {
-    return "";
-  }
+  if (!row) return "";
   const month = resolveTooltipMonth(label, row.month);
   const parts: string[] = [];
   for (const item of series) {
     const part = seriesPart(row, item);
-    if (part !== null) {
-      parts.push(part);
-    }
+    if (part === null) continue;
+
+    parts.push(part);
   }
   return `${[month, ...parts].join(". ")}.`;
 }
@@ -123,9 +119,7 @@ function MonthlyChartTooltip({
     announceTooltip(active, payload, label, series, onAnnounce);
   }, [active, payload, label, series, onAnnounce]);
 
-  if (!active || !payload?.length) {
-    return null;
-  }
+  if (!active || !payload?.length) return null;
 
   return <ChartTooltipContent active={active} payload={payload} label={label} indicator="dot" />;
 }
@@ -185,9 +179,7 @@ function ChartAxes({
 }
 
 function computeRadius(isTop: boolean, narrow: boolean): [number, number, number, number] | 0 {
-  if (!isTop) {
-    return 0;
-  }
+  if (!isTop) return 0;
   return narrow ? [0, 4, 4, 0] : [4, 4, 0, 0];
 }
 

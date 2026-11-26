@@ -40,9 +40,9 @@ export function toRows(series: ChartSeries[], fiscalYear: number): ChartRow[] {
 
     for (const item of series) {
       const value = item.values[index];
-      if (value !== undefined) {
-        row[item.key] = value;
-      }
+      if (value === undefined) continue;
+
+      row[item.key] = value;
     }
 
     rows.push(row);
@@ -66,9 +66,7 @@ export function toDomain(series: ChartSeries[]): number {
     }
   }
 
-  if (maximum === 0) {
-    return 0;
-  }
+  if (maximum === 0) return 0;
 
   const step = maximum >= 100 ? 100 : 10;
 
@@ -78,19 +76,11 @@ export function toDomain(series: ChartSeries[]): number {
 export type ScopeBreakdown = "branch" | "adviser" | "channel";
 
 export function scopeBreakdown(node: TreeNode): ScopeBreakdown | null {
-  if (childrenOf(node).length === 0) {
-    return null;
-  }
+  if (childrenOf(node).length === 0) return null;
 
-  if ("branches" in node) {
-    return "branch";
-  }
-  if ("employees" in node) {
-    return "adviser";
-  }
-  if ("channels" in node) {
-    return "channel";
-  }
+  if ("branches" in node) return "branch";
+  if ("employees" in node) return "adviser";
+  if ("channels" in node) return "channel";
 
   return null;
 }
@@ -120,9 +110,7 @@ export function toTopSeries(series: ChartSeries[]): (string | null)[] {
 }
 
 export function axisTicks(domain: number): number[] {
-  if (domain <= 0) {
-    return [0];
-  }
+  if (domain <= 0) return [0];
   const step = domain >= 100 ? 100 : 10;
   const values: number[] = [];
   for (let value = 0; value <= domain; value += step) {

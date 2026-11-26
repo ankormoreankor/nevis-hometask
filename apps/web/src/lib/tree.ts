@@ -16,15 +16,9 @@ export type FlatRow = {
 // The union shares no child key, so the level is read from the keys the node
 // carries.
 export function childrenOf(node: TreeNode): TreeNode[] {
-  if ("branches" in node) {
-    return node.branches ?? [];
-  }
-  if ("employees" in node) {
-    return node.employees ?? [];
-  }
-  if ("channels" in node) {
-    return node.channels ?? [];
-  }
+  if ("branches" in node) return node.branches ?? [];
+  if ("employees" in node) return node.employees ?? [];
+  if ("channels" in node) return node.channels ?? [];
   return [];
 }
 
@@ -49,20 +43,14 @@ export function pathTo(root: Company, id: string): TreeNode[] {
   const path: TreeNode[] = [];
 
   const walk = (node: TreeNode): boolean => {
-    if (visited.has(node.id)) {
-      return false;
-    }
+    if (visited.has(node.id)) return false;
     visited.add(node.id);
 
     path.push(node);
-    if (node.id === id) {
-      return true;
-    }
+    if (node.id === id) return true;
 
     for (const child of childrenOf(node)) {
-      if (walk(child)) {
-        return true;
-      }
+      if (walk(child)) return true;
     }
     path.pop();
 
@@ -75,9 +63,7 @@ export function pathTo(root: Company, id: string): TreeNode[] {
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const first = parts[0];
-  if (!first) {
-    return "";
-  }
+  if (!first) return "";
 
   if (parts.length === 1) {
     return (first[0] ?? "").toUpperCase();
@@ -117,9 +103,7 @@ export function flattenVisible(root: Company, expanded: ReadonlySet<string>): Fl
       parentId,
     });
 
-    if (!isExpanded) {
-      return;
-    }
+    if (!isExpanded) return;
 
     const childKind: FlatRow["kind"] =
       kind === "company" ? "branch" : kind === "branch" ? "advisor" : "channel";

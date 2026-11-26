@@ -747,3 +747,32 @@ Verified
 
 Open
 - `Dashboard.module.css` keeps the last file header, and `vite.config.ts` keeps two lines that restate their own config.
+
+## one shape for every conditional
+
+Decided
+- A one-line `if` body is only `return`, `continue` or `break`. The return may carry a literal, a variable, an object or array literal, or a JSX element.
+- `throw`, assignments, function-call statements and returns whose expression is a call keep braces, because they are easy to miss at the end of a line.
+- A loop body or a guard around the rest of a scope flattens to `continue` or an early `return`.
+- A compound condition whose parts read different things gets named consts, with a blank line before the `if`.
+
+Done
+- 14 files under `apps/web/src` follow the shape: the treegrid, the chart and tree helpers, the navigation helper, the hooks and the routes.
+- `TreeGrid.toggle` reads its ancestor selection from `isSelectedAncestor` and `isToSelect`; `handleKeyDown` from `isChevronKey` and `isNotRowKey`.
+- `useMonthHover` names `isChartTarget`, `hasActiveMonth` and `isChartKey`.
+- `IF-STYLE.md` at the root records the rules and stays local through `.git/info/exclude`.
+
+Verified
+- `check`, `typecheck` and `test` (74 cases) pass.
+
+## the second guard keeps the gate
+
+Decided
+- A nullable part of a compound condition gets its own early return, so the extracted condition needs no optional chaining.
+
+Done
+- `TreeGrid.handleKeyDown` guards the missing action first and the chevron key second; cyclomatic falls from 5 to 4 and CRAP from 30 to 20.
+- `IF-STYLE.md` now prefers a guard over optional chaining when a value can be null.
+
+Verified
+- `check`, `typecheck`, `test` (74 cases) and `analyze` pass. The previous entry had not run `analyze`; CI caught the CRAP regression.

@@ -32,15 +32,13 @@ export function ScopeTrail({ company, selectedId, labelledById, onSelect }: Scop
 
   // Keyboard activation moves focus to the new current item; pointer clicks do not.
   useEffect(() => {
-    if (shouldFocusCurrentRef.current) {
-      shouldFocusCurrentRef.current = false;
-      currentRef.current?.focus();
-    }
+    if (!shouldFocusCurrentRef.current) return;
+
+    shouldFocusCurrentRef.current = false;
+    currentRef.current?.focus();
   });
 
-  if (!current) {
-    return null;
-  }
+  if (!current) return null;
 
   return (
     <nav aria-label="Chart scope" className={styles.trail}>

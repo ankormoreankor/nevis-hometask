@@ -2,9 +2,7 @@ import type { Company, TreeNode } from "@nevis/shared";
 import { findNode } from "@/lib/tree";
 
 export function resolveSelected(company: Company, nodeId: string | null): TreeNode {
-  if (!nodeId) {
-    return company;
-  }
+  if (!nodeId) return company;
   return findNode(company, nodeId) ?? company;
 }
 
