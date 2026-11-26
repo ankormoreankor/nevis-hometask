@@ -1,6 +1,6 @@
 # Working context
 
-Everything a fresh session needs to be as oriented as the session that set this repo up. Read alongside `brief.md` (the task and payload) and `jd.md` (the role).
+Everything a fresh session needs to be as oriented as the session that set this repo up. Read alongside `brief.md` (the task and payload) and `decisions.md` (the calls and assumptions).
 
 ## The task in one paragraph
 
@@ -8,7 +8,7 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 
 ## What is already decided
 
-- **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. The dashboard is `/dashboard/:year`; `/` and `/dashboard` redirect in a loader to `/dashboard/2024`, replacing the entry. A four-digit year starting with 1 or 2 always renders, including one with no data; `/dashboard/abc`, `/dashboard/0024` and `/dashboard/3000` are not found rather than redirected, so a typo stays visible, and none of them makes a request. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`. Same shape as the employer's own app.
+- **Frontend:** Vite, React 19, TypeScript strict, `createBrowserRouter`. The dashboard is `/dashboard/:year`; `/` and `/dashboard` redirect in a loader to `/dashboard/2024`, replacing the entry. A four-digit year starting with 1 or 2 always renders, including one with no data; `/dashboard/abc`, `/dashboard/0024` and `/dashboard/3000` are not found rather than redirected, so a typo stays visible, and none of them makes a request. Tailwind v4 and shadcn/ui for the two data components, CSS modules for the page shell, tokens in `apps/web/src/index.css`.
 - **Page and cards:** the page is #F9F9F9 and that both blocks keep a white 8px-radius card wrapper so they can be reused over any surface, and that the table card pads 8px inside its radius so the rail and the focus ring are not clipped by the rounded corners.
 - **Typography:** Inter Variable Latin subset vendored under `apps/web/public/fonts/inter-latin-variable.woff2` and preloaded from `apps/web/index.html`. Self-hosting without npm dependencies avoids third-party requests and off-screen font loading prevents layout shifts on first paint. Month labels use `formatMonthShort` ("Feb", "Jan") below sm and `formatMonthLabel` ("Feb 2024") at sm and above, rendered with separate spans so the unused label stays out of the accessibility tree.
 - **Table:** `TreeGrid`, a native `<table role="treegrid">` with the WAI-ARIA APG rows-first keyboard model. Not Accordion or Collapsible over divs, not TanStack Table. Rows are the only focus target; cells are not, which is a stated deviation from APG. The chevron is pointer only for the same reason: it takes no focus, the row keeps DOM focus after a pointer click, the focus-visible ring is reserved for keyboard interaction via `{ focusVisible: false }`, and Enter on a row selects and never toggles. Expansion is local state, selection is `?node=<id>`. The visible row list comes from `flattenVisible` in `apps/web/src/lib/tree.ts`, a pure function, so the levels, the sibling counts and the kind of each row can be unit tested without a browser. On small screens below sm, the table increases density with text-[13px], h-12 rows, px-1.5 cells, custom indent [--row-indent:12px], short month headers, and a sticky name column pinned at left 0 with z-10 and bg-card mirroring the row hover band. The sticky name column uses `w-[clamp(160px,48vw,296px)]` across header and cell, keeping its width constant regardless of expansion depth. Row names carry `min-w-0 flex-1 truncate` with a title attribute for pointer fallback while the full text remains in the DOM and the accessibility tree. Chevron buttons and leaf placeholders reduce to 24 by 24 pixels (`h-6 w-6 sm:h-8 sm:w-8`) to preserve text space while meeting the target size floor.
@@ -28,19 +28,17 @@ A dashboard for a wealth adviser's book of business. Two parts: a stacked bar ch
 - **Fiscal calendar:** `apps/web/src/lib/period.ts` holds the twelve-month table, `formatMonthLabel`, `formatPeriod` and `currentFiscalYear`. February is first because the fiscal year says so; the year in the labels comes from the route.
 - **Empty year:** `/dashboard/2025` renders a heading with the year, a form with a visually hidden label (`<label htmlFor="year" className="sr-only">Fiscal year</label>`), a fixed-width select (`w-56`) over 2000 to the current fiscal year and a Go button, and a link to `/`. The select always shows a disabled placeholder ("Select a fiscal year") and resets on every submit: it is an action, not a display of the current year. The range is valid years, not populated ones, so no endpoint is needed. A year change uses `push`. Browsers supporting `appearance: base-select` render the picker anchored under the control with styled options and the UA picker icon hidden, and the closed control centres its selected content with `align-items`; Firefox falls back to the native select popup.
 - **Loading state:** The first paint renders the `role="status"` region named "Loading" immediately so assistive technology learns about it at once, under the header, which is already on screen. The decorative skeleton shapes mount only after a 200ms delay via `useDelayedFlag`, so a 404 or fast response never flashes a chart skeleton. When the response arrives, the skeletons unmount.
-- **State pages:** `/dashboard/:emptyYear` and `*` (not found) use a centered shared shell (`StatePage`) with a decorative looping muted MP4 video (The Office clips), an intrinsic poster frame, and an accessible pause/play toggle button overlay. WCAG 2.2.2 requires a mechanism to pause moving content longer than five seconds, and `prefers-reduced-motion` suppresses autoplay, showing the poster frame until explicit user play. Because the state pages carry a decorative video with a poster frame, they have no separate placeholder.
+- **State pages:** `/dashboard/:emptyYear` and `*` (not found) use a centered shared shell (`StatePage`) with a decorative looping muted MP4 video, an intrinsic poster frame, and an accessible pause/play toggle button overlay. WCAG 2.2.2 requires a mechanism to pause moving content longer than five seconds, and `prefers-reduced-motion` suppresses autoplay, showing the poster frame until explicit user play. Because the state pages carry a decorative video with a poster frame, they have no separate placeholder.
 - **Deploy:** none. The project runs locally with `npm run dev`; there is no hosted demo, so no CORS question, no base URL and no deploy pipeline. In dev, Vite proxies `/api` to the API port. Vite binds to the local network with `host: true` in dev and preview configurations, proxying `/api` to port 3000 so the dashboard can be tested directly from mobile devices on the same Wi-Fi.
 - **Data:** the payload is the source of truth, served unchanged. It lives in `packages/shared/src/payload.ts`; `parsedDataMap` in `apps/api/src/data.ts` is a `Map` with one entry, FY2024, parsed once at module scope; `getData(year)` returns that tree or undefined. No projections, no corrections, no derived totals: the source query and filters are unknown, so a correction would be invented. Moving to a real database touches one file.
-- **README:** short landing page (overview, demo media, stack, run commands, highlights, and doc links). The long material (decisions, accessibility, tests, data quirks, and AI use) is parked in `.scratch/README-cut.md` (gitignored) until folded into a reviewer-facing decisions document.
+- **README:** short landing page (overview, demo media, stack, run commands, highlights, and doc links). The calls and the assumptions behind them live in `docs/decisions.md`.
 - **Comments:** a comment records a decision, a trap or the reason for a side effect, in one line at the site where someone would break it. File headers and docstrings that restate a signature are gone; a clean function is documented by its tests, and the rationale sits here.
 
 The API is a prop for this exercise, not the deliverable. Keep it small, spend the hours on the UI.
 
-## Employer context that shapes decisions
+## Context that shapes decisions
 
-- Nevis sells an AI wealth management platform to financial advisers: CRM, meeting intelligence, planning, custodian workflows, agents. Around 70 people, Series B, US data residency, SOC 2 Type II, tenant isolation, audit trails.
-- Their production frontend (public bundle, inspected 2026-10-28): React 19.2, `createBrowserRouter` with lazy route chunks, Vite-style asset graph on rolldown, CSS modules per component, in-house token palette, Inter, ECharts for charts, TipTap, Zod v4 behind a schema-driven form runtime, Sentry, Amplitude.
-- What that implies for this build: dense tables and charts are their daily work, design tokens over a component library, typed schemas as contracts, keyboard and audit thinking in a compliance-bound product. Vite and react-router are the expected tooling; SCSS appears in the JD, CSS modules in the app.
+The product serves financial advisers, so dense tables and charts are the daily work. The build follows the team's stack: React, react-router and CSS modules.
 
 ## Design facts from the Figma pull
 
@@ -76,7 +74,7 @@ Arithmetic in the payload, verified:
 - Aug 2024: advisers sum to 216, branch says 214.
 - Anna Blackwood's channels differ from her own row by 1 in May, June, July and September, and by 2 in August. Her 2 in August is the whole of the branch's 2-unit gap that month. Every other channel month matches, and every other adviser matches their branch.
 
-Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded here and in `.scratch/README-cut.md`, pending the reviewer-facing decisions document.
+Settled: the payload is served as given. The source query and filters are unknown, so correcting a cell would mean inventing a rule for which one is wrong. The mismatches are recorded here and in `docs/decisions.md`.
 
 ## Ideas worth building, in order of value
 
@@ -94,7 +92,7 @@ Settled: the payload is served as given. The source query and filters are unknow
 - [x] Expand and collapse from the keyboard only, hierarchy announced to assistive tech
 - [x] Tests: expand/collapse, data-to-chart mapping. The chart mapping is vitest; expand and collapse, the states and the 375px layout are in the browser suite.
 - [x] Nothing overflows or breaks at 375px
-- [x] README: run, test, demo, doc links, open questions, and next; assumptions and decisions live in docs/context.md
+- [x] README: run, test, demo, doc links, open questions, and next; the calls and assumptions live in `docs/decisions.md`
 - [x] No console errors, no unused dependencies
 
 ## Open questions

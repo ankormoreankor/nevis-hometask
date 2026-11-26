@@ -30,3 +30,11 @@ design/
 
 # Temporary scratch files
 .scratch/
+
+# Local session log
+docs/log.md
+
+# Local agent tooling
+opencode.jsonc
+.opencode/
+.serena/
