@@ -205,7 +205,7 @@ function ChartBars({
       name={item.label}
       stackId={STACK_ID}
       fill={`var(--color-${item.key})`}
-      maxBarSize={narrow ? 20 : 88}
+      maxBarSize={narrow ? 20 : 87.5}
       isAnimationActive={!reducedMotion}
       shape={(rect: BarShapeProps) => (
         <Rectangle
@@ -260,7 +260,12 @@ export function ChartPlot({
       margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
     >
       <TicksBridge ticksRef={ticks} narrow={narrow} />
-      <CartesianGrid vertical={narrow} horizontal={!narrow} stroke="#ccc" strokeDasharray="3 3" />
+      <CartesianGrid
+        vertical={narrow}
+        horizontal={!narrow}
+        strokeDasharray="1 6"
+        strokeLinecap="round"
+      />
       <ChartAxes narrow={narrow} axisMax={axisMax} yTicks={yTicks} />
       <ChartTooltip
         cursor={{ fill: "var(--muted)" }}
