@@ -4,7 +4,7 @@ import type { ChartSeries } from "@/lib/chart";
 
 // Chart and placeholder share this box, so the swap causes no layout shift.
 
-const PLOT_AREA_CLASS = "h-[440px] sm:h-[390px] w-full";
+const PLOT_AREA_CLASS = "h-[440px] sm:h-[358px] w-full";
 
 export type ChartFrameProps = {
   series: ChartSeries[];
